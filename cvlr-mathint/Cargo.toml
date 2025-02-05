@@ -1,0 +1,16 @@
+[package]
+name = "cvlr-mathint"
+authors = ["Arie Gurfinkel <arie@certora.com>"]
+version.workspace = true
+edition = "2021"
+publish = false
+
+[features]
+default = []
+rt = []
+
+[dependencies]
+cvlr-nondet = { workspace = true }
+
+[dev-dependencies]
+cvlr-mathint = { path = ".", features = ["rt"] }

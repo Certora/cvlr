@@ -1,0 +1,17 @@
+[package]
+name = "cvlr-hook"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { workspace = true, features = ["full", "derive"] }
+quote = { workspace = true }
+
+[dev-dependencies]
+macrotest = { workspace = true }
+trybuild = { workspace = true }
+

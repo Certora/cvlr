@@ -1,0 +1,14 @@
+[package]
+name = "cvlr-log"
+version.workspace = true
+authors = ["Jorge Navas <jorge@certora.com>", "Arie Gurfinkel <arie@certora.com>"]
+edition = "2021"
+publish = false
+
+[features]
+default = ["mathint"]
+rt = ["cvlr-mathint/rt"]
+mathint = ["dep:cvlr-mathint"]
+
+[dependencies]
+cvlr-mathint = { workspace = true, optional = true }

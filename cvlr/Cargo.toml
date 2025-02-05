@@ -1,0 +1,18 @@
+[package]
+name = "cvlr"
+version.workspace = true
+edition = "2021"
+
+
+[features]
+vacuity = ["cvlr-asserts/vacuity"]
+rt = ["cvlr-asserts/rt", "cvlr-mathint/rt", "cvlr-log/rt", "cvlr-nondet/rt"]
+
+[dependencies]
+cvlr-asserts = { workspace = true }
+cvlr-mathint = { workspace = true }
+cvlr-log = { workspace = true }
+cvlr-nondet = { workspace = true }
+cvlr-macros = { workspace = true }
+cvlr-early-panic = { workspace = true }
+cvlr-hook = { workspace = true }

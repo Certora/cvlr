@@ -1,0 +1,16 @@
+[package]
+name = "cvlr-nondet"
+authors = ["Arie Gurfinkel <arie@certora.com>"]
+version.workspace = true
+edition = "2021"
+publish = false
+
+[features]
+default = ["std"]
+std = []
+rt = []
+derive = ["derive_nondet"]
+
+[dependencies]
+cvlr-asserts = { workspace = true }
+derive_nondet = { version = "0.3", path = "./derive", optional=true }

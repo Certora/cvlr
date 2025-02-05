@@ -1,0 +1,33 @@
+[workspace]
+resolver = "2"
+members = [
+    "cvlr",
+    "cvlr-asserts",
+    "cvlr-mathint",
+    "cvlr-log",
+    "cvlr-nondet",
+    "cvlr-early-panic",
+    "cvlr-hook",
+    "cvlr-macros",
+]
+
+[workspace.package]
+version = "0.3.0"
+authors = ["Certora"]
+description = "Certora Verification Language for Rust"
+documentation = "https://certora.com"
+
+[workspace.dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = "2"
+macrotest = "1"
+trybuild = "1"
+
+cvlr-asserts = { path = "cvlr-asserts" }
+cvlr-mathint = { path = "cvlr-mathint" }
+cvlr-nondet = { path = "cvlr-nondet" }
+cvlr-log = { path = "cvlr-log" }
+cvlr-macros = { path = "cvlr-macros" }
+cvlr-early-panic = { path = "cvlr-early-panic" }
+cvlr-hook = { path = "cvlr-hook" }
