@@ -9,7 +9,7 @@ mod rt_decls {
 #[cfg(feature = "rt")]
 mod rt_impls {
     #[no_mangle]
-    pub extern "C" fn CTV_assume(c: bool) {
+    pub extern "C" fn CVT_assume(c: bool) {
         if !c {
             panic!()
         }
