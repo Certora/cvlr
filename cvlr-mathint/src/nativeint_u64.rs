@@ -400,7 +400,7 @@ mod tests {
 
     #[test]
     fn nondet_test() {
-        let x: NativeIntU64 = nondet::nondet();
+        let x: NativeIntU64 = cvlr_nondet::nondet();
         assert_eq!(x, 0u64.into());
     }
 }
