@@ -1,4 +1,4 @@
-use hook_macro::{cvt_hook_start, cvt_hook_end};
+use cvlr_hook::{cvlr_hook_on_entry, cvlr_hook_on_exit};
 
 fn hook_start() {
     ();
@@ -9,8 +9,8 @@ fn hook_end() {
 }
 
 
-#[cvt_hook_start(hook_start())]
-#[cvt_hook_end(hook_end())]
+#[cvlr_hook_on_entry(hook_start())]
+#[cvlr_hook_on_exit(hook_end())]
 fn tmp() -> Result<()> {
     // hook start inserted here
     // hook end inserted here
@@ -21,15 +21,15 @@ fn t3() {
     assert_eq!(tmp(), Ok(()));
 }
 
-#[cvt_hook_start(hook_start())]
-#[cvt_hook_end(hook_end())]
+#[cvlr_hook_on_entry(hook_start())]
+#[cvlr_hook_on_exit(hook_end())]
 fn t4() {
     // hook start inserted here
     assert_eq!(1, 1);
     // hook end inserted here
 }
 
-#[cvt_hook_start(hook_start())]
+#[cvlr_hook_on_entry(hook_start())]
 fn abs(x : i32) -> i32 {
     // hook start inserted here
     if x >= 0 { 
@@ -41,7 +41,7 @@ fn abs(x : i32) -> i32 {
     }
 }
 
-#[cvt_hook_end(hook_end())]
+#[cvlr_hook_on_exit(hook_end())]
 fn abs2(x : i32) -> i32 {
     // hook end inserted here
     if x >= 0 { 

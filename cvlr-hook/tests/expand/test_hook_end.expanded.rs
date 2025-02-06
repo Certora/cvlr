@@ -1,4 +1,4 @@
-use hook_macro::cvt_hook_end;
+use cvlr_hook::cvlr_hook_on_exit;
 fn hook() {
     ();
 }

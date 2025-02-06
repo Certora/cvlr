@@ -1,4 +1,4 @@
-use hook_macro::cvt_hook_start;
+use cvlr_hook::cvlr_hook_on_entry;
 
 fn hook() {
     ();
@@ -6,7 +6,7 @@ fn hook() {
 
 // adding this hook to a struct should result
 // in a compile error
-#[cvt_hook_start(hook())]
+#[cvlr_hook_on_entry(hook())]
 struct S1 {
     a: i32
 }

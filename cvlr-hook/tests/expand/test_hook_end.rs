@@ -1,23 +1,23 @@
-use hook_macro::cvt_hook_end;
+use cvlr_hook::cvlr_hook_on_exit;
 
 fn hook() {
     ();
 }
 
-#[cvt_hook_end(hook())]
+#[cvlr_hook_on_exit(hook())]
 fn t1() {
     assert_eq!(1, 1);
     // hook inserted here
     assert_eq!(2, 2);
 }
 
-#[cvt_hook_end(hook())]
+#[cvlr_hook_on_exit(hook())]
 fn t2() {
     // hook inserted here
     assert_eq!(1, 1);
 }
 
-#[cvt_hook_end(hook())]
+#[cvlr_hook_on_exit(hook())]
 fn tmp() -> Result<()> {
     // hook inserted here
     Ok(())

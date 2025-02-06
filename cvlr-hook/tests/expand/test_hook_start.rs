@@ -1,10 +1,10 @@
-use hook_macro::cvt_hook_start;
+use cvlr_hook::cvlr_hook_on_entry;
 
 fn hook() {
     ();
 }
 
-#[cvt_hook_start(hook())]
+#[cvlr_hook_on_entry(hook())]
 fn t1() {
     // hook inserted here
     println!("t1");
