@@ -28,7 +28,7 @@ impl VisitMut for EarlyPanic {
 /// # Example
 ///
 /// ```
-/// use early_panic::early_panic;
+/// use cvlr_early_panic::early_panic;
 /// #[early_panic]
 /// fn foo() -> Option<u64> {
 ///     let v = "42".parse::<u64>()?;
