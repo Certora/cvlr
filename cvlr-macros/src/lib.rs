@@ -8,11 +8,11 @@ use syn::{parse_macro_input, parse_quote, ItemFn};
 /// # Example
 ///
 /// ```
-/// use cvt_macros::rule;
-/// use cvt::CVT_assert;
+/// use cvlr_asserts::cvlr_assert;
+/// use cvlr_macros::rule;
 /// #[rule]
 /// fn foo()  {
-///    cvt::CVT_assert(false);
+///    cvlr_assert!(false);
 /// }
 /// ```
 #[proc_macro_attribute]
