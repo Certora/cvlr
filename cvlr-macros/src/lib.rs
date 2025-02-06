@@ -1,7 +1,6 @@
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::ToTokens;
 use syn::{parse_macro_input, parse_quote, ItemFn};
-
 
 /// Mark a method as a CVT rule
 ///
@@ -16,9 +15,13 @@ use syn::{parse_macro_input, parse_quote, ItemFn};
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn rule(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let mut fn_ast = parse_macro_input!(input as ItemFn);
+pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let mut fn_ast = parse_macro_input!(item as ItemFn);
     // add #[no_mangle] attribute
-    fn_ast.attrs.push(parse_quote!(#[no_mangle]));
-    TokenStream::from(quote!(#fn_ast))
+    fn_ast.attrs.push(parse_quote! { #[no_mangle] });
+    fn_ast
+        .block
+        .stmts
+        .push(parse_quote! { cvlr::cvlr_vacuity_check!(); });
+    fn_ast.into_token_stream().into()
 }

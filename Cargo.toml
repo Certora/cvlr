@@ -24,6 +24,7 @@ syn = "2"
 macrotest = "1"
 trybuild = "1"
 
+cvlr = { path = "cvlr" }
 cvlr-asserts = { path = "cvlr-asserts" }
 cvlr-mathint = { path = "cvlr-mathint" }
 cvlr-nondet = { path = "cvlr-nondet" }
