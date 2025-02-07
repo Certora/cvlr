@@ -39,37 +39,46 @@ pub use rt_decls::*;
 pub struct CvlrLogger;
 
 impl CvlrLogger {
+    #[inline(always)]
     pub fn new() -> Self {
         Self {}
     }
+    #[inline(always)]
     pub fn log(&mut self, v: &str) {
         unsafe {
             CVT_calltrace_print_tag(v);
         }
     }
 
+    #[inline(always)]
     pub fn log_str(&mut self, t: &str, v: &str) {
         unsafe {
             CVT_calltrace_print_string(t, v);
         }
     }
 
+    #[inline(always)]
     pub fn log_u64(&mut self, t: &str, v: u64) {
         unsafe {
             CVT_calltrace_print_u64_1(t, v);
         }
     }
+
+    #[inline(always)]
     pub fn log_u64_2(&mut self, t: &str, v0: u64, v1: u64) {
         unsafe {
             CVT_calltrace_print_u64_2(t, v0, v1);
         }
     }
+
+    #[inline(always)]
     pub fn log_u64_3(&mut self, t: &str, v0: u64, v1: u64, v2: u64) {
         unsafe {
             CVT_calltrace_print_u64_3(t, v0, v1, v2);
         }
     }
 
+    #[inline(always)]
     pub fn log_i64(&mut self, t: &str, v: i64) {
         unsafe {
             CVT_calltrace_print_i64_1(t, v);
