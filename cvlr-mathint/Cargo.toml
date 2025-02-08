@@ -10,7 +10,7 @@ default = []
 rt = []
 
 [dependencies]
-cvlr-nondet = { workspace = true }
+cvlr-nondet = { workspace = true, default-features = false }
 
 [dev-dependencies]
 cvlr-mathint = { path = ".", features = ["rt"] }

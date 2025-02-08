@@ -1,3 +1,5 @@
+#![no_std]
+
 /// ! Mathematical Integers
 /// 
 /// This crate provides various representations of integers that behave like

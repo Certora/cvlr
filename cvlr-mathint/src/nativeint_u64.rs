@@ -1,5 +1,5 @@
 #[derive(Eq, Debug, Copy, Clone)]
-/// Nativeematical Integer (represented by u64 number)
+/// Native Mathematical Integer (represented by u64 number)
 ///
 /// The magic is that symbolically an SBF word is mapped to 256 bit symbolic
 /// integer.
@@ -210,13 +210,13 @@ impl PartialEq for NativeIntU64 {
 }
 
 impl PartialOrd for NativeIntU64 {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         let ord = if self.0 == other.0 {
-            std::cmp::Ordering::Equal
+            core::cmp::Ordering::Equal
         } else if self.0 < other.0 {
-            std::cmp::Ordering::Less
+            core::cmp::Ordering::Less
         } else {
-            std::cmp::Ordering::Greater
+            core::cmp::Ordering::Greater
         };
         Some(ord)
     }
@@ -235,13 +235,13 @@ impl PartialOrd for NativeIntU64 {
 }
 
 impl Ord for NativeIntU64 {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         if self.lt(&other) {
-            std::cmp::Ordering::Less
+            core::cmp::Ordering::Less
         } else if self.gt(&other) {
-            std::cmp::Ordering::Greater
+            core::cmp::Ordering::Greater
         } else {
-            std::cmp::Ordering::Equal
+            core::cmp::Ordering::Equal
         }
     }
 
@@ -272,7 +272,7 @@ impl Ord for NativeIntU64 {
     }
 }
 
-impl std::ops::Add<NativeIntU64> for NativeIntU64 {
+impl core::ops::Add<NativeIntU64> for NativeIntU64 {
     type Output = Self;
 
     fn add(self, rhs: NativeIntU64) -> Self::Output {
@@ -280,7 +280,7 @@ impl std::ops::Add<NativeIntU64> for NativeIntU64 {
     }
 }
 
-impl std::ops::Mul<NativeIntU64> for NativeIntU64 {
+impl core::ops::Mul<NativeIntU64> for NativeIntU64 {
     type Output = Self;
 
     fn mul(self, rhs: NativeIntU64) -> Self::Output {
@@ -288,7 +288,7 @@ impl std::ops::Mul<NativeIntU64> for NativeIntU64 {
     }
 }
 
-impl std::ops::Div<NativeIntU64> for NativeIntU64 {
+impl core::ops::Div<NativeIntU64> for NativeIntU64 {
     type Output = Self;
 
     fn div(self, rhs: NativeIntU64) -> Self::Output {
@@ -296,7 +296,7 @@ impl std::ops::Div<NativeIntU64> for NativeIntU64 {
     }
 }
 
-impl std::ops::Add<u64> for NativeIntU64 {
+impl core::ops::Add<u64> for NativeIntU64 {
     type Output = Self;
 
     fn add(self, rhs: u64) -> Self::Output {
@@ -304,7 +304,7 @@ impl std::ops::Add<u64> for NativeIntU64 {
     }
 }
 
-impl std::ops::Mul<u64> for NativeIntU64 {
+impl core::ops::Mul<u64> for NativeIntU64 {
     type Output = Self;
 
     fn mul(self, rhs: u64) -> Self::Output {
@@ -312,7 +312,7 @@ impl std::ops::Mul<u64> for NativeIntU64 {
     }
 }
 
-impl std::ops::Div<u64> for NativeIntU64 {
+impl core::ops::Div<u64> for NativeIntU64 {
     type Output = Self;
 
     fn div(self, rhs: u64) -> Self::Output {
