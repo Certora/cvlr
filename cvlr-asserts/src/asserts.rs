@@ -6,10 +6,10 @@ macro_rules! cvlr_log_lineno {
 }
 
 macro_rules! impl_bin_assert {
-    ($name: ident, $pred: tt) => {
+    ($name: ident, $pred: tt, $dollar: tt) => {
         #[macro_export]
         macro_rules! $name {
-            ($lhs: expr, $rhs: expr) => {{
+            ($lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
                 cvlr::clog!(stringify!(assert $lhs $pred $rhs));
                 $crate::cvlr_log_lineno!();
                 cvlr::clog!($lhs, $rhs);
@@ -20,12 +20,12 @@ macro_rules! impl_bin_assert {
     };
 }
 
-impl_bin_assert!(cvlr_assert_eq, ==);
-impl_bin_assert!(cvlr_assert_ne, !=);
-impl_bin_assert!(cvlr_assert_le, <=);
-impl_bin_assert!(cvlr_assert_lt, <);
-impl_bin_assert!(cvlr_assert_ge, >=);
-impl_bin_assert!(cvlr_assert_gt, >);
+impl_bin_assert!(cvlr_assert_eq, ==, $);
+impl_bin_assert!(cvlr_assert_ne, !=, $);
+impl_bin_assert!(cvlr_assert_le, <=, $);
+impl_bin_assert!(cvlr_assert_lt, <, $);
+impl_bin_assert!(cvlr_assert_ge, >=, $);
+impl_bin_assert!(cvlr_assert_gt, >, $);
 
 
 

@@ -64,21 +64,21 @@ pub fn cvlr_sanity_checked(c: bool) {
 
 #[macro_export]
 macro_rules! cvlr_assert {
-    ($cond: expr $(,)?) => {
+    ($cond: expr $(, $desc: literal)?) => {
         $crate::cvlr_assert_checked($cond)
     };
 }
 
 #[macro_export]
 macro_rules! cvlr_assume {
-    ($cond: expr $(,)?) => {
+    ($cond: expr $(, $desc: literal)?) => {
         $crate::cvlr_assume_checked($cond)
     };
 }
 
 #[macro_export]
 macro_rules! cvlr_satisfy {
-    ($cond: expr $(,)?) => {
+    ($cond: expr $(, $desc: literal)?) => {
         $crate::cvlr_satisfy_checked($cond)
     };
 }
@@ -86,12 +86,15 @@ macro_rules! cvlr_satisfy {
 #[cfg(feature = "vacuity")]
 #[macro_export]
 macro_rules! cvlr_vacuity_check {
-    () => { $crate::cvlr_assert!(false) };
+    () => {
+        $crate::cvlr_assert!(false)
+    };
 }
 
 #[cfg(not(feature = "vacuity"))]
 #[macro_export]
 macro_rules! cvlr_vacuity_check {
-    () => { $crate::cvlr_sanity_checked(true) };
+    () => {
+        $crate::cvlr_sanity_checked(true)
+    };
 }
-
