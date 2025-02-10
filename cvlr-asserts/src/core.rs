@@ -3,6 +3,7 @@ mod rt_decls {
         pub fn CVT_assume(_c: bool);
         pub fn CVT_assert(_c: bool);
         pub fn CVT_satisfy(_c: bool);
+        pub fn CVT_sanity(_c: bool);
     }
 }
 
@@ -23,6 +24,11 @@ mod rt_impls {
     #[no_mangle]
     pub extern "C" fn CVT_satisfy(c: bool) {
         assert!(c);
+    }
+
+    #[no_mangle]
+    pub extern "C" fn CVT_sanity(c: bool) {
+        CVT_satisfy(c)
     }
 }
 
@@ -46,6 +52,13 @@ pub fn cvlr_assume_checked(c: bool) {
 pub fn cvlr_satisfy_checked(c: bool) {
     unsafe {
         CVT_satisfy(c);
+    }
+}
+
+#[inline(always)]
+pub fn cvlr_sanity_checked(c: bool) {
+    unsafe {
+        CVT_sanity(c);
     }
 }
 
@@ -79,6 +92,6 @@ macro_rules! cvlr_vacuity_check {
 #[cfg(not(feature = "vacuity"))]
 #[macro_export]
 macro_rules! cvlr_vacuity_check {
-    () => { $crate::cvlr_assert!(true) };
+    () => { $crate::cvlr_sanity_checked(true) };
 }
 
