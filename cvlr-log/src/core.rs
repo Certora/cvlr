@@ -12,6 +12,8 @@ pub mod rt_decls {
         pub fn CVT_calltrace_print_i64_3(tag: &str, x: i64, y: i64, z: i64);
 
         pub fn CVT_calltrace_print_string(tag: &str, v: &str);
+
+        pub fn CVT_calltrace_print_location(file: &str, line: u64);
     }
 }
 
@@ -33,6 +35,8 @@ mod rt_impls {
     pub extern "C" fn CVT_calltrace_print_i64_3(_tag: &str, _x: i64, _y: i64, _z: i64) {}
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_string(_tag: &str, v: &str) {}
+    #[no_mangle]
+    pub extern "C" fn CVT_calltrace_print_location(_tag: &str, v: u64) {}
 }
 pub use rt_decls::*;
 
@@ -84,6 +88,13 @@ impl CvlrLogger {
             CVT_calltrace_print_i64_1(t, v);
         }
     }
+
+    #[inline(always)]
+    pub fn log_loc(&mut self, file: &str, line: u64) {
+        unsafe {
+            CVT_calltrace_print_location(file, line);
+        }
+    }
 }
 
 #[inline(always)]
@@ -105,4 +116,5 @@ macro_rules! expose_log_fn {
 expose_log_fn! {log_str, &str}
 expose_log_fn! {log_u64, u64}
 expose_log_fn! {log_i64, i64}
+expose_log_fn! {log_loc, u64}
 

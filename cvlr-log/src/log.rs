@@ -17,6 +17,10 @@ pub fn cvlr_log<T: CvlrLog>(tag: &str, val: &T) {
 
 #[macro_export]
 macro_rules! cvlr_log {
+    () => {
+        $crate::log_loc(core::file!(), core::line!());
+    };
+
     ($v:expr => $t:expr) => {
         $crate::cvlr_log($t, &($v));
     };
