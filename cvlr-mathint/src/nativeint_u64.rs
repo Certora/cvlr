@@ -18,6 +18,7 @@ mod rt_decls {
         pub fn CVT_nativeint_u64_le(_: u64, _: u64) -> BoolU64;
 
         pub fn CVT_nativeint_u64_add(_: u64, _: u64) -> u64;
+        pub fn CVT_nativeint_u64_sub(_: u64, _: u64) -> u64;
         pub fn CVT_nativeint_u64_mul(_: u64, _: u64) -> u64;
         pub fn CVT_nativeint_u64_div(_: u64, _: u64) -> u64;
         pub fn CVT_nativeint_u64_div_ceil(_: u64, _: u64) -> u64;
@@ -37,8 +38,8 @@ mod rt_decls {
 
 /// Run-time implementation of the external library
 ///
-/// This implementation is intendent as an under-approximation of the symbolic
-/// behaviour. It is intended to be used for testing.
+/// This implementation is intended as an under-approximation of the symbolic
+/// behavior. It is intended to be used for testing.
 #[cfg(feature = "rt")]
 mod rt_impls {
     #[no_mangle]
@@ -64,6 +65,11 @@ mod rt_impls {
     #[no_mangle]
     pub extern "C" fn CVT_nativeint_u64_mul(a: u64, b: u64) -> u64 {
         a.checked_mul(b).unwrap()
+    }
+
+    #[no_mangle]
+    pub extern "C" fn CVT_nativeint_u64_sub(a: u64, b: u64) -> u64 {
+        a.checked_sub(b).unwrap()
     }
 
     #[no_mangle]
@@ -175,7 +181,7 @@ impl NativeIntU64 {
     pub fn is_u16(&self) -> bool {
         *self <= Self::new(u16::MAX as u64)
     }
-    
+
     pub fn is_u32(&self) -> bool {
         *self <= Self::new(u32::MAX as u64)
     }
@@ -197,8 +203,12 @@ impl NativeIntU64 {
         cvlr_nondet::nondet()
     }
 
+    pub fn checked_sub(&self, v: NativeIntU64) -> Self {
+        *self - v
+    }
+
     // Expose internal representation. Internal use only.
-    pub fn as_internal(&self) -> u64 { 
+    pub fn as_internal(&self) -> u64 {
         self.0
     }
 }
@@ -280,6 +290,14 @@ impl core::ops::Add<NativeIntU64> for NativeIntU64 {
     }
 }
 
+impl core::ops::Sub<NativeIntU64> for NativeIntU64 {
+    type Output = Self;
+
+    fn sub(self, rhs: NativeIntU64) -> Self::Output {
+        unsafe { Self(CVT_nativeint_u64_sub(self.0, rhs.0)) }
+    }
+}
+
 impl core::ops::Mul<NativeIntU64> for NativeIntU64 {
     type Output = Self;
 
@@ -327,9 +345,7 @@ macro_rules! impl_from_for_uint {
                 Self(value as u64)
             }
         }
-
     };
-
 }
 
 impl_from_for_uint!(u8);
@@ -376,7 +392,6 @@ impl From<&[u8]> for NativeIntU64 {
         let v: &[u8; 32] = value.try_into().unwrap();
         Self::from(v)
     }
-
 }
 
 impl cvlr_nondet::Nondet for NativeIntU64 {
