@@ -90,9 +90,9 @@ impl CvlrLogger {
     }
 
     #[inline(always)]
-    pub fn log_loc(&mut self, file: &str, line: u64) {
+    pub fn log_loc(&mut self, file: &str, line: u32) {
         unsafe {
-            CVT_calltrace_print_location(file, line);
+            CVT_calltrace_print_location(file, line as u64);
         }
     }
 }
@@ -116,5 +116,5 @@ macro_rules! expose_log_fn {
 expose_log_fn! {log_str, &str}
 expose_log_fn! {log_u64, u64}
 expose_log_fn! {log_i64, i64}
-expose_log_fn! {log_loc, u64}
+expose_log_fn! {log_loc, u32}
 
