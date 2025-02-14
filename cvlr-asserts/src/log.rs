@@ -1,5 +1,6 @@
 mod rt_decls {
     extern "C" {
+        #![allow(improper_ctypes)]
         // duplicated to avoid cvlr-assert depend on any other cvlr crate
         pub fn CVT_calltrace_attach_location(file: &str, line: u64);
     }
