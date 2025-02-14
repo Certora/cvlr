@@ -360,7 +360,7 @@ impl From<NativeIntU64> for u64 {
     }
 }
 
-impl From<NativeIntU64> for u128 { 
+impl From<NativeIntU64> for u128 {
     fn from(value: NativeIntU64) -> Self {
         cvlr_asserts::cvlr_assume!(value.is_u128());
         let res: u128 = cvlr_nondet::nondet();
@@ -415,6 +415,20 @@ impl cvlr_nondet::Nondet for NativeIntU64 {
         unsafe { Self(CVT_nativeint_u64_nondet()) }
     }
 }
+
+macro_rules! impl_is_uint {
+    ($name:ident, $uint:ty, $is_uint:ident) => {
+        pub fn $name(v: $uint) -> bool {
+            NativeIntU64::from(v).$is_uint()
+        }
+    };
+}
+
+impl_is_uint! { is_u8, u8, is_u8 }
+impl_is_uint! { is_u16, u16, is_u16 }
+impl_is_uint! { is_u32, u32, is_u32 }
+impl_is_uint! { is_u64, u64, is_u64 }
+impl_is_uint! { is_u128, u128, is_u128 }
 
 #[cfg(test)]
 mod tests {
