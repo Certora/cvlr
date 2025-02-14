@@ -65,6 +65,7 @@ pub fn cvlr_sanity_checked(c: bool) {
 #[macro_export]
 macro_rules! cvlr_assert {
     ($cond: expr $(, $desc: literal)?) => {
+        $crate::add_loc!();
         $crate::cvlr_assert_checked($cond)
     };
 }

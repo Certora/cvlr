@@ -22,6 +22,8 @@ macro_rules! cvlr_log {
     };
 
     ($v:expr => $t:expr) => {
+        // TODO: enable when this becomes stable
+        // $crate::add_loc(core::file!(), core::line!());
         $crate::cvlr_log($t, &($v));
     };
 

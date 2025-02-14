@@ -1,9 +1,4 @@
-#[macro_export]
-macro_rules! cvlr_log_lineno {
-    () => {
-        cvlr::clog!(std::line!() => std::file!());
-    };
-}
+
 
 macro_rules! impl_bin_assert {
     ($name: ident, $pred: tt, $dollar: tt) => {
@@ -11,7 +6,6 @@ macro_rules! impl_bin_assert {
         macro_rules! $name {
             ($lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
                 cvlr::clog!(stringify!(assert $lhs $pred $rhs));
-                $crate::cvlr_log_lineno!();
                 cvlr::clog!($lhs, $rhs);
                 $crate::cvlr_assert!($lhs $pred $rhs);
             }};

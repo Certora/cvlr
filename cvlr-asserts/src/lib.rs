@@ -1,7 +1,9 @@
 #![no_std]
 
+pub mod log;
 mod core;
 pub mod asserts;
+
 
 pub use core::*;
 
