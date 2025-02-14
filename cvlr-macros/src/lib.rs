@@ -2,6 +2,7 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{parse_macro_input, parse_quote, ItemFn};
 
+mod mock;
 /// Mark a method as a CVT rule
 ///
 /// # Example
@@ -24,4 +25,9 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
         .stmts
         .push(parse_quote! { cvlr::cvlr_vacuity_check!(); });
     fn_ast.into_token_stream().into()
+}
+
+#[proc_macro_attribute]
+pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
+    mock::mock_fn_impl(attr, item)
 }
