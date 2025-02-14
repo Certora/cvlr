@@ -1,0 +1,15 @@
+[package]
+name = "cvlr-fixed"
+authors = ["Arie Gurfinkel <arie@certora.com>"]
+version.workspace = true
+edition = "2021"
+publish = false
+
+[features]
+rt = ["cvlr-mathint/rt", "cvlr-nondet/rt", "cvlr-asserts/rt", "cvlr-log/rt"]
+
+[dependencies]
+cvlr-nondet = { workspace = true, default-features = false }
+cvlr-asserts = { workspace = true }
+cvlr-mathint = { workspace = true }
+cvlr-log = { workspace = true }

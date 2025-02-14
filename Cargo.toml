@@ -9,6 +9,7 @@ members = [
     "cvlr-early-panic",
     "cvlr-hook",
     "cvlr-macros",
+    "cvlr-fixed"
 ]
 
 [workspace.package]
@@ -32,3 +33,4 @@ cvlr-log = { path = "cvlr-log" }
 cvlr-macros = { path = "cvlr-macros" }
 cvlr-early-panic = { path = "cvlr-early-panic" }
 cvlr-hook = { path = "cvlr-hook" }
+cvlr-fixed = { path = "cvlr-fixed" }
