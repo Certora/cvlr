@@ -353,6 +353,22 @@ impl_from_for_uint!(u16);
 impl_from_for_uint!(u32);
 impl_from_for_uint!(u64);
 
+impl From<NativeIntU64> for u64 {
+    fn from(value: NativeIntU64) -> Self {
+        cvlr_asserts::cvlr_assume!(value.is_u64());
+        value.as_internal()
+    }
+}
+
+impl From<NativeIntU64> for u128 { 
+    fn from(value: NativeIntU64) -> Self {
+        cvlr_asserts::cvlr_assume!(value.is_u128());
+        let res: u128 = cvlr_nondet::nondet();
+        cvlr_asserts::cvlr_assume!(value == res.into());
+        res
+    }
+}
+
 impl From<u128> for NativeIntU64 {
     fn from(value: u128) -> Self {
         let w0: u64 = (value & 0xffff_ffff_ffff_ffff) as u64;
