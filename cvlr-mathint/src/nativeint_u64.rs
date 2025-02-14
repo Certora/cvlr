@@ -230,16 +230,16 @@ impl PartialOrd for NativeIntU64 {
         };
         Some(ord)
     }
-    fn lt(&self, other: &NativeIntU64) -> bool {
+    fn lt(&self, other: &Self) -> bool {
         unsafe { CVT_nativeint_u64_lt(self.0, other.0) != 0 }
     }
-    fn le(&self, other: &NativeIntU64) -> bool {
+    fn le(&self, other: &Self) -> bool {
         unsafe { CVT_nativeint_u64_le(self.0, other.0) != 0 }
     }
-    fn gt(&self, other: &NativeIntU64) -> bool {
+    fn gt(&self, other: &Self) -> bool {
         other.lt(self)
     }
-    fn ge(&self, other: &NativeIntU64) -> bool {
+    fn ge(&self, other: &Self) -> bool {
         other.le(self)
     }
 }
