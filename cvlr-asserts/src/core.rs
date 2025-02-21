@@ -80,9 +80,11 @@ macro_rules! cvlr_assume {
 
 #[macro_export]
 macro_rules! cvlr_satisfy {
-    ($cond: expr $(, $desc: literal)?) => {
-        $crate::cvlr_satisfy_checked($cond)
-    };
+    ($cond: expr $(, $desc: literal)?) => {{
+        let c_ = $cond;
+        $crate::add_loc!();
+        $crate::cvlr_satisfy_checked(c_)
+    }};
 }
 
 #[cfg(feature = "vacuity")]
