@@ -13,6 +13,8 @@ pub mod rt_decls {
 
         pub fn CVT_calltrace_print_string(tag: &str, v: &str);
 
+        pub fn CVT_calltrace_print_u64_as_fixed(tag: &str, x: u64, y: u64);
+
         pub fn CVT_calltrace_print_location(file: &str, line: u64);
         pub fn CVT_calltrace_attach_location(file: &str, line: u64);
 
@@ -35,6 +37,8 @@ mod rt_impls {
     pub extern "C" fn CVT_calltrace_print_i64_2(_tag: &str, _x: i64, _y: i64) {}
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_i64_3(_tag: &str, _x: i64, _y: i64, _z: i64) {}
+    #[no_mangle]
+    pub extern "C" fn CVT_calltrace_print_u64_as_fixed(_tag: &str, _x: u64, _y: u64) {}
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_string(_tag: &str, v: &str) {}
     #[no_mangle]
@@ -94,6 +98,13 @@ impl CvlrLogger {
     }
 
     #[inline(always)]
+    pub fn log_u64_as_fp(&mut self, t: &str, v: u64, b: u64) {
+        unsafe {
+            CVT_calltrace_print_u64_as_fixed(t, v, b);
+        }
+    }
+
+    #[inline(always)]
     pub fn log_loc(&mut self, file: &str, line: u32) {
         unsafe {
             CVT_calltrace_print_location(file, line as u64);
@@ -114,6 +125,11 @@ pub fn log(v: &str) {
     logger.log(v);
 }
 
+#[inline(always)]
+pub fn log_u64_as_fp(t: &str, v: u64, b: u64) {
+    let mut logger = CvlrLogger::new();
+    logger.log_u64_as_fp(t, v, b);
+}
 macro_rules! expose_log_fn {
     ($name: ident, $ty: ty) => {
         #[inline(always)]
