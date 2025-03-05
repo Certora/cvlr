@@ -1,4 +1,4 @@
-use {std::alloc::alloc, core::alloc::Layout};
+use {core::alloc::Layout, std::alloc::alloc};
 
 mod rt_decls {
     extern "C" {

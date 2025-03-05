@@ -33,8 +33,8 @@ pub mod prelude {
     pub use cvlr_early_panic::early_panic;
     pub use cvlr_hook::cvlr_hook_on_entry as hook_on_entry;
     pub use cvlr_hook::cvlr_hook_on_exit as hook_on_exit;
-    pub use cvlr_macros::rule;
     pub use cvlr_macros::mock_fn;
+    pub use cvlr_macros::rule;
 }
 
 pub use prelude::*;

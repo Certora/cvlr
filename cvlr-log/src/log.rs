@@ -54,7 +54,6 @@ macro_rules! impl_cvlr_log_for_uint {
     };
 }
 
-
 impl_cvlr_log_for_uint!(bool);
 impl_cvlr_log_for_uint!(u8);
 impl_cvlr_log_for_uint!(u16);
@@ -79,28 +78,28 @@ impl_cvlr_log_for_int!(i32);
 impl_cvlr_log_for_int!(i64);
 
 impl<T: CvlrLog> CvlrLog for &T {
-    #[inline(always)]  
+    #[inline(always)]
     fn log(&self, tag: &str, logger: &mut CvlrLogger) {
         (**self).log(tag, logger);
     }
 }
 
 impl CvlrLog for &str {
-    #[inline(always)]  
+    #[inline(always)]
     fn log(&self, _tag: &str, logger: &mut CvlrLogger) {
         logger.log(*self);
     }
 }
 
 impl CvlrLog for () {
-    #[inline(always)]  
+    #[inline(always)]
     fn log(&self, tag: &str, logger: &mut CvlrLogger) {
         logger.log_str(tag, "()");
     }
 }
 
 impl<T: CvlrLog> CvlrLog for Option<T> {
-    #[inline(always)]  
+    #[inline(always)]
     fn log(&self, tag: &str, logger: &mut CvlrLogger) {
         if let Some(v) = self {
             v.log(tag, logger);
@@ -111,7 +110,7 @@ impl<T: CvlrLog> CvlrLog for Option<T> {
 }
 
 impl<T: CvlrLog, E: CvlrLog> CvlrLog for Result<T, E> {
-    #[inline(always)]  
+    #[inline(always)]
     fn log(&self, tag: &str, logger: &mut CvlrLogger) {
         match self {
             Ok(v) => {
@@ -128,7 +127,7 @@ impl<T: CvlrLog, E: CvlrLog> CvlrLog for Result<T, E> {
 
 #[cfg(feature = "mathint")]
 impl CvlrLog for cvlr_mathint::NativeInt {
-    #[inline(always)]  
+    #[inline(always)]
     fn log(&self, tag: &str, logger: &mut CvlrLogger) {
         logger.log_u64(tag, self.as_internal());
     }
