@@ -15,7 +15,8 @@ mod rt_imps {
     }
 }
 
-pub fn memhavoc(data: *mut u8, size: usize) {
+#[allow(clippy::missing_safety_doc)]
+pub unsafe fn memhavoc(data: *mut u8, size: usize) {
     unsafe {
         rt_decls::memhavoc_c(data, size);
     }
