@@ -31,9 +31,9 @@ pub fn alloc_havoced<T: Sized>() -> *mut T {
 }
 
 pub fn alloc_ref_havoced<T: Sized>() -> &'static T {
-    unsafe { return &*alloc_havoced::<T>() }
+    unsafe { &*alloc_havoced::<T>() }
 }
 
 pub fn alloc_mut_ref_havoced<T: Sized>() -> &'static mut T {
-    unsafe { return &mut *alloc_havoced::<T>() }
+    unsafe { &mut *alloc_havoced::<T>() }
 }

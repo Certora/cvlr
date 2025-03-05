@@ -87,7 +87,7 @@ impl<T: CvlrLog> CvlrLog for &T {
 impl CvlrLog for &str {
     #[inline(always)]
     fn log(&self, _tag: &str, logger: &mut CvlrLogger) {
-        logger.log(*self);
+        logger.log(self);
     }
 }
 
