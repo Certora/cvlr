@@ -161,6 +161,7 @@ macro_rules! native_fixed {
             }
         }
 
+        #[allow(clippy::non_canonical_partial_ord_impl)]
         impl<const F: u32> core::cmp::PartialOrd for $NativeFixed<F> {
             fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
                 self.val.partial_cmp(&other.val)

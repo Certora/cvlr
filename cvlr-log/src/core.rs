@@ -48,6 +48,7 @@ mod rt_impls {
 }
 pub use rt_decls::*;
 
+#[derive(Default)]
 pub struct CvlrLogger;
 
 impl CvlrLogger {

@@ -4,8 +4,6 @@ use syn::visit_mut::{self, VisitMut};
 use syn::{parse_macro_input, parse_quote, Expr, ItemFn};
 
 /// Replaces question mark operator by unwrap
-///
-
 struct EarlyPanic;
 
 impl VisitMut for EarlyPanic {
