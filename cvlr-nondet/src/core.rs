@@ -1,4 +1,3 @@
-
 /// A trait for giving a type a non-deterministic value
 pub trait Nondet: Sized {
     fn nondet() -> Self;
@@ -24,7 +23,6 @@ where
 {
     Nondet::nondet_with(func)
 }
-
 
 #[macro_export]
 macro_rules! nondet_impl {

@@ -38,10 +38,7 @@ pub fn cvlr_hook_on_entry(attr: TokenStream, input: TokenStream) -> TokenStream 
     // insert tokens_start into fn item statements at position 0
     let tokens_start: syn::Stmt = syn::parse_quote! { #arg; };
 
-    fn_item
-        .block
-        .stmts
-        .insert(0, tokens_start);
+    fn_item.block.stmts.insert(0, tokens_start);
 
     fn_item.into_token_stream().into()
 }
@@ -92,17 +89,11 @@ pub fn cvlr_hook_on_exit(attr: TokenStream, input: TokenStream) -> TokenStream {
     match ret_type {
         syn::ReturnType::Default => {
             // insert tokens_end into fn item statements at position len
-            fn_item
-                .block
-                .stmts
-                .insert(len, stmt_end);
+            fn_item.block.stmts.insert(len, stmt_end);
         }
         syn::ReturnType::Type(_, _) => {
             // insert tokens_end into fn item statements at position len-1
-            fn_item
-                .block
-                .stmts
-                .insert(len - 1, stmt_end);
+            fn_item.block.stmts.insert(len - 1, stmt_end);
         }
     }
 

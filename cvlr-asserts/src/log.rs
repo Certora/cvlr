@@ -8,7 +8,7 @@ mod rt_decls {
 
 #[cfg(feature = "rt")]
 mod rt_impls {
-     #[no_mangle]
+    #[no_mangle]
     pub extern "C" fn CVT_calltrace_attach_location(_tag: &str, v: u64) {}
 }
 

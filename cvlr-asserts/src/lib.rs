@@ -1,9 +1,8 @@
 #![no_std]
 
-pub mod log;
-mod core;
 pub mod asserts;
-
+mod core;
+pub mod log;
 
 pub use core::*;
 
@@ -14,4 +13,3 @@ pub mod cvt {
     pub use crate::cvlr_satisfy as cvt_satisfy;
     pub use crate::cvlr_vacuity_check as cvt_vacuity_check;
 }
-

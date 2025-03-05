@@ -1,5 +1,5 @@
-use cvlr_mathint::NativeInt;
 use cvlr_asserts::cvlr_assume;
+use cvlr_mathint::NativeInt;
 use cvlr_nondet::nondet;
 
 macro_rules! native_fixed {
