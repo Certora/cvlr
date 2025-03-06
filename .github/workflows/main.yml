@@ -7,7 +7,7 @@ on:
 
 jobs:
   format:
-    name: Format
+    name: Format Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
