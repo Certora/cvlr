@@ -15,3 +15,6 @@ jobs:
 
       - name: Run fmt
         run: cargo fmt -- --check
+
+      - name: Cargo clippy
+        run: cargo clippy -- -W clippy::pedantic
