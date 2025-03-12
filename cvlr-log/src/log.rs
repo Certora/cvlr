@@ -61,6 +61,13 @@ impl_cvlr_log_for_uint!(u32);
 impl_cvlr_log_for_uint!(u64);
 impl_cvlr_log_for_uint!(usize);
 
+impl CvlrLog for u128 {
+    #[inline(always)]
+    fn log(&self, tag: &str, logger: &mut CvlrLogger) {
+        logger.log_u128(tag, *self);
+    }
+}
+
 macro_rules! impl_cvlr_log_for_int {
     ($t:ty) => {
         impl CvlrLog for $t {
@@ -76,6 +83,13 @@ impl_cvlr_log_for_int!(i8);
 impl_cvlr_log_for_int!(i16);
 impl_cvlr_log_for_int!(i32);
 impl_cvlr_log_for_int!(i64);
+
+impl CvlrLog for i128 {
+    #[inline(always)]
+    fn log(&self, tag: &str, logger: &mut CvlrLogger) {
+        logger.log_i128(tag, *self);
+    }
+}
 
 impl<T: CvlrLog> CvlrLog for &T {
     #[inline(always)]

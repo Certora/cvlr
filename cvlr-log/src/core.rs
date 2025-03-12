@@ -6,10 +6,12 @@ pub mod rt_decls {
         pub fn CVT_calltrace_print_u64_1(tag: &str, x: u64);
         pub fn CVT_calltrace_print_u64_2(tag: &str, x: u64, y: u64);
         pub fn CVT_calltrace_print_u64_3(tag: &str, x: u64, y: u64, z: u64);
+        pub fn CVT_calltrace_print_u128(tag: &str, x: u128);
 
         pub fn CVT_calltrace_print_i64_1(tag: &str, x: i64);
         pub fn CVT_calltrace_print_i64_2(tag: &str, x: i64, y: i64);
         pub fn CVT_calltrace_print_i64_3(tag: &str, x: i64, y: i64, z: i64);
+        pub fn CVT_calltrace_print_i128(tag: &str, x: i128);
 
         pub fn CVT_calltrace_print_string(tag: &str, v: &str);
 
@@ -32,11 +34,15 @@ mod rt_impls {
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_u64_3(_tag: &str, _x: u64, _y: u64, _z: u64) {}
     #[no_mangle]
+    pub extern "C" fn CVT_calltrace_print_u128(_tag: &str, _x: u128) {}
+    #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_i64_1(_tag: &str, _x: i64) {}
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_i64_2(_tag: &str, _x: i64, _y: i64) {}
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_i64_3(_tag: &str, _x: i64, _y: i64, _z: i64) {}
+    #[no_mangle]
+    pub extern "C" fn CVT_calltrace_print_i128(_tag: &str, _x: i128) {}
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_u64_as_fixed(_tag: &str, _x: u64, _y: u64) {}
     #[no_mangle]
@@ -92,9 +98,23 @@ impl CvlrLogger {
     }
 
     #[inline(always)]
+    pub fn log_u128(&mut self, t: &str, v: u128) {
+        unsafe {
+            CVT_calltrace_print_u128(t, v);
+        }
+    }
+
+    #[inline(always)]
     pub fn log_i64(&mut self, t: &str, v: i64) {
         unsafe {
             CVT_calltrace_print_i64_1(t, v);
+        }
+    }
+
+    #[inline(always)]
+    pub fn log_i128(&mut self, t: &str, v: i128) {
+        unsafe {
+            CVT_calltrace_print_i128(t, v);
         }
     }
 
@@ -144,5 +164,7 @@ macro_rules! expose_log_fn {
 expose_log_fn! {log_str, &str}
 expose_log_fn! {log_u64, u64}
 expose_log_fn! {log_i64, i64}
+expose_log_fn! {log_u128, u128}
+expose_log_fn! {log_i128, i128}
 expose_log_fn! {log_loc, u32}
 expose_log_fn! {add_loc, u32}
