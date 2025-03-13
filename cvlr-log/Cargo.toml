@@ -1,9 +1,17 @@
 [package]
 name = "cvlr-log"
+description = "Logging in Certora Calltrace" 
 version.workspace = true
-authors = ["Jorge Navas <jorge@certora.com>", "Arie Gurfinkel <arie@certora.com>"]
-edition = "2021"
-publish = false
+edition.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
+authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
 
 [features]
 default = ["mathint"]

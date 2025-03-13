@@ -1,8 +1,17 @@
 [package]
 name = "cvlr-hook"
+description = "Macro to inject code at a function call"
 version.workspace = true
-edition = "2021"
-publish = false
+edition.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
+authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
 
 [lib]
 proc-macro = true

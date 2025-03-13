@@ -1,10 +1,17 @@
 [package]
 name = "cvlr-asserts"
-edition = "2021"
+description = "Asserts and assumes for post- and pre-conditions" 
 version.workspace = true
+edition.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
 authors.workspace = true
-description.workspace = true
 documentation.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
 
 [features]
 vacuity = []

@@ -1,9 +1,16 @@
 [package]
 name = "cvlr-nondet"
-authors = ["Arie Gurfinkel <arie@certora.com>"]
+description = "Non-deterministic (i.e., symbolic) values"
 version.workspace = true
-edition = "2021"
-publish = false
+edition.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
+authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [features]
 default = ["std"]
@@ -13,4 +20,4 @@ derive = ["derive_nondet"]
 
 [dependencies]
 cvlr-asserts = { workspace = true }
-derive_nondet = { version = "0.3", path = "./derive", optional=true }
+derive_nondet = { version = "0.3", path = "./derive", optional = true }
