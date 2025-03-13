@@ -1,9 +1,17 @@
 [package]
 name = "cvlr-mathint"
-authors = ["Arie Gurfinkel <arie@certora.com>"]
+description = "Number library backed by Certora native integers"
 version.workspace = true
-edition = "2021"
-publish = false
+edition.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
+authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
 
 [features]
 default = []

@@ -1,9 +1,16 @@
 [package]
 name = "cvlr-macros"
+description = "Miscellaneous macros" 
 version.workspace = true
-authors = ["Arie Gurfinkel <arie@certora.com>"]
-edition = "2021"
-publish = false
+edition.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
+authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [lib]
 proc-macro = true

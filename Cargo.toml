@@ -14,9 +14,32 @@ members = [
 
 [workspace.package]
 version = "0.3.2"
-authors = ["Certora"]
+authors = [
+    "Arie Gurfinkel <arie@certora.com>",
+    "Jorge A. Navas <jorge@certora.com>",
+    "Francesco Parolini <francesco@certora.com>",
+    "Chandrakana Nandi <chandra@certora.com>",
+    "Alexander Bakst <abakst@certora.com>",
+]
+edition = "2021"
 description = "Certora Verification Language for Rust"
-documentation = "https://certora.com"
+documentation = "https://docs.rs/cvlr/latest"
+license = "MIT"
+keywords = [
+    "certora", 
+    "assert", 
+    "logic", 
+    "verification", 
+    "formal-methods",
+]
+categories = [
+    "development-tools::debugging", 
+    "development-tools::testing", 
+    "no-std"
+]
+readme = "README.md"
+homepage = "https://www.certora.com"
+repository = "https://github.com/Certora/cvlr"
 
 [workspace.dependencies]
 proc-macro2 = "1"
