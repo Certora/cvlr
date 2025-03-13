@@ -16,8 +16,6 @@ repository.workspace = true
 default = ["std"]
 std = []
 rt = []
-derive = ["derive_nondet"]
 
 [dependencies]
 cvlr-asserts = { workspace = true }
-derive_nondet = { version = "0.3", path = "./derive", optional = true }
