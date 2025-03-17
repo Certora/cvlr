@@ -13,7 +13,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.3.2"
+version = "0.4.0"
 authors = [
     "Arie Gurfinkel <arie@certora.com>",
     "Jorge A. Navas <jorge@certora.com>",
@@ -48,12 +48,12 @@ syn = "2"
 macrotest = "1"
 trybuild = "1"
 
-cvlr = { path = "cvlr", version = "=0.3.2" }
-cvlr-asserts = { path = "cvlr-asserts", version = "=0.3.2" }
-cvlr-mathint = { path = "cvlr-mathint", version = "=0.3.2" }
-cvlr-nondet = { path = "cvlr-nondet", default-features = false, version = "=0.3.2" }
-cvlr-log = { path = "cvlr-log", version = "=0.3.2" }
-cvlr-macros = { path = "cvlr-macros", version = "=0.3.2" }
-cvlr-early-panic = { path = "cvlr-early-panic", version = "=0.3.2" }
-cvlr-hook = { path = "cvlr-hook", version = "=0.3.2" }
-cvlr-fixed = { path = "cvlr-fixed", version = "=0.3.2" }
+cvlr = { path = "cvlr", version = "=0.4.0" }
+cvlr-asserts = { path = "cvlr-asserts", version = "=0.4.0" }
+cvlr-mathint = { path = "cvlr-mathint", version = "=0.4.0" }
+cvlr-nondet = { path = "cvlr-nondet", default-features = false, version = "=0.4.0" }
+cvlr-log = { path = "cvlr-log", version = "=0.4.0" }
+cvlr-macros = { path = "cvlr-macros", version = "=0.4.0" }
+cvlr-early-panic = { path = "cvlr-early-panic", version = "=0.4.0" }
+cvlr-hook = { path = "cvlr-hook", version = "=0.4.0" }
+cvlr-fixed = { path = "cvlr-fixed", version = "=0.4.0" }
