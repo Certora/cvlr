@@ -23,4 +23,5 @@ darling = "0.20"
 
 [dev-dependencies]
 cvlr-asserts = { workspace = true }
-cvlr = { workspace = true }
+# path-dependency to break cyclic dev dependency on crates
+cvlr = { path = "../cvlr" }
