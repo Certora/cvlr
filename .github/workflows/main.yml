@@ -13,19 +13,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
+          components: rustfmt, clippy
       - name: Run cargo check
+        if: success() || failure()
         run: cargo check
+      - name: Check code formatting
+        if: success() || failure()
+        run: cargo fmt -- --check
+      - name: Run Clippy
+        if: success() || failure()
+        run: cargo clippy -- --deny warnings
 
-  test:
-    runs-on: ubuntu-latest
+  testing:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@v1
         with:
@@ -34,29 +45,3 @@ jobs:
         run: cargo install cargo-expand
       - name: Run cargo test
         run: cargo test --verbose
-
-  fmt:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-          components: rustfmt
-      - name: Check code formatting
-        run: cargo fmt -- --check
-
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-          components: clippy
-      - name: Run Clippy
-        run: cargo clippy -- --deny warnings
