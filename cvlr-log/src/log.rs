@@ -31,11 +31,11 @@ macro_rules! cvlr_log {
         $crate::cvlr_log_with($t, &($v), $l)
     };
 
-    ($v:expr) => {
+    ($v:expr $(,)?) => {
         $crate::cvlr_log! { $v => stringify!($v) }
     };
 
-    ($v:expr, $( $vs:expr ),+) => {
+    ($v:expr, $( $vs:expr ),+ $(,)?) => {
         $crate::cvlr_log! { $v }
         $crate::cvlr_log! { $( $vs ),+ }
     };
