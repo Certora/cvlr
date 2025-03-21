@@ -55,6 +55,11 @@ macro_rules! native_fixed {
                 Self::from_val(self.val + v.val)
             }
 
+            pub fn checked_div(&self, v: Self) -> Self {
+                cvlr_assume!(v.val > 0u64.into());
+                Self::from_val(self.val * Self::BASE / v.val)
+            }
+
             pub fn saturating_sub(&self, v: Self) -> Self {
                 let val = if self.val <= v.val {
                     0u64.into()
@@ -93,11 +98,26 @@ macro_rules! native_fixed {
             pub fn floor(&self) -> Self {
                 self.to_floor().into()
             }
+
+            pub fn to_ceil(&self) -> NativeInt {
+                let floor = self.to_floor();
+                let rem = *self - Self::new(floor);
+
+                if rem.val > 0u64.into() {
+                    floor + 1
+                } else {
+                    floor
+                }
+            }
+
+            pub fn ceil(&self) -> Self {
+                self.to_ceil().into()
+            }
         }
 
         impl<const F: u32> cvlr_nondet::Nondet for $NativeFixed<F> {
             fn nondet() -> Self {
-                Self::new(nondet())
+                Self::from_val(nondet())
             }
         }
 
@@ -144,6 +164,14 @@ macro_rules! native_fixed {
 
             fn mul(self, v: T) -> Self::Output {
                 self.mul_by_int(v.into())
+            }
+        }
+
+        impl<const F: u32> core::ops::Div<$NativeFixed<F>> for $NativeFixed<F> {
+            type Output = Self;
+
+            fn div(self, v: Self) -> Self::Output {
+                self.checked_div(v)
             }
         }
 
