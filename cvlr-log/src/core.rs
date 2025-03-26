@@ -20,6 +20,7 @@ pub mod rt_decls {
         pub fn CVT_calltrace_print_location(file: &str, line: u64);
         pub fn CVT_calltrace_attach_location(file: &str, line: u64);
 
+        pub fn CVT_rule_location(file: &str, line: u64);
     }
 }
 
@@ -51,6 +52,8 @@ mod rt_impls {
     pub extern "C" fn CVT_calltrace_print_location(_tag: &str, v: u64) {}
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_attach_location(_tag: &str, v: u64) {}
+    #[no_mangle]
+    pub extern "C" fn CVT_rule_location(_file: &str, _line: u64) {}
 }
 pub use rt_decls::*;
 
@@ -138,6 +141,14 @@ impl CvlrLogger {
             CVT_calltrace_attach_location(file, line as u64);
         }
     }
+
+    /// Automatically inserted by macros, not intended for public use.
+    #[inline(always)]
+    pub fn log_rule_location(&mut self, file: &str, line: u64) {
+        unsafe {
+            crate::CVT_rule_location(file, line);
+        }
+    }
 }
 
 #[inline(always)]
@@ -159,6 +170,13 @@ macro_rules! expose_log_fn {
             logger.$name(t, v)
         }
     };
+    ($name: ident, $ty1: ty, $ty2: ty) => {
+        #[inline(always)]
+        pub fn $name(v1: $ty1, v2: $ty2) {
+            let mut logger = CvlrLogger::new();
+            logger.$name(v1, v2)
+        }
+    };
 }
 
 expose_log_fn! {log_str, &str}
@@ -168,3 +186,12 @@ expose_log_fn! {log_u128, u128}
 expose_log_fn! {log_i128, i128}
 expose_log_fn! {log_loc, u32}
 expose_log_fn! {add_loc, u32}
+expose_log_fn! {log_rule_location, &str, u64}
+
+/// Automatically inserted by other macros, not intended for public use.
+#[macro_export]
+macro_rules! cvlr_rule_location {
+    () => {{
+        $crate::log_rule_location(std::file!(), std::line!() as u64)
+    }};
+}
