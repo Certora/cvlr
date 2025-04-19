@@ -174,27 +174,27 @@ impl NativeIntU64 {
         unsafe { Self(CVT_nativeint_u64_u256_max()) }
     }
 
-    pub fn is_u8(&self) -> bool {
-        *self <= Self::new(u8::MAX as u64)
+    pub fn is_u8(self) -> bool {
+        self <= Self::new(u8::MAX as u64)
     }
 
-    pub fn is_u16(&self) -> bool {
-        *self <= Self::new(u16::MAX as u64)
+    pub fn is_u16(self) -> bool {
+        self <= Self::new(u16::MAX as u64)
     }
 
-    pub fn is_u32(&self) -> bool {
-        *self <= Self::new(u32::MAX as u64)
+    pub fn is_u32(self) -> bool {
+        self <= Self::new(u32::MAX as u64)
     }
 
-    pub fn is_u64(&self) -> bool {
-        *self <= Self::u64_max()
+    pub fn is_u64(self) -> bool {
+        self <= Self::u64_max()
     }
 
-    pub fn is_u128(&self) -> bool {
-        *self <= Self::u128_max()
+    pub fn is_u128(self) -> bool {
+        self <= Self::u128_max()
     }
 
-    pub fn is_u256(&self) -> bool {
+    pub fn is_u256(self) -> bool {
         // native ints are 256 bits
         true
     }
@@ -375,7 +375,8 @@ impl From<NativeIntU64> for u128 {
 
 impl From<u128> for NativeIntU64 {
     fn from(value: u128) -> Self {
-        let w0: u64 = (value & 0xffff_ffff_ffff_ffff) as u64;
+        // let w0: u64 = (value & 0xffff_ffff_ffff_ffff) as u64;
+        let w0: u64 = value as u64;
         let w1: u64 = (value >> 64) as u64;
 
         Self::from_u128(w0, w1)
