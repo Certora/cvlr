@@ -6,18 +6,19 @@ use syn::{parse_macro_input, punctuated::Punctuated, ItemFn, Meta, Token};
 * This macro is used to insert a hook at the start of a function.
 * # Example
 * #[cvlr_hook_on_entry(hook())]
-   fn t1() {
-       // hook inserted here
-       println!("t1");
-   }
+  fn t1() {
+      // hook inserted here
+      println!("t1");
+  }
 
-   expands to
+  expands to
 
-   fn t1() {
-       hook();
-       println!("t1");
-   }
+  fn t1() {
+      hook();
+      println!("t1");
+  }
 */
+#[allow(clippy::doc_overindented_list_items)]
 #[proc_macro_attribute]
 pub fn cvlr_hook_on_entry(attr: TokenStream, input: TokenStream) -> TokenStream {
     // parse the attribute argument
@@ -48,20 +49,21 @@ pub fn cvlr_hook_on_entry(attr: TokenStream, input: TokenStream) -> TokenStream 
 * If the function returns a value, the hook is inserted before the return statement.
 * # Example
 * #[cvlr_hook_on_exit(hook())]
-   fn t1() {
-       assert_eq!(1, 1);
-       assert_eq!(2, 2);
-       // hook inserted here
-   }
+  fn t1() {
+      assert_eq!(1, 1);
+      assert_eq!(2, 2);
+      // hook inserted here
+  }
 
-   expands to
+  expands to
 
-   fn t1() {
-       assert_eq!(1, 1);
-       assert_eq!(2, 2);
-       hook()
-   }
+  fn t1() {
+      assert_eq!(1, 1);
+      assert_eq!(2, 2);
+      hook()
+  }
 */
+#[allow(clippy::doc_overindented_list_items)]
 #[proc_macro_attribute]
 pub fn cvlr_hook_on_exit(attr: TokenStream, input: TokenStream) -> TokenStream {
     // parse the attribute argument
