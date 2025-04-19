@@ -130,8 +130,7 @@ macro_rules! native_fixed {
         impl<const F: u32> cvlr_log::CvlrLog for $NativeFixed<F> {
             #[inline(always)]
             fn log(&self, tag: &str, logger: &mut cvlr_log::CvlrLogger) {
-                cvlr_log::cvlr_log_with(tag, &self.to_floor(), logger);
-                cvlr_log::cvlr_log_with(&"\tbits", &self.val, logger);
+                logger.log_u64_as_fp(tag, self.val.as_internal(), F as u64);
             }
         }
 
