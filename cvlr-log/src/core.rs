@@ -21,6 +21,9 @@ pub mod rt_decls {
         pub fn CVT_calltrace_attach_location(file: &str, line: u64);
 
         pub fn CVT_rule_location(file: &str, line: u64);
+
+        pub fn CVT_calltrace_scope_start(name: &str);
+        pub fn CVT_calltrace_scope_end(name: &str);
     }
 }
 
@@ -54,6 +57,10 @@ mod rt_impls {
     pub extern "C" fn CVT_calltrace_attach_location(_tag: &str, v: u64) {}
     #[no_mangle]
     pub extern "C" fn CVT_rule_location(_file: &str, _line: u64) {}
+    #[no_mangle]
+    pub extern "C" fn CVT_calltrace_scope_start(name: &str) {}
+    #[no_mangle]
+    pub extern "C" fn CVT_calltrace_scope_end(name: &str) {}
 }
 pub use rt_decls::*;
 
@@ -148,6 +155,20 @@ impl CvlrLogger {
             crate::CVT_rule_location(file, line);
         }
     }
+
+    #[inline(always)]
+    pub fn log_scope_start(&mut self, scope: &str) {
+        unsafe {
+            CVT_calltrace_scope_start(scope);
+        }
+    }
+
+    #[inline(always)]
+    pub fn log_scope_end(&mut self, scope: &str) {
+        unsafe {
+            CVT_calltrace_scope_end(scope);
+        }
+    }
 }
 
 #[inline(always)]
@@ -166,6 +187,18 @@ pub fn log_u64_as_fp(t: &str, v: u64, b: u64) {
 pub fn log_rule_location(file: &str, line: u64) {
     let mut logger = CvlrLogger::new();
     logger.log_rule_location(file, line);
+}
+
+#[inline(always)]
+pub fn log_scope_start(scope: &str) {
+    let mut logger = CvlrLogger::new();
+    logger.log_scope_start(scope);
+}
+
+#[inline(always)]
+pub fn log_scope_end(scope: &str) {
+    let mut logger = CvlrLogger::new();
+    logger.log_scope_end(scope);
 }
 
 macro_rules! expose_log_fn {
