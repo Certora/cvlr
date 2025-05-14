@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "cvlr"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "cvlr-asserts",
  "cvlr-early-panic",
@@ -17,11 +17,11 @@ dependencies = [
 
 [[package]]
 name = "cvlr-asserts"
-version = "0.4.0"
+version = "0.4.1"
 
 [[package]]
 name = "cvlr-early-panic"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -30,7 +30,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-fixed"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "cvlr-asserts",
  "cvlr-log",
@@ -40,7 +40,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-hook"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "macrotest",
  "quote",
@@ -50,14 +50,14 @@ dependencies = [
 
 [[package]]
 name = "cvlr-log"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "cvlr-mathint",
 ]
 
 [[package]]
 name = "cvlr-macros"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "cvlr",
  "cvlr-asserts",
@@ -69,7 +69,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-mathint"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "cvlr-asserts",
  "cvlr-mathint",
@@ -78,7 +78,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-nondet"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "cvlr-asserts",
 ]
