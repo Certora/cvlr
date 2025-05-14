@@ -7,10 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [0.4.1] - 2025-05-14
+
 ### Added
-
+  - Allow extra comma at the end of clog! macro
+  - cvlr-fixed library supports div and ceil
+  - cvlr-fixed numbers are logged as decimals
+  - Source location added for rule attribute
+  - Support for scopes in cvlr-log
 ### Changed
-
+  - NativeInt are passed by value internally
 ### Removed
 
 
@@ -35,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-[unreleased]: https://github.com/Certora/cvlr/compare/v0.3.2...HEAD
+
+[unreleased]: https://github.com/Certora/cvlr/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Certora/cvlr/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Certora/cvlr/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/Certora/cvlr/releases/tag/v0.3.2
