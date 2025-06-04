@@ -33,9 +33,8 @@ keywords = [
     "formal-methods",
 ]
 categories = [
-    "development-tools::debugging", 
-    "development-tools::testing", 
-    "no-std"
+    "development-tools::debugging",
+    "development-tools::testing"
 ]
 readme = "README.md"
 homepage = "https://www.certora.com"
