@@ -20,12 +20,6 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut fn_ast = parse_macro_input!(item as ItemFn);
     // add #[no_mangle] attribute
     fn_ast.attrs.push(parse_quote! { #[no_mangle] });
-    // The first statement in rules is a call to the macro `cvlr_rule_location!`
-    // to automatically insert the location of the rule.
-    fn_ast
-        .block
-        .stmts
-        .insert(0, parse_quote! { cvlr::log::cvlr_rule_location!(); });
     fn_ast
         .block
         .stmts
