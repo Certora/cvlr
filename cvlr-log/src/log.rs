@@ -148,7 +148,7 @@ impl CvlrLog for cvlr_mathint::NativeInt {
 }
 
 /// Implements CvlrLog trait given a struct and a list of fields
-/// 
+///
 /// Example usage
 /// ```
 /// struct Foo {
