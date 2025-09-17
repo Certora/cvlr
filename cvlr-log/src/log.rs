@@ -151,6 +151,7 @@ impl CvlrLog for cvlr_mathint::NativeInt {
 ///
 /// Example usage
 /// ```
+/// use cvlr_log::impl_cvlr_log_for_struct;
 /// struct Foo {
 ///     x: u64,
 ///     y: u64,
