@@ -146,3 +146,33 @@ impl CvlrLog for cvlr_mathint::NativeInt {
         logger.log_u64(tag, self.as_internal());
     }
 }
+
+/// Implements CvlrLog trait given a struct and a list of fields
+/// 
+/// Example usage
+/// ```
+/// struct Foo {
+///     x: u64,
+///     y: u64,
+/// }
+/// impl_cvlr_log_for_struct!(Foo, x, y,);
+/// ```
+#[macro_export]
+macro_rules! impl_cvlr_log_for_struct {
+    ($prop:ident $(, $field:ident)* $(,)?) => {
+        impl $crate::log::CvlrLog for $prop {
+            fn log(&self, tag: &str, logger: &mut $crate::log::CvlrLogger) {
+                logger.log_scope_start(tag);
+                let __self = self;
+                $(impl_cvlr_log_for_struct!(@field __self, logger, $field);)*
+                logger.log_scope_end(tag);
+            }
+        }
+    };
+
+    (@field $self:ident, $logger:ident, $field:ident) => {
+        $crate::log::cvlr_log_with(stringify!($field), &$self.$field, $logger);
+    };
+}
+
+pub use impl_cvlr_log_for_struct as impl_clog_for_struct;
