@@ -31,7 +31,7 @@ macro_rules! native_fixed {
             }
 
             pub fn to_bits(&self) -> $uint {
-                cvlr_assume!(self.val.is_u64());
+                cvlr_assume!(self.val.$is_uint());
                 self.val.into()
             }
 
