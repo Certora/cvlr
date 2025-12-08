@@ -18,6 +18,10 @@ dependencies = [
 [[package]]
 name = "cvlr-asserts"
 version = "0.4.1"
+dependencies = [
+ "cvlr",
+ "cvlr-asserts",
+]
 
 [[package]]
 name = "cvlr-early-panic"
