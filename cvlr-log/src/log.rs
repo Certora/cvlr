@@ -160,7 +160,7 @@ impl CvlrLog for cvlr_mathint::NativeInt {
 /// ```
 #[macro_export]
 macro_rules! impl_cvlr_log_for_struct {
-    ($prop:ident $(, $field:ident)* $(,)?) => {
+    ($prop:path $(, $field:ident)* $(,)?) => {
         impl $crate::CvlrLog for $prop {
             fn log(&self, tag: &str, logger: &mut $crate::CvlrLogger) {
                 logger.log_scope_start(tag);
