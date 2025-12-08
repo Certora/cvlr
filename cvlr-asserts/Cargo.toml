@@ -1,6 +1,6 @@
 [package]
 name = "cvlr-asserts"
-description = "Asserts and assumes for post- and pre-conditions" 
+description = "Asserts and assumes for post- and pre-conditions"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -18,3 +18,8 @@ vacuity = []
 rt = []
 
 [dependencies]
+
+[dev-dependencies]
+# path-dependency to break cyclic dev dependency on crates
+cvlr = { path = "../cvlr", features = ["rt"] }
+cvlr-asserts = { path = ".", features = ["rt"] }
