@@ -7,6 +7,7 @@ mod rt_decls {
 }
 
 #[cfg(feature = "rt")]
+#[allow(dead_code)]
 mod rt_imps {
     pub extern "C" fn memhavoc_c(data: *mut u8, sz: usize) {
         unsafe {
