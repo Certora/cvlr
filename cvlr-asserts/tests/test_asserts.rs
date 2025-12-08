@@ -178,4 +178,3 @@ fn test_assert_eq_different_numeric_types() {
     cvlr_assert_eq!(1i32, 1i32);
     cvlr_assert_eq!(1i64, 1i64);
 }
-
