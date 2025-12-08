@@ -28,6 +28,7 @@ pub mod rt_decls {
 }
 
 #[cfg(feature = "rt")]
+#[allow(improper_ctypes_definitions)]
 mod rt_impls {
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_tag(_tag: &str) {}
@@ -50,17 +51,17 @@ mod rt_impls {
     #[no_mangle]
     pub extern "C" fn CVT_calltrace_print_u64_as_fixed(_tag: &str, _x: u64, _y: u64) {}
     #[no_mangle]
-    pub extern "C" fn CVT_calltrace_print_string(_tag: &str, v: &str) {}
+    pub extern "C" fn CVT_calltrace_print_string(_tag: &str, _v: &str) {}
     #[no_mangle]
-    pub extern "C" fn CVT_calltrace_print_location(_tag: &str, v: u64) {}
+    pub extern "C" fn CVT_calltrace_print_location(_file: &str, _line: u64) {}
     #[no_mangle]
-    pub extern "C" fn CVT_calltrace_attach_location(_tag: &str, v: u64) {}
+    pub extern "C" fn CVT_calltrace_attach_location(_file: &str, _line: u64) {}
     #[no_mangle]
     pub extern "C" fn CVT_rule_location(_file: &str, _line: u64) {}
     #[no_mangle]
-    pub extern "C" fn CVT_calltrace_scope_start(name: &str) {}
+    pub extern "C" fn CVT_calltrace_scope_start(_name: &str) {}
     #[no_mangle]
-    pub extern "C" fn CVT_calltrace_scope_end(name: &str) {}
+    pub extern "C" fn CVT_calltrace_scope_end(_name: &str) {}
 }
 pub use rt_decls::*;
 
