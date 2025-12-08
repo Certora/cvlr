@@ -4,9 +4,12 @@ macro_rules! impl_bin_assert {
         #[macro_export]
         macro_rules! $name {
         ($lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
+            let lhs = $lhs;
+            let rhs = $rhs;
             cvlr::clog!(stringify!(assert $lhs $pred $rhs));
-            cvlr::clog!($lhs, $rhs);
-            $crate::cvlr_assert!($lhs $pred $rhs);
+            cvlr::clog!(lhs => stringify!($lhs));
+            cvlr::clog!(rhs => stringify!($rhs));
+            $crate::cvlr_assert!(lhs $pred rhs);
         }};
     }
         pub use $name;
