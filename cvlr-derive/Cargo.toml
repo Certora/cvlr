@@ -22,3 +22,5 @@ syn = { workspace = true, features = ['derive', 'parsing', 'extra-traits'] }
 
 [dev-dependencies]
 cvlr = { path = "../cvlr", features = ["rt"]}
+macrotest = { workspace = true }
+trybuild = { workspace = true }

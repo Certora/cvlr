@@ -1,0 +1,7 @@
+error: proc-macro derive panicked
+ --> tests/expand/test_nondet_union.rs:3:10
+  |
+3 | #[derive(Nondet)]
+  |          ^^^^^^
+  |
+  = help: message: not yet implemented: Union not supported yet
