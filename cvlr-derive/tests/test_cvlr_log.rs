@@ -23,6 +23,10 @@ struct MixedTypes {
     e: bool,
 }
 
+// Test tuple struct (unnamed fields)
+#[derive(CvlrLog)]
+struct TupleStruct(u64, i32, bool);
+
 #[test]
 fn test_point_log() {
     let point = Point { x: 1, y: 2 };
@@ -48,4 +52,11 @@ fn test_mixed_types_log() {
     };
     let mut logger = cvlr::log::CvlrLogger::new();
     mixed.log("mixed", &mut logger);
+}
+
+#[test]
+fn test_tuple_struct_log() {
+    let tuple = TupleStruct(1, -2, true);
+    let mut logger = cvlr::log::CvlrLogger::new();
+    tuple.log("tuple", &mut logger);
 }
