@@ -6,6 +6,11 @@ extern crate cvlr_log;
 #[cfg(feature = "rt")]
 use cvlr_log::*;
 
+#[test]
+fn test_cvlr_log_macro_expansion() {
+    macrotest::expand("tests/expand/*.rs");
+}
+
 #[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_empty() {
