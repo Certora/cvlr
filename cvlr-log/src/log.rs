@@ -64,6 +64,12 @@ macro_rules! cvlr_log {
         $crate::cvlr_log! { $( $vs => $ts ),+ }
     };
 
+    // first labeled, rest can be mixed (labeled or unlabeled)
+    ($v:expr => $t:expr, $( $rest:tt )+) => {
+        $crate::cvlr_log! { $v => $t }
+        $crate::cvlr_log! { $( $rest )+ }
+    };
+
     ($v:expr => $t:expr) => {
         // TODO: enable when this becomes stable
         // $crate::add_loc(core::file!(), core::line!());
@@ -74,9 +80,10 @@ macro_rules! cvlr_log {
         $crate::cvlr_log! { $v => stringify!($v) }
     };
 
-    ($v:expr, $( $vs:expr ),+ $(,)?) => {
+    // first unlabeled, rest can be mixed (labeled or unlabeled)
+    ($v:expr, $( $rest:tt )+) => {
         $crate::cvlr_log! { $v }
-        $crate::cvlr_log! { $( $vs ),+ }
+        $crate::cvlr_log! { $( $rest )+ }
     };
 }
 
