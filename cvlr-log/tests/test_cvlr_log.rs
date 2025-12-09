@@ -1,11 +1,3 @@
-//! Tests for cvlr_log macro
-
-#[cfg(feature = "rt")]
-extern crate cvlr_log;
-
-#[cfg(feature = "rt")]
-use cvlr_log::*;
-
 #[test]
 fn test_cvlr_log_macro_expansion() {
     macrotest::expand_args("tests/expand/*.rs", &["--features", "no-loc"]);
