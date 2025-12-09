@@ -6,7 +6,7 @@ use {
         Data::{Enum, Struct, Union},
         DeriveInput,
         Fields::{self, Named, Unnamed},
-        FieldsNamed, FieldsUnnamed, Ident, Variant,
+        FieldsNamed, FieldsUnnamed, Ident, Index, Variant,
     },
 };
 
@@ -186,6 +186,11 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
 /// This macro generates an implementation of `CvlrLog` for structs,
 /// allowing them to be logged with CVLR's logging system.
 ///
+/// Supports:
+/// - Structs with named fields (uses field names as tags)
+/// - Structs with unnamed fields (uses field indices "0", "1", "2", etc. as tags)
+/// - Unit structs (empty scope)
+///
 /// # Example
 ///
 /// ```ignore
@@ -198,8 +203,14 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
 ///     y: u64,
 /// }
 ///
+/// #[derive(CvlrLog)]
+/// struct Tuple(u64, i32);
+///
 /// let p = Point { x: 1, y: 2 };
 /// p.log("point", &mut logger);
+///
+/// let t = Tuple(1, -2);
+/// t.log("tuple", &mut logger);
 /// ```
 #[proc_macro_derive(CvlrLog)]
 pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
@@ -234,9 +245,23 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
                 .into()
             }
             
-            Fields::Unnamed(_) => {
+            Fields::Unnamed(unnamed) => {
+                let field_logs: Vec<_> = unnamed.unnamed.iter().enumerate().map(|(index, _f)| {
+                    let field_index = Index::from(index);
+                    let field_index_str = index.to_string();
+                    quote! {
+                        ::cvlr::log::cvlr_log_with(#field_index_str, &self.#field_index, logger);
+                    }
+                }).collect();
+                
                 quote! {
-                    compile_error!("CvlrLog derive is only supported for structs with named fields");
+                    impl ::cvlr::log::CvlrLog for #name {
+                        fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
+                            logger.log_scope_start(tag);
+                            #( #field_logs )*
+                            logger.log_scope_end(tag);
+                        }
+                    }
                 }
                 .into()
             }
