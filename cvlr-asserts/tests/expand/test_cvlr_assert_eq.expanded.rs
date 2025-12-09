@@ -3,7 +3,7 @@ fn main() {
     {
         let lhs = 1;
         let rhs = 1;
-        ::cvlr_log::cvlr_log("stringify! (assert 1 == 1)", &("assert 1 == 1"));
+        ::cvlr_log::cvlr_log("_", &("assert 1 == 1"));
         ::cvlr_log::cvlr_log("1", &(lhs));
         ::cvlr_log::cvlr_log("1", &(rhs));
         {
@@ -15,7 +15,7 @@ fn main() {
     {
         let lhs = x;
         let rhs = y;
-        ::cvlr_log::cvlr_log("stringify! (assert x == y)", &("assert x == y"));
+        ::cvlr_log::cvlr_log("_", &("assert x == y"));
         ::cvlr_log::cvlr_log("x", &(lhs));
         ::cvlr_log::cvlr_log("y", &(rhs));
         {
@@ -27,7 +27,7 @@ fn main() {
     {
         let lhs = a;
         let rhs = b;
-        ::cvlr_log::cvlr_log("stringify! (assert a == b)", &("assert a == b"));
+        ::cvlr_log::cvlr_log("_", &("assert a == b"));
         ::cvlr_log::cvlr_log("a", &(lhs));
         ::cvlr_log::cvlr_log("b", &(rhs));
         {
