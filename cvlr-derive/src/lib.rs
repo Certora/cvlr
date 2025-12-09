@@ -14,7 +14,7 @@ fn of_named_fields(n: &Ident, named_fields: &FieldsNamed) -> proc_macro2::TokenS
     let initialize = named_fields.named.iter().map(|f| {
         let name = f.ident.as_ref().unwrap();
         quote! {
-            #name: ::nondet::nondet(),
+            #name: ::cvlr::nondet::nondet(),
         }
     });
 
@@ -27,7 +27,7 @@ fn of_named_fields(n: &Ident, named_fields: &FieldsNamed) -> proc_macro2::TokenS
 
 fn of_unnamed_fields(n: &Ident, unnamed: &FieldsUnnamed) -> proc_macro2::TokenStream {
     let initialize = unnamed.unnamed.iter().map(|_| {
-        quote! { ::nondet::nondet(), }
+        quote! { ::cvlr::nondet::nondet(), }
     });
 
     quote! {
@@ -37,6 +37,25 @@ fn of_unnamed_fields(n: &Ident, unnamed: &FieldsUnnamed) -> proc_macro2::TokenSt
     }
 }
 
+/// Derive macro for implementing the `Nondet` trait
+///
+/// This macro generates an implementation of `Nondet` for structs,
+/// allowing them to be created with non-deterministic (symbolic) values.
+///
+/// # Example
+///
+/// ```ignore
+/// use cvlr_derive::Nondet;
+/// use cvlr::prelude::*;
+///
+/// #[derive(Nondet)]
+/// struct Point {
+///     x: u64,
+///     y: u64,
+/// }
+///
+/// let p = Point::nondet();
+/// ```
 #[proc_macro_derive(Nondet)]
 pub fn derive_nondet(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
@@ -52,9 +71,9 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
 
         Struct(ds) => match ds.fields {
             Fields::Unit => quote! {
-                impl crate for #name {
+                impl ::cvlr::nondet::Nondet for #name {
                     fn nondet() -> #name {
-                        ()
+                        #name
                     }
                 }
             }
@@ -63,7 +82,7 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
             Named(named) => {
                 let init = of_named_fields(&name, &named);
                 quote! {
-                    impl ::nondet::Nondet for #name {
+                    impl ::cvlr::nondet::Nondet for #name {
                         fn nondet() -> #name {
                             #init
                         }
@@ -75,7 +94,7 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
             Unnamed(fields) => {
                 let init = of_unnamed_fields(&name, &fields);
                 quote! {
-                    impl ::nondet::Nondet for #name {
+                    impl ::cvlr::nondet::Nondet for #name {
                         fn nondet() -> #name {
                             #init
                         }
