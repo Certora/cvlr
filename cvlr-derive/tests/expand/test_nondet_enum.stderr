@@ -1,0 +1,7 @@
+error: proc-macro derive panicked
+ --> tests/expand/test_nondet_enum.rs:3:10
+  |
+3 | #[derive(Nondet)]
+  |          ^^^^^^
+  |
+  = help: message: not yet implemented: Enum not supported yet
