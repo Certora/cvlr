@@ -24,3 +24,4 @@ no-loc = []
 # path-dependency to break cyclic dev dependency on crates
 cvlr = { path = "../cvlr", features = ["rt"] }
 cvlr-asserts = { path = ".", features = ["rt"] }
+macrotest = { workspace = true }
