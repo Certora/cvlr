@@ -1,6 +1,7 @@
 use cvlr_derive::CvlrLog;
 struct UnitStruct;
 impl ::cvlr::log::CvlrLog for UnitStruct {
+    #[inline(always)]
     fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
         logger.log_scope_start(tag);
         logger.log_scope_end(tag);

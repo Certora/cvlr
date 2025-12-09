@@ -290,6 +290,7 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
 
             quote! {
                 impl ::cvlr::log::CvlrLog for #name {
+                    #[inline(always)]
                     fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
                         match self {
                             #( #match_arms )*
@@ -309,6 +310,7 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
             match ds.fields {
                 Fields::Unit => quote! {
                     impl ::cvlr::log::CvlrLog for #name {
+                        #[inline(always)]
                         fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
                             logger.log_scope_start(tag);
                             logger.log_scope_end(tag);
@@ -328,6 +330,7 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
 
                     quote! {
                         impl ::cvlr::log::CvlrLog for #name {
+                            #[inline(always)]
                             fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
                                 logger.log_scope_start(tag);
                                 #( #field_logs )*
@@ -349,6 +352,7 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
 
                     quote! {
                         impl ::cvlr::log::CvlrLog for #name {
+                            #[inline(always)]
                             fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
                                 logger.log_scope_start(tag);
                                 #( #field_logs )*
