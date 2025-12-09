@@ -89,3 +89,15 @@ fn test_nondet_with() {
     let point = NamedFields::nondet_with(|p| p.x == 0);
     let _x = point.x;
 }
+
+#[test]
+fn expand_tests() {
+    macrotest::expand("tests/expand/*.rs");
+}
+
+#[test]
+fn ui_tests() {
+    let t = trybuild::TestCases::new();
+    t.compile_fail("tests/expand/test_nondet_enum.rs");
+    t.compile_fail("tests/expand/test_nondet_union.rs");
+}
