@@ -64,6 +64,19 @@ fn test_cvlr_log_multiple_values() {
 
 #[cfg(feature = "rt")]
 #[test]
+fn test_cvlr_log_multiple_with_tags() {
+    // Test multiple values with explicit tags
+    let a = 1;
+    let b = 2;
+    let c = 3;
+    cvlr_log!(a => "first", b => "second", c => "third");
+    cvlr_log!(10 => "ten", 20 => "twenty", 30 => "thirty", 40 => "forty");
+    cvlr_log!("hello" => "greeting", "world" => "target");
+    cvlr_log!(a => "a", b => "b",); // with trailing comma
+}
+
+#[cfg(feature = "rt")]
+#[test]
 fn test_cvlr_log_various_integer_types() {
     // Test various integer types
     cvlr_log!(1u8 => "u8");
