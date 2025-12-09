@@ -16,6 +16,7 @@ repository.workspace = true
 [features]
 vacuity = []
 rt = []
+no-loc = []
 
 [dependencies]
 
