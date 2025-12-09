@@ -5,6 +5,7 @@ enum EnumWithUnnamed {
     Variant3(u64, i32),
 }
 impl ::cvlr::log::CvlrLog for EnumWithUnnamed {
+    #[inline(always)]
     fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
         match self {
             EnumWithUnnamed::Variant1 => {

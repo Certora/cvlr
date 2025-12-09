@@ -4,6 +4,7 @@ enum SimpleEnum {
     Variant2,
 }
 impl ::cvlr::log::CvlrLog for SimpleEnum {
+    #[inline(always)]
     fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
         match self {
             SimpleEnum::Variant1 => {
