@@ -6,7 +6,7 @@ macro_rules! impl_bin_assert {
         ($lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
             let lhs = $lhs;
             let rhs = $rhs;
-            cvlr::clog!(stringify!(assert $lhs $pred $rhs));
+            cvlr::clog!(stringify!(assert $lhs $pred $rhs) => "_");
             cvlr::clog!(lhs => stringify!($lhs));
             cvlr::clog!(rhs => stringify!($rhs));
             $crate::cvlr_assert!(lhs $pred rhs);
@@ -31,7 +31,7 @@ macro_rules! impl_bin_assume {
         ($lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
             let lhs = $lhs;
             let rhs = $rhs;
-            cvlr::clog!(stringify!(assume $lhs $pred $rhs));
+            cvlr::clog!(stringify!(assume $lhs $pred $rhs) => "_");
             cvlr::clog!(lhs => stringify!($lhs));
             cvlr::clog!(rhs => stringify!($rhs));
             $crate::cvlr_assume!(lhs $pred rhs);
@@ -64,7 +64,7 @@ macro_rules! impl_bin_assert_if {
         macro_rules! $name {
         ($guard: expr,$lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
             let guard = $guard;
-            cvlr::clog!(stringify!(assert $guard ==> $lhs $pred $rhs));
+            cvlr::clog!(stringify!(assert $guard ==> $lhs $pred $rhs) => "_");
             cvlr::clog!(guard => stringify!($guard));
             if guard {
                 let lhs = $lhs;
