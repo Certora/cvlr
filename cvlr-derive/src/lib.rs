@@ -229,7 +229,7 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
 pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
     let name = input.ident;
-    
+
     match input.data {
         Enum(data_enum) => {
             let variants = &data_enum.variants;
@@ -255,7 +255,6 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
                                 ::cvlr::log::cvlr_log_with(#field_index_str, &#field_binding, logger);
                             }
                         }).collect();
-                        
                         quote! {
                             #name::#variant_name(#(ref #field_bindings),*) => {
                                 logger.log_scope_start(tag);
@@ -288,7 +287,7 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
                     }
                 }
             }).collect();
-            
+
             quote! {
                 impl ::cvlr::log::CvlrLog for #name {
                     fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
@@ -300,17 +299,15 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
             }
             .into()
         }
-        
-        Union(_) => {
-            quote! {
-                compile_error!("CvlrLog derive is only supported for structs");
-            }
-            .into()
+
+        Union(_) => quote! {
+            compile_error!("CvlrLog derive is only supported for structs");
         }
-        
-        Struct(ds) => match ds.fields {
-            Fields::Unit => {
-                quote! {
+        .into(),
+
+        Struct(ds) => {
+            match ds.fields {
+                Fields::Unit => quote! {
                     impl ::cvlr::log::CvlrLog for #name {
                         fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
                             logger.log_scope_start(tag);
@@ -318,50 +315,50 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
                         }
                     }
                 }
-                .into()
-            }
-            
-            Fields::Unnamed(unnamed) => {
-                let field_logs: Vec<_> = unnamed.unnamed.iter().enumerate().map(|(index, _f)| {
+                .into(),
+
+                Fields::Unnamed(unnamed) => {
+                    let field_logs: Vec<_> = unnamed.unnamed.iter().enumerate().map(|(index, _f)| {
                     let field_index = Index::from(index);
                     let field_index_str = index.to_string();
                     quote! {
                         ::cvlr::log::cvlr_log_with(#field_index_str, &self.#field_index, logger);
                     }
                 }).collect();
-                
-                quote! {
-                    impl ::cvlr::log::CvlrLog for #name {
-                        fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
-                            logger.log_scope_start(tag);
-                            #( #field_logs )*
-                            logger.log_scope_end(tag);
+
+                    quote! {
+                        impl ::cvlr::log::CvlrLog for #name {
+                            fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
+                                logger.log_scope_start(tag);
+                                #( #field_logs )*
+                                logger.log_scope_end(tag);
+                            }
                         }
                     }
+                    .into()
                 }
-                .into()
-            }
-            
-            Fields::Named(named) => {
-                let field_logs: Vec<_> = named.named.iter().map(|f| {
+
+                Fields::Named(named) => {
+                    let field_logs: Vec<_> = named.named.iter().map(|f| {
                     let field_name = f.ident.as_ref().unwrap();
                     let field_name_str = field_name.to_string();
                     quote! {
                         ::cvlr::log::cvlr_log_with(#field_name_str, &self.#field_name, logger);
                     }
                 }).collect();
-                
-                quote! {
-                    impl ::cvlr::log::CvlrLog for #name {
-                        fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
-                            logger.log_scope_start(tag);
-                            #( #field_logs )*
-                            logger.log_scope_end(tag);
+
+                    quote! {
+                        impl ::cvlr::log::CvlrLog for #name {
+                            fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
+                                logger.log_scope_start(tag);
+                                #( #field_logs )*
+                                logger.log_scope_end(tag);
+                            }
                         }
                     }
+                    .into()
                 }
-                .into()
             }
-        },
+        }
     }
 }
