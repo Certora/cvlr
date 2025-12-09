@@ -27,8 +27,9 @@ macro_rules! cvlr_log {
         $crate::cvlr_log($t, &($v));
     };
 
-    ($v:expr => $t:expr ; $l:ident) => {
-        $crate::cvlr_log_with($t, &($v), $l)
+    // log with a specified logger
+    ($v:expr => $t:expr ; $logger:ident) => {
+        $crate::cvlr_log_with($t, &($v), &mut $logger)
     };
 
     ($v:expr $(,)?) => {
