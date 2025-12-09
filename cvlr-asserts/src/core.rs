@@ -67,7 +67,7 @@ macro_rules! cvlr_assert {
     ($cond: expr $(, $desc: literal)?) => {{
         let c_ = $cond;
         $crate::add_loc!();
-        $crate::cvlr_assert_checked(c_)
+        $crate::cvlr_assert_checked(c_);
     }};
 }
 
@@ -83,7 +83,7 @@ macro_rules! cvlr_satisfy {
     ($cond: expr $(, $desc: literal)?) => {{
         let c_ = $cond;
         $crate::add_loc!();
-        $crate::cvlr_satisfy_checked(c_)
+        $crate::cvlr_satisfy_checked(c_);
     }};
 }
 
