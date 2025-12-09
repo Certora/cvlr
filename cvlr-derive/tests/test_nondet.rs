@@ -1,3 +1,4 @@
+#![allow(unused)]
 use cvlr::nondet::Nondet;
 use cvlr_derive::Nondet;
 
@@ -32,6 +33,37 @@ struct MixedTypes {
 struct Nested {
     point: NamedFields,
     value: u64,
+}
+
+// Test enum with unit variant
+#[derive(Nondet)]
+enum SimpleEnum {
+    Variant1,
+    Variant2,
+}
+
+// Test enum with unnamed fields
+#[derive(Nondet)]
+enum EnumWithUnnamed {
+    Variant1,
+    Variant2(u64),
+    Variant3(u64, i32),
+}
+
+// Test enum with named fields
+#[derive(Nondet)]
+enum EnumWithNamed {
+    Variant1,
+    Variant2 { x: u64 },
+    Variant3 { x: u64, y: i32 },
+}
+
+// Test enum with mixed variants
+#[derive(Nondet)]
+enum MixedEnum {
+    Unit,
+    Unnamed(u64, i32),
+    Named { x: u64, y: bool },
 }
 
 #[test]
@@ -91,6 +123,49 @@ fn test_nondet_with() {
 }
 
 #[test]
+fn test_simple_enum() {
+    let _e = SimpleEnum::nondet();
+}
+
+#[test]
+fn test_enum_with_unnamed() {
+    let e = EnumWithUnnamed::nondet();
+    match e {
+        EnumWithUnnamed::Variant1 => {}
+        EnumWithUnnamed::Variant2(_) => {}
+        EnumWithUnnamed::Variant3(_, _) => {}
+    }
+}
+
+#[test]
+fn test_enum_with_named() {
+    let e = EnumWithNamed::nondet();
+    match e {
+        EnumWithNamed::Variant1 => {}
+        EnumWithNamed::Variant2 { x: _ } => {}
+        EnumWithNamed::Variant3 { x: _, y: _ } => {}
+    }
+}
+
+#[test]
+fn test_mixed_enum() {
+    let e = MixedEnum::nondet();
+    match e {
+        MixedEnum::Unit => {}
+        MixedEnum::Unnamed(_, _) => {}
+        MixedEnum::Named { x: _, y: _ } => {}
+    }
+}
+
+#[test]
+fn test_enum_nondet_trait_method() {
+    let e: SimpleEnum = cvlr::nondet::nondet();
+    match e {
+        SimpleEnum::Variant1 | SimpleEnum::Variant2 => {}
+    }
+}
+
+#[test]
 fn expand_tests() {
     macrotest::expand("tests/expand/*.rs");
 }
@@ -98,6 +173,5 @@ fn expand_tests() {
 #[test]
 fn ui_tests() {
     let t = trybuild::TestCases::new();
-    t.compile_fail("tests/expand/test_nondet_enum.rs");
     t.compile_fail("tests/expand/test_nondet_union.rs");
 }
