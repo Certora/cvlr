@@ -180,3 +180,87 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
         },
     }
 }
+
+/// Derive macro for implementing the `CvlrLog` trait
+///
+/// This macro generates an implementation of `CvlrLog` for structs,
+/// allowing them to be logged with CVLR's logging system.
+///
+/// # Example
+///
+/// ```ignore
+/// use cvlr_derive::CvlrLog;
+/// use cvlr::log::CvlrLog;
+///
+/// #[derive(CvlrLog)]
+/// struct Point {
+///     x: u64,
+///     y: u64,
+/// }
+///
+/// let p = Point { x: 1, y: 2 };
+/// p.log("point", &mut logger);
+/// ```
+#[proc_macro_derive(CvlrLog)]
+pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as DeriveInput);
+    let name = input.ident;
+    
+    match input.data {
+        Enum(_) => {
+            quote! {
+                compile_error!("CvlrLog derive is only supported for structs");
+            }
+            .into()
+        }
+        
+        Union(_) => {
+            quote! {
+                compile_error!("CvlrLog derive is only supported for structs");
+            }
+            .into()
+        }
+        
+        Struct(ds) => match ds.fields {
+            Fields::Unit => {
+                quote! {
+                    impl ::cvlr::log::CvlrLog for #name {
+                        fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
+                            logger.log_scope_start(tag);
+                            logger.log_scope_end(tag);
+                        }
+                    }
+                }
+                .into()
+            }
+            
+            Fields::Unnamed(_) => {
+                quote! {
+                    compile_error!("CvlrLog derive is only supported for structs with named fields");
+                }
+                .into()
+            }
+            
+            Fields::Named(named) => {
+                let field_logs: Vec<_> = named.named.iter().map(|f| {
+                    let field_name = f.ident.as_ref().unwrap();
+                    let field_name_str = field_name.to_string();
+                    quote! {
+                        ::cvlr::log::cvlr_log_with(#field_name_str, &self.#field_name, logger);
+                    }
+                }).collect();
+                
+                quote! {
+                    impl ::cvlr::log::CvlrLog for #name {
+                        fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
+                            logger.log_scope_start(tag);
+                            #( #field_logs )*
+                            logger.log_scope_end(tag);
+                        }
+                    }
+                }
+                .into()
+            }
+        },
+    }
+}
