@@ -4,6 +4,7 @@ struct Point {
     y: u64,
 }
 impl ::cvlr::log::CvlrLog for Point {
+    #[inline(always)]
     fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
         logger.log_scope_start(tag);
         ::cvlr::log::cvlr_log_with("x", &self.x, logger);
