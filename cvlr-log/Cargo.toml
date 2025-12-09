@@ -20,3 +20,8 @@ mathint = ["dep:cvlr-mathint"]
 
 [dependencies]
 cvlr-mathint = { workspace = true, optional = true }
+
+[dev-dependencies]
+cvlr = { path = "../cvlr", features = ["rt"] }
+trybuild = { workspace = true }
+macrotest = { workspace = true }
