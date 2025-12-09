@@ -6,6 +6,11 @@ extern crate cvlr;
 #[cfg(feature = "rt")]
 use cvlr_asserts::*;
 
+#[test]
+fn test_cvlr_asserts_macro_expansion() {
+    macrotest::expand_args("tests/expand/*.rs", &["--features", "no-loc"]);
+}
+
 #[cfg(feature = "rt")]
 #[test]
 fn test_assert_eq_pass() {
