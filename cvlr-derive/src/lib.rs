@@ -1,5 +1,6 @@
 use {
     proc_macro::TokenStream,
+    proc_macro2::Span,
     quote::quote,
     syn::{
         parse_macro_input,
@@ -183,13 +184,15 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
 
 /// Derive macro for implementing the `CvlrLog` trait
 ///
-/// This macro generates an implementation of `CvlrLog` for structs,
+/// This macro generates an implementation of `CvlrLog` for structs and enums,
 /// allowing them to be logged with CVLR's logging system.
 ///
 /// Supports:
 /// - Structs with named fields (uses field names as tags)
 /// - Structs with unnamed fields (uses field indices "0", "1", "2", etc. as tags)
 /// - Unit structs (empty scope)
+/// - Enums with unit variants (logs variant name)
+/// - Enums with field variants (logs variant name first, then fields; uses scope for multiple fields)
 ///
 /// # Example
 ///
@@ -206,11 +209,21 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
 /// #[derive(CvlrLog)]
 /// struct Tuple(u64, i32);
 ///
+/// #[derive(CvlrLog)]
+/// enum MyEnum {
+///     Variant1,
+///     Variant2(u64),
+///     Variant3 { x: u64, y: i32 },
+/// }
+///
 /// let p = Point { x: 1, y: 2 };
 /// p.log("point", &mut logger);
 ///
 /// let t = Tuple(1, -2);
 /// t.log("tuple", &mut logger);
+///
+/// let e = MyEnum::Variant2(42);
+/// e.log("enum", &mut logger);
 /// ```
 #[proc_macro_derive(CvlrLog)]
 pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
@@ -218,9 +231,72 @@ pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {
     let name = input.ident;
     
     match input.data {
-        Enum(_) => {
+        Enum(data_enum) => {
+            let variants = &data_enum.variants;
+            let match_arms: Vec<_> = variants.iter().map(|variant| {
+                let variant_name = &variant.ident;
+                let variant_name_str = variant_name.to_string();
+                match &variant.fields {
+                    Fields::Unit => {
+                        quote! {
+                            #name::#variant_name => {
+                                logger.log_str(tag, #variant_name_str);
+                            }
+                        }
+                    }
+                    Fields::Unnamed(unnamed) => {
+                        let field_bindings: Vec<_> = unnamed.unnamed.iter().enumerate().map(|(index, _f)| {
+                            syn::Ident::new(&format!("field{}", index), Span::call_site())
+                        }).collect();
+                        let field_logs: Vec<_> = unnamed.unnamed.iter().enumerate().map(|(index, _f)| {
+                            let field_binding = &field_bindings[index];
+                            let field_index_str = index.to_string();
+                            quote! {
+                                ::cvlr::log::cvlr_log_with(#field_index_str, &#field_binding, logger);
+                            }
+                        }).collect();
+                        
+                        quote! {
+                            #name::#variant_name(#(ref #field_bindings),*) => {
+                                logger.log_scope_start(tag);
+                                logger.log_str(tag, #variant_name_str);
+                                #( #field_logs )*
+                                logger.log_scope_end(tag);
+                            }
+                        }
+                    }
+                    Fields::Named(named) => {
+                        let field_logs: Vec<_> = named.named.iter().map(|f| {
+                            let field_name = f.ident.as_ref().unwrap();
+                            let field_name_str = field_name.to_string();
+                            quote! {
+                                ::cvlr::log::cvlr_log_with(#field_name_str, &#field_name, logger);
+                            }
+                        }).collect();
+                        let field_names: Vec<_> = named.named.iter().map(|f| {
+                            f.ident.as_ref().unwrap()
+                        }).collect();
+
+                        quote! {
+                            #name::#variant_name { #(ref #field_names),* } => {
+                                logger.log_scope_start(tag);
+                                logger.log_str(tag, #variant_name_str);
+                                #( #field_logs )*
+                                logger.log_scope_end(tag);
+                            }
+                        }
+                    }
+                }
+            }).collect();
+            
             quote! {
-                compile_error!("CvlrLog derive is only supported for structs");
+                impl ::cvlr::log::CvlrLog for #name {
+                    fn log(&self, tag: &str, logger: &mut ::cvlr::log::CvlrLogger) {
+                        match self {
+                            #( #match_arms )*
+                        }
+                    }
+                }
             }
             .into()
         }
