@@ -6,7 +6,7 @@ use {
         Data::{Enum, Struct, Union},
         DeriveInput,
         Fields::{self, Named, Unnamed},
-        FieldsNamed, FieldsUnnamed, Ident,
+        FieldsNamed, FieldsUnnamed, Ident, Variant,
     },
 };
 
@@ -37,9 +37,41 @@ fn of_unnamed_fields(n: &Ident, unnamed: &FieldsUnnamed) -> proc_macro2::TokenSt
     }
 }
 
+fn of_enum_variant(variant: &Variant, enum_name: &Ident) -> proc_macro2::TokenStream {
+    let variant_name = &variant.ident;
+    match &variant.fields {
+        Fields::Unit => quote! {
+            #enum_name::#variant_name
+        },
+        Fields::Unnamed(unnamed) => {
+            let initialize = unnamed.unnamed.iter().map(|_| {
+                quote! { ::cvlr::nondet::nondet(), }
+            });
+            quote! {
+                #enum_name::#variant_name(
+                    #( #initialize )*
+                )
+            }
+        }
+        Fields::Named(named) => {
+            let initialize = named.named.iter().map(|f| {
+                let field_name = f.ident.as_ref().unwrap();
+                quote! {
+                    #field_name: ::cvlr::nondet::nondet(),
+                }
+            });
+            quote! {
+                #enum_name::#variant_name {
+                    #( #initialize )*
+                }
+            }
+        }
+    }
+}
+
 /// Derive macro for implementing the `Nondet` trait
 ///
-/// This macro generates an implementation of `Nondet` for structs,
+/// This macro generates an implementation of `Nondet` for structs and enums,
 /// allowing them to be created with non-deterministic (symbolic) values.
 ///
 /// # Example
@@ -54,15 +86,58 @@ fn of_unnamed_fields(n: &Ident, unnamed: &FieldsUnnamed) -> proc_macro2::TokenSt
 ///     y: u64,
 /// }
 ///
+/// #[derive(Nondet)]
+/// enum MyEnum {
+///     Variant1,
+///     Variant2(u64),
+///     Variant3 { x: u64 },
+/// }
+///
 /// let p = Point::nondet();
+/// let e = MyEnum::nondet();
 /// ```
 #[proc_macro_derive(Nondet)]
 pub fn derive_nondet(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
     let name = input.ident;
     match input.data {
-        Enum(_) => {
-            todo!("Enum not supported yet")
+        Enum(data_enum) => {
+            let variants = &data_enum.variants;
+            let variant_count = variants.len();
+
+            if variant_count == 0 {
+                return quote! {
+                    compile_error!("Enum must have at least one variant");
+                }
+                .into();
+            }
+
+            let mut match_arms = Vec::new();
+            for (index, variant) in variants.iter().enumerate() {
+                let variant_expr = of_enum_variant(variant, &name);
+                if index == variant_count - 1 {
+                    // Last variant is catch-all
+                    match_arms.push(quote! {
+                        _ => #variant_expr,
+                    });
+                } else {
+                    let index_lit = index as u64;
+                    match_arms.push(quote! {
+                        #index_lit => #variant_expr,
+                    });
+                }
+            }
+
+            quote! {
+                impl ::cvlr::nondet::Nondet for #name {
+                    fn nondet() -> #name {
+                        match ::cvlr::nondet::nondet::<u64>() {
+                            #( #match_arms )*
+                        }
+                    }
+                }
+            }
+            .into()
         }
 
         Union(_) => {
