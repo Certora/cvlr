@@ -15,10 +15,42 @@ pub fn cvlr_log<T: CvlrLog>(tag: &str, val: &T) {
     val.log(tag, &mut logger);
 }
 
+#[cfg(not(feature = "no-loc"))]
+#[macro_export]
+macro_rules! cvlr_log_core_file {
+    () => {
+        ::core::file!()
+    };
+}
+
+#[cfg(not(feature = "no-loc"))]
+#[macro_export]
+macro_rules! cvlr_log_core_line {
+    () => {
+        ::core::line!()
+    };
+}
+
+#[cfg(feature = "no-loc")]
+#[macro_export]
+macro_rules! cvlr_log_core_file {
+    () => {
+        "<FILE>"
+    };
+}
+
+#[cfg(feature = "no-loc")]
+#[macro_export]
+macro_rules! cvlr_log_core_line {
+    () => {
+        0u32
+    };
+}
+
 #[macro_export]
 macro_rules! cvlr_log {
     () => {
-        $crate::log_loc(core::file!(), core::line!());
+        $crate::log_loc($crate::cvlr_log_core_file!(), $crate::cvlr_log_core_line!());
     };
 
     // log with a specified logger

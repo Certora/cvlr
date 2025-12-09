@@ -17,6 +17,7 @@ repository.workspace = true
 default = ["mathint"]
 rt = ["cvlr-mathint/rt"]
 mathint = ["dep:cvlr-mathint"]
+no-loc = []
 
 [dependencies]
 cvlr-mathint = { workspace = true, optional = true }

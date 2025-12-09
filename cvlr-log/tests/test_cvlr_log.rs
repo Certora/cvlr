@@ -8,7 +8,7 @@ use cvlr_log::*;
 
 #[test]
 fn test_cvlr_log_macro_expansion() {
-    macrotest::expand("tests/expand/*.rs");
+    macrotest::expand_args("tests/expand/*.rs", &["--features", "no-loc"]);
 }
 
 #[cfg(feature = "rt")]
@@ -85,7 +85,7 @@ fn test_cvlr_log_various_integer_types() {
     cvlr_log!(4u64 => "u64");
     cvlr_log!(5usize => "usize");
     cvlr_log!(6u128 => "u128");
-    
+
     cvlr_log!(-1i8 => "i8");
     cvlr_log!(-2i16 => "i16");
     cvlr_log!(-3i32 => "i32");
@@ -99,7 +99,7 @@ fn test_cvlr_log_option() {
     // Test Option types
     let some_value: Option<u64> = Some(42);
     let none_value: Option<u64> = None;
-    
+
     cvlr_log!(some_value => "some");
     cvlr_log!(none_value => "none");
     cvlr_log!(Some(100));
@@ -112,7 +112,7 @@ fn test_cvlr_log_result() {
     // Test Result types
     let ok_value: Result<u64, &str> = Ok(42);
     let err_value: Result<u64, &str> = Err("error message");
-    
+
     cvlr_log!(ok_value => "ok_result");
     cvlr_log!(err_value => "err_result");
     cvlr_log!(Ok::<u64, &str>(100));
@@ -145,7 +145,7 @@ fn test_cvlr_log_complex_expressions() {
     cvlr_log!((1 + 2) => "sum");
     cvlr_log!((10 * 5) => "product");
     cvlr_log!((100 - 50) => "difference");
-    
+
     let x = 5;
     let y = 10;
     cvlr_log!((x + y) => "computed");
@@ -166,7 +166,7 @@ fn test_cvlr_log_mixed_types() {
     let num = 42;
     let text = "hello";
     let flag = true;
-    
+
     cvlr_log!(num, text, flag);
 }
 
@@ -176,7 +176,7 @@ fn test_cvlr_log_nested_options() {
     // Test nested Option types
     let nested: Option<Option<u64>> = Some(Some(42));
     cvlr_log!(nested => "nested_some");
-    
+
     let nested_none: Option<Option<u64>> = Some(None);
     cvlr_log!(nested_none => "nested_none");
 }
@@ -187,7 +187,7 @@ fn test_cvlr_log_nested_results() {
     // Test nested Result types
     let nested_ok: Result<Result<u64, &str>, &str> = Ok(Ok(42));
     cvlr_log!(nested_ok => "nested_ok");
-    
+
     let nested_err: Result<Result<u64, &str>, &str> = Ok(Err("inner error"));
     cvlr_log!(nested_err => "nested_err");
 }
