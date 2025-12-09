@@ -9,7 +9,8 @@ members = [
     "cvlr-early-panic",
     "cvlr-hook",
     "cvlr-macros",
-    "cvlr-fixed"
+    "cvlr-fixed",
+    "cvlr-derive"
 ]
 
 [workspace.package]
@@ -57,3 +58,4 @@ cvlr-macros = { path = "cvlr-macros", version = "=0.4.2" }
 cvlr-early-panic = { path = "cvlr-early-panic", version = "=0.4.2" }
 cvlr-hook = { path = "cvlr-hook", version = "=0.4.2" }
 cvlr-fixed = { path = "cvlr-fixed", version = "=0.4.2" }
+cvlr-derive = { path = "cvlr-derive", version = "=0.4.2" }
