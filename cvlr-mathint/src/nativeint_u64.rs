@@ -318,44 +318,73 @@ impl core::ops::Div<NativeIntU64> for NativeIntU64 {
     }
 }
 
-impl core::ops::Add<u64> for NativeIntU64 {
-    type Output = Self;
-
-    fn add(self, rhs: u64) -> Self::Output {
-        self + Self(rhs)
-    }
-}
-
-impl core::ops::Mul<u64> for NativeIntU64 {
-    type Output = Self;
-
-    fn mul(self, rhs: u64) -> Self::Output {
-        self * Self(rhs)
-    }
-}
-
-impl core::ops::Div<u64> for NativeIntU64 {
-    type Output = Self;
-
-    fn div(self, rhs: u64) -> Self::Output {
-        self / Self(rhs)
-    }
-}
-
-macro_rules! impl_from_for_uint {
-    ($t:ty) => {
-        impl From<$t> for NativeIntU64 {
-            fn from(value: $t) -> Self {
+macro_rules! impl_from_for_small_uint {
+    ($uint:ty) => {
+        impl From<$uint> for NativeIntU64 {
+            fn from(value: $uint) -> Self {
                 Self(value as u64)
             }
         }
     };
 }
 
-impl_from_for_uint!(u8);
-impl_from_for_uint!(u16);
-impl_from_for_uint!(u32);
-impl_from_for_uint!(u64);
+macro_rules! impl_core_traits_for_uint {
+    ($uint:ty) => {
+        impl core::ops::Add<$uint> for NativeIntU64 {
+            type Output = Self;
+
+            fn add(self, rhs: $uint) -> Self::Output {
+                self + Self::from(rhs)
+            }
+        }
+
+        impl core::ops::Mul<$uint> for NativeIntU64 {
+            type Output = Self;
+
+            fn mul(self, rhs: $uint) -> Self::Output {
+                self * Self::from(rhs)
+            }
+        }
+
+        impl core::ops::Div<$uint> for NativeIntU64 {
+            type Output = Self;
+
+            fn div(self, rhs: $uint) -> Self::Output {
+                self / Self::from(rhs)
+            }
+        }
+    };
+}
+
+impl_from_for_small_uint!(u8);
+impl_from_for_small_uint!(u16);
+impl_from_for_small_uint!(u32);
+impl_from_for_small_uint!(u64);
+
+impl From<u128> for NativeIntU64 {
+    fn from(value: u128) -> Self {
+        // let w0: u64 = (value & 0xffff_ffff_ffff_ffff) as u64;
+        let w0: u64 = value as u64;
+        let w1: u64 = (value >> 64) as u64;
+
+        Self::from_u128(w0, w1)
+    }
+}
+
+impl_core_traits_for_uint!(u8);
+impl_core_traits_for_uint!(u16);
+impl_core_traits_for_uint!(u32);
+impl_core_traits_for_uint!(u64);
+impl_core_traits_for_uint!(u128);
+
+impl From<i32> for NativeIntU64 {
+    fn from(value: i32) -> Self {
+        value
+            .is_positive()
+            .then(|| Self::from(value as u32))
+            .unwrap_or_else(|| Self::from(0u64) - Self::from((value as i64).unsigned_abs()))
+    }
+}
 
 impl From<NativeIntU64> for u64 {
     fn from(value: NativeIntU64) -> Self {
@@ -370,16 +399,6 @@ impl From<NativeIntU64> for u128 {
         let res: u128 = cvlr_nondet::nondet();
         cvlr_asserts::cvlr_assume!(value == res.into());
         res
-    }
-}
-
-impl From<u128> for NativeIntU64 {
-    fn from(value: u128) -> Self {
-        // let w0: u64 = (value & 0xffff_ffff_ffff_ffff) as u64;
-        let w0: u64 = value as u64;
-        let w1: u64 = (value >> 64) as u64;
-
-        Self::from_u128(w0, w1)
     }
 }
 
