@@ -21,10 +21,10 @@ pub fn test() {
     cvlr_assert_that!(x + y > 0);
 
     // Guarded boolean expressions
-    cvlr_assert_that!(guard => condition);
-    cvlr_assert_that!(x > 0 => y > 0 && z < 10);
-    cvlr_assert_that!(flag => !error);
-    cvlr_assert_that!(test => (a || b) && c);
+    cvlr_assert_that!(if guard { condition });
+    cvlr_assert_that!(if x > 0 { y > 0 && z < 10 });
+    cvlr_assert_that!(if flag { !error });
+    cvlr_assert_that!(if test { (a || b) && c });
 }
 
 fn main() {}
