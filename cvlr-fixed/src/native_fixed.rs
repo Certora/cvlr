@@ -56,7 +56,7 @@ macro_rules! native_fixed {
             }
 
             pub fn checked_div(&self, v: Self) -> Self {
-                cvlr_assume!(v.val > 0u64.into());
+                cvlr_assume!(v.val > 0u64);
                 Self::from_val(self.val * Self::BASE / v.val)
             }
 
@@ -103,7 +103,7 @@ macro_rules! native_fixed {
                 let floor = self.to_floor();
                 let rem = *self - Self::new(floor);
 
-                if rem.val > 0u64.into() {
+                if rem.val > 0 {
                     floor + 1
                 } else {
                     floor
