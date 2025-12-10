@@ -1,4 +1,4 @@
-//! Tests for cvlr_assert_that and cvlr_assert_all macros
+//! Tests for cvlr_assert_that, cvlr_assert_all, cvlr_assume_that, and cvlr_assume_all macros
 
 #[test]
 fn test_cvlr_assert_that_macro_expansion() {
@@ -12,4 +12,6 @@ fn test_cvlr_assert_that_compiles() {
     t.pass("tests/expand/test_cvlr_assert_that_guarded_comparisons.rs");
     t.pass("tests/expand/test_cvlr_assert_that_booleans.rs");
     t.pass("tests/expand/test_cvlr_assert_all.rs");
+    t.pass("tests/expand/test_cvlr_assume_that.rs");
+    t.pass("tests/expand/test_cvlr_assume_all.rs");
 }
