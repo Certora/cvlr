@@ -193,3 +193,134 @@ pub fn cvlr_assert_that(input: TokenStream) -> TokenStream {
 pub fn cvlr_assert_all(input: TokenStream) -> TokenStream {
     assert_that::assert_all_impl(input)
 }
+
+/// Assume a condition using a DSL syntax (analogous to `cvlr_assert_that!`)
+///
+/// This macro provides the same DSL syntax as `cvlr_assert_that!` but expands to
+/// `cvlr_assume_*` macros instead of `cvlr_assert_*` macros.
+///
+/// # Syntax
+///
+/// The macro accepts either:
+/// - **Unguarded expression**: `cvlr_assume_that!(condition)`
+/// - **Guarded expression**: `cvlr_assume_that!(if guard { condition })`
+///
+/// The `condition` can be:
+/// - A comparison: `a < b`, `x >= y`, `p == q`, etc.
+/// - A boolean expression: `flag`, `x > 0 && y < 10`, etc.
+///
+/// # Examples
+///
+/// ## Unguarded comparisons
+///
+/// ```rust,no_run
+/// use cvlr_macros::cvlr_assume_that;
+///
+/// let x = 5;
+/// let y = 10;
+///
+/// cvlr_assume_that!(x < y);        // expands to cvlr_assume_lt!(x, y)
+/// cvlr_assume_that!(x <= y);       // expands to cvlr_assume_le!(x, y)
+/// cvlr_assume_that!(x > 0);        // expands to cvlr_assume_gt!(x, 0)
+/// cvlr_assume_that!(x >= 0);       // expands to cvlr_assume_ge!(x, 0)
+/// cvlr_assume_that!(x == 5);       // expands to cvlr_assume_eq!(x, 5)
+/// cvlr_assume_that!(x != 0);       // expands to cvlr_assume_ne!(x, 0)
+/// ```
+///
+/// ## Guarded comparisons
+///
+/// ```rust,no_run
+/// use cvlr_macros::cvlr_assume_that;
+///
+/// let flag = true;
+/// let a = 1;
+/// let b = 2;
+///
+/// // Assume a < b only if flag is true
+/// cvlr_assume_that!(if flag { a < b });  // expands to: if flag { cvlr_assume_lt!(a, b); }
+/// ```
+///
+/// ## Boolean expressions
+///
+/// ```rust,no_run
+/// use cvlr_macros::cvlr_assume_that;
+///
+/// let flag = true;
+/// let x = 5;
+/// let y = 3;
+///
+/// // Unguarded boolean
+/// cvlr_assume_that!(flag);                    // expands to cvlr_assume!(flag)
+/// cvlr_assume_that!(x > 0 && y < 10);         // expands to cvlr_assume!(x > 0 && y < 10)
+///
+/// // Guarded boolean
+/// cvlr_assume_that!(if flag { x > 0 });       // expands to: if flag { cvlr_assume!(x > 0); }
+/// ```
+///
+/// # Expansion
+///
+/// The macro automatically detects comparison operators and expands to the
+/// appropriate assume macro:
+///
+/// - Comparisons (`<`, `<=`, `>`, `>=`, `==`, `!=`) expand to `cvlr_assume_<op>!`
+/// - For guarded expressions, the assume is wrapped in an `if` block
+/// - Boolean expressions expand to `cvlr_assume!`
+#[proc_macro]
+pub fn cvlr_assume_that(input: TokenStream) -> TokenStream {
+    assert_that::assume_that_impl(input)
+}
+
+/// Assume multiple conditions using the same DSL syntax as `cvlr_assume_that!`
+///
+/// This macro takes a list of DSL expressions (same syntax as `cvlr_assume_that!`)
+/// and expands directly to the underlying `cvlr_assume_*` macros. Expressions can be
+/// separated by either commas (`,`) or semicolons (`;`).
+///
+/// # Syntax
+///
+/// Expressions can be separated by commas or semicolons:
+/// - `cvlr_assume_all!(expr1, expr2, expr3);`
+/// - `cvlr_assume_all!(expr1; expr2; expr3);`
+/// - `cvlr_assume_all!(expr1, expr2; expr3);`  // Mixed separators are also allowed
+///
+/// Each expression follows the same syntax as `cvlr_assume_that!`:
+/// - Unguarded: `condition`
+/// - Guarded: `if guard { condition }`
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use cvlr_macros::cvlr_assume_all;
+///
+/// let x = 5;
+/// let y = 10;
+/// let c = true;
+///
+/// // Multiple unguarded assumptions
+/// cvlr_assume_all!(x > 0, y < 20, x < y);
+///
+/// // Mixed guarded and unguarded
+/// cvlr_assume_all!(x > 0, if c { x < y });
+///
+/// // Using semicolons
+/// cvlr_assume_all!(x > 0; y < 20; if c { x < y });
+/// ```
+///
+/// # Expansion
+///
+/// This macro expands directly to the underlying assume macros:
+///
+/// ```text
+/// // Input:
+/// cvlr_assume_all!(x > 0, if c { x < y });
+///
+/// // Expands to:
+/// ::cvlr::asserts::cvlr_assume_gt!(x, 0);
+/// if c {
+///     ::cvlr::asserts::cvlr_assume_lt!(x, y);
+/// }
+/// ```
+#[proc_macro]
+pub fn cvlr_assume_all(input: TokenStream) -> TokenStream {
+    assert_that::assume_all_impl(input)
+}
