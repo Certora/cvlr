@@ -130,3 +130,60 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn cvlr_assert_that(input: TokenStream) -> TokenStream {
     assert_that::assert_that_impl(input)
 }
+
+/// Assert multiple conditions using the same DSL syntax as `cvlr_assert_that!`
+///
+/// This macro takes a list of DSL expressions (same syntax as `cvlr_assert_that!`)
+/// and expands to multiple calls to `cvlr_assert_that!`. Expressions can be
+/// separated by either commas (`,`) or semicolons (`;`).
+///
+/// # Syntax
+///
+/// ```rust
+/// cvlr_assert_all!(expr1, expr2, expr3);
+/// cvlr_assert_all!(expr1; expr2; expr3);
+/// cvlr_assert_all!(expr1, expr2; expr3);  // Mixed separators are also allowed
+/// ```
+///
+/// Each expression follows the same syntax as `cvlr_assert_that!`:
+/// - Unguarded: `condition`
+/// - Guarded: `if guard { condition }`
+///
+/// # Examples
+///
+/// ```rust
+/// use cvlr_macros::cvlr_assert_all;
+///
+/// let x = 5;
+/// let y = 10;
+/// let c = true;
+///
+/// // Multiple unguarded assertions
+/// cvlr_assert_all!(x > 0, y < 20, x < y);
+///
+/// // Mixed guarded and unguarded
+/// cvlr_assert_all!(x > 0, if c { x < y });
+///
+/// // Using semicolons
+/// cvlr_assert_all!(x > 0; y < 20; if c { x < y });
+///
+/// // Mixed separators
+/// cvlr_assert_all!(x > 0, y < 20; if c { x < y });
+/// ```
+///
+/// # Expansion
+///
+/// This macro expands to multiple `cvlr_assert_that!` calls:
+///
+/// ```rust
+/// // Input:
+/// cvlr_assert_all!(x > 0, if c { x < y });
+///
+/// // Expands to:
+/// cvlr_assert_that!(x > 0);
+/// cvlr_assert_that!(if c { x < y });
+/// ```
+#[proc_macro]
+pub fn cvlr_assert_all(input: TokenStream) -> TokenStream {
+    assert_that::assert_all_impl(input)
+}

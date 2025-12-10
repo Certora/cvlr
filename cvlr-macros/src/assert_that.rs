@@ -115,3 +115,57 @@ fn handle_boolean_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Resu
         })
     }
 }
+
+// Parser for a list of AssertThatInput expressions separated by comma or semicolon
+struct AssertAllInput {
+    expressions: Vec<AssertThatInput>,
+}
+
+impl Parse for AssertAllInput {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut expressions = Vec::new();
+
+        loop {
+            // Parse one expression
+            let expr: AssertThatInput = input.parse()?;
+            expressions.push(expr);
+
+            // Check for separator (comma or semicolon)
+            if input.peek(Token![,]) {
+                let _: Token![,] = input.parse()?;
+            } else if input.peek(Token![;]) {
+                let _: Token![;] = input.parse()?;
+            } else {
+                // No more separators, we're done
+                break;
+            }
+
+            // Check if we're at the end
+            if input.is_empty() {
+                break;
+            }
+        }
+
+        Ok(AssertAllInput { expressions })
+    }
+}
+
+pub fn assert_all_impl(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as AssertAllInput);
+
+    // Generate the underlying assertion macros directly for each expression
+    let mut assertions = Vec::new();
+
+    for expr in &input.expressions {
+        match analyze_condition(&expr.condition, expr.guard.as_ref()) {
+            Ok(assertion) => assertions.push(assertion),
+            // stop on first error
+            Err(e) => return e.to_compile_error().into(),
+        }
+    }
+
+    quote! {
+        #(#assertions)*
+    }
+    .into()
+}
