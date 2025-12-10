@@ -64,7 +64,7 @@ macro_rules! impl_bin_assert_if {
         macro_rules! $name {
         ($guard: expr,$lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
             let guard = $guard;
-            cvlr::clog!(stringify!(assert $guard ==> $lhs $pred $rhs) => "_");
+            cvlr::clog!(stringify!(assert if $guard { $lhs $pred $rhs }) => "_");
             cvlr::clog!(guard => stringify!($guard));
             if guard {
                 let lhs = $lhs;
