@@ -8,7 +8,7 @@ mod mock;
 ///
 /// # Example
 ///
-/// ```
+/// ```rust,no_run
 /// use cvlr::prelude::*;
 /// #[rule]
 /// fn foo()  {
@@ -58,7 +58,7 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// ## Unguarded comparisons
 ///
-/// ```rust
+/// ```rust,no_run
 /// use cvlr_macros::cvlr_assert_that;
 ///
 /// let x = 5;
@@ -74,12 +74,15 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// ## Guarded comparisons
 ///
-/// ```rust
+/// ```rust,no_run
 /// use cvlr_macros::cvlr_assert_that;
 ///
 /// let flag = true;
 /// let a = 1;
 /// let b = 2;
+/// let x = 5;
+/// let y = 10;
+/// let z = 15;
 ///
 /// // Assert b < a only if flag is true
 /// cvlr_assert_that!(if flag { a < b });  // expands to cvlr_assert_lt_if!(flag, a, b)
@@ -88,12 +91,13 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// ## Boolean expressions
 ///
-/// ```rust
+/// ```rust,no_run
 /// use cvlr_macros::cvlr_assert_that;
 ///
 /// let flag = true;
 /// let x = 5;
 /// let y = 3;
+/// let z = 7;
 ///
 /// // Unguarded boolean
 /// cvlr_assert_that!(flag);                    // expands to cvlr_assert!(flag)
@@ -106,13 +110,16 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// ## Complex expressions
 ///
-/// ```rust
+/// ```rust,no_run
 /// use cvlr_macros::cvlr_assert_that;
 ///
 /// let a = 1;
 /// let c = 3;
 /// let d = 4;
 /// let p = 5;
+/// let x = 5;
+/// let y = 3;
+/// let z = 10;
 ///
 /// // Complex guard and condition
 /// cvlr_assert_that!(if a > c { d < p });      // expands to cvlr_assert_lt_if!(a > c, d, p)
@@ -139,11 +146,10 @@ pub fn cvlr_assert_that(input: TokenStream) -> TokenStream {
 ///
 /// # Syntax
 ///
-/// ```rust
-/// cvlr_assert_all!(expr1, expr2, expr3);
-/// cvlr_assert_all!(expr1; expr2; expr3);
-/// cvlr_assert_all!(expr1, expr2; expr3);  // Mixed separators are also allowed
-/// ```
+/// Expressions can be separated by commas or semicolons:
+/// - `cvlr_assert_all!(expr1, expr2, expr3);`
+/// - `cvlr_assert_all!(expr1; expr2; expr3);`
+/// - `cvlr_assert_all!(expr1, expr2; expr3);`  // Mixed separators are also allowed
 ///
 /// Each expression follows the same syntax as `cvlr_assert_that!`:
 /// - Unguarded: `condition`
@@ -151,7 +157,7 @@ pub fn cvlr_assert_that(input: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,no_run
 /// use cvlr_macros::cvlr_assert_all;
 ///
 /// let x = 5;
@@ -173,15 +179,15 @@ pub fn cvlr_assert_that(input: TokenStream) -> TokenStream {
 ///
 /// # Expansion
 ///
-/// This macro expands to multiple `cvlr_assert_that!` calls:
+/// This macro expands directly to the underlying assertion macros (not to `cvlr_assert_that!` calls):
 ///
-/// ```rust
+/// ```text
 /// // Input:
 /// cvlr_assert_all!(x > 0, if c { x < y });
 ///
 /// // Expands to:
-/// cvlr_assert_that!(x > 0);
-/// cvlr_assert_that!(if c { x < y });
+/// ::cvlr::asserts::cvlr_assert_gt!(x, 0);
+/// ::cvlr::asserts::cvlr_assert_lt_if!(c, x, y);
 /// ```
 #[proc_macro]
 pub fn cvlr_assert_all(input: TokenStream) -> TokenStream {
