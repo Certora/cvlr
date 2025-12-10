@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::{parse::Parse, parse_macro_input, Expr, Token};
+use syn::{parse::Parse, parse_macro_input, Expr, ExprIf, Token};
 
 // Custom parser for the assert_that DSL
 struct AssertThatInput {
@@ -11,22 +11,38 @@ struct AssertThatInput {
 
 impl Parse for AssertThatInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        // Try to parse as: guard => condition
-        let guard_expr: Expr = input.parse()?;
-
-        // Check if next token is =>
-        if input.peek(Token![=>]) {
-            let _arrow: Token![=>] = input.parse()?;
-            let condition: Expr = input.parse()?;
+        // Try to parse as: if guard { condition }
+        if input.peek(Token![if]) {
+            let if_expr: ExprIf = input.parse()?;
+            // Extract guard and condition from if expression
+            let guard = *if_expr.cond;
+            // The condition should be a single expression in the block
+            if if_expr.then_branch.stmts.len() != 1 {
+                return Err(syn::Error::new(
+                    Span::call_site(),
+                    "expected exactly one statement in if block",
+                ));
+            }
+            // Extract the expression from the statement
+            let condition = match &if_expr.then_branch.stmts[0] {
+                syn::Stmt::Expr(expr, _) => expr.clone(),
+                _ => {
+                    return Err(syn::Error::new(
+                        Span::call_site(),
+                        "expected an expression, not a statement",
+                    ));
+                }
+            };
             Ok(AssertThatInput {
-                guard: Some(guard_expr),
+                guard: Some(guard),
                 condition,
             })
         } else {
-            // No guard, the first expression is the condition
+            // No guard, parse as unguarded condition
+            let condition: Expr = input.parse()?;
             Ok(AssertThatInput {
                 guard: None,
-                condition: guard_expr,
+                condition,
             })
         }
     }
