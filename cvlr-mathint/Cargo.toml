@@ -22,4 +22,4 @@ cvlr-nondet = { workspace = true, default-features = false }
 cvlr-asserts = { workspace = true }
 
 [dev-dependencies]
-cvlr-mathint = { path = ".", features = ["rt"] }
+cvlr = { path = "../cvlr", features = ["rt", "no-loc"] }
