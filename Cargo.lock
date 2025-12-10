@@ -21,6 +21,7 @@ version = "0.4.2"
 dependencies = [
  "cvlr",
  "cvlr-asserts",
+ "macrotest",
 ]
 
 [[package]]
@@ -79,11 +80,12 @@ name = "cvlr-macros"
 version = "0.4.2"
 dependencies = [
  "cvlr",
- "cvlr-asserts",
  "darling",
+ "macrotest",
  "proc-macro2",
  "quote",
  "syn",
+ "trybuild",
 ]
 
 [[package]]
