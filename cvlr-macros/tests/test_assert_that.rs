@@ -1,4 +1,4 @@
-//! Tests for cvlr_assert_that macro
+//! Tests for cvlr_assert_that and cvlr_assert_all macros
 
 #[test]
 fn test_cvlr_assert_that_macro_expansion() {
@@ -11,4 +11,5 @@ fn test_cvlr_assert_that_compiles() {
     t.pass("tests/expand/test_cvlr_assert_that_comparisons.rs");
     t.pass("tests/expand/test_cvlr_assert_that_guarded_comparisons.rs");
     t.pass("tests/expand/test_cvlr_assert_that_booleans.rs");
+    t.pass("tests/expand/test_cvlr_assert_all.rs");
 }
