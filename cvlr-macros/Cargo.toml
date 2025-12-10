@@ -22,6 +22,7 @@ syn = { workspace = true }
 darling = "0.20" 
 
 [dev-dependencies]
-cvlr-asserts = { workspace = true }
 # path-dependency to break cyclic dev dependency on crates
-cvlr = { path = "../cvlr" }
+cvlr = { path = "../cvlr", features = ["rt", "no-loc"] }
+macrotest = { workspace = true }
+trybuild = { workspace = true }

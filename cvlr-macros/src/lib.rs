@@ -9,8 +9,7 @@ mod mock;
 /// # Example
 ///
 /// ```
-/// use cvlr_asserts::cvlr_assert;
-/// use cvlr_macros::rule;
+/// use cvlr::prelude::*;
 /// #[rule]
 /// fn foo()  {
 ///    cvlr_assert!(false);

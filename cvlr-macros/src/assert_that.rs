@@ -77,7 +77,7 @@ fn analyze_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<Toke
             // Unguarded assertion: cvlr_assert_<op>!(lhs, rhs)
             let macro_ident = syn::Ident::new(macro_name, Span::call_site());
             Ok(quote! {
-                ::clvr::asserts::#macro_ident!(#left, #right);
+                ::cvlr::asserts::#macro_ident!(#left, #right);
             })
         }
     } else {
@@ -90,7 +90,7 @@ fn handle_boolean_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Resu
     if let Some(guard_expr) = guard {
         // Guarded boolean: cvlr_assert_if!(guard, condition)
         Ok(quote! {
-            ::cvrl::asserts::cvlr_assert_if!(#guard_expr, #condition);
+            ::cvlr::asserts::cvlr_assert_if!(#guard_expr, #condition);
         })
     } else {
         // Unguarded boolean: cvlr_assert!(condition)
