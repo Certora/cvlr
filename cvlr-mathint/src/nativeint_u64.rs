@@ -472,4 +472,320 @@ mod tests {
         let x: NativeIntU64 = cvlr_nondet::nondet();
         assert_eq!(x, 0u64.into());
     }
+
+    #[test]
+    fn test_arithmetic_operations() {
+        let a = NativeIntU64::new(10);
+        let b = NativeIntU64::new(3);
+
+        // Addition
+        assert_eq!(a + b, NativeIntU64::new(13));
+        assert_eq!(a + 5u64, NativeIntU64::new(15));
+
+        // Subtraction
+        assert_eq!(a - b, NativeIntU64::new(7));
+        // Note: b - a would underflow and panic in rt mode
+
+        // Multiplication
+        assert_eq!(a * b, NativeIntU64::new(30));
+        assert_eq!(a * 2u64, NativeIntU64::new(20));
+
+        // Division
+        assert_eq!(a / b, NativeIntU64::new(3));
+        assert_eq!(a / 2u64, NativeIntU64::new(5));
+    }
+
+    #[test]
+    fn test_comparison_operations() {
+        let a = NativeIntU64::new(5);
+        let b = NativeIntU64::new(10);
+        let c = NativeIntU64::new(5);
+
+        // Equality
+        assert_eq!(a, c);
+        assert_ne!(a, b);
+
+        // Less than
+        assert!(a < b);
+        assert!(!(b < a));
+        assert!(!(a < c));
+
+        // Less than or equal
+        assert!(a <= b);
+        assert!(a <= c);
+        assert!(!(b <= a));
+
+        // Greater than
+        assert!(b > a);
+        assert!(!(a > b));
+        assert!(!(a > c));
+
+        // Greater than or equal
+        assert!(b >= a);
+        assert!(a >= c);
+        assert!(!(a >= b));
+    }
+
+    #[test]
+    fn test_div_ceil() {
+        let a = NativeIntU64::new(10);
+        let b = NativeIntU64::new(3);
+        assert_eq!(a.div_ceil(b), NativeIntU64::new(4)); // 10/3 = 3.33... -> 4
+
+        let c = NativeIntU64::new(9);
+        let d = NativeIntU64::new(3);
+        assert_eq!(c.div_ceil(d), NativeIntU64::new(3)); // 9/3 = 3 -> 3
+
+        let e = NativeIntU64::new(11);
+        let f = NativeIntU64::new(5);
+        assert_eq!(e.div_ceil(f), NativeIntU64::new(3)); // 11/5 = 2.2 -> 3
+    }
+
+    #[test]
+    fn test_muldiv() {
+        let a = NativeIntU64::new(10);
+        let b = NativeIntU64::new(3);
+        let c = NativeIntU64::new(2);
+        // (10 * 3) / 2 = 30 / 2 = 15
+        assert_eq!(a.muldiv(b, c), NativeIntU64::new(15));
+
+        let d = NativeIntU64::new(100);
+        let e = NativeIntU64::new(7);
+        let f = NativeIntU64::new(4);
+        // (100 * 7) / 4 = 700 / 4 = 175
+        assert_eq!(d.muldiv(e, f), NativeIntU64::new(175));
+    }
+
+    #[test]
+    fn test_muldiv_ceil() {
+        let a = NativeIntU64::new(10);
+        let b = NativeIntU64::new(3);
+        let c = NativeIntU64::new(4);
+        // (10 * 3) / 4 = 30 / 4 = 7.5 -> 8
+        assert_eq!(a.muldiv_ceil(b, c), NativeIntU64::new(8));
+
+        let d = NativeIntU64::new(10);
+        let e = NativeIntU64::new(3);
+        let f = NativeIntU64::new(5);
+        // (10 * 3) / 5 = 30 / 5 = 6 -> 6
+        assert_eq!(d.muldiv_ceil(e, f), NativeIntU64::new(6));
+    }
+
+    #[test]
+    fn test_from_u128() {
+        let val = NativeIntU64::from_u128(42, 0);
+        assert_eq!(val, NativeIntU64::new(42));
+
+        let val2 = NativeIntU64::from_u128(0x1234_5678_9abc_def0, 0);
+        assert_eq!(val2, NativeIntU64::new(0x1234_5678_9abc_def0u64));
+    }
+
+    #[test]
+    fn test_from_u256() {
+        let val = NativeIntU64::from_u256(100, 0, 0, 0);
+        assert_eq!(val, NativeIntU64::new(100));
+
+        let val2 = NativeIntU64::from_u256(0xffff_ffff_ffff_ffff, 0, 0, 0);
+        assert_eq!(val2, NativeIntU64::new(0xffff_ffff_ffff_ffffu64));
+    }
+
+    #[test]
+    fn test_from_primitive_types() {
+        // From u8
+        let val_u8: NativeIntU64 = 42u8.into();
+        assert_eq!(val_u8, NativeIntU64::new(42));
+
+        // From u16
+        let val_u16: NativeIntU64 = 1000u16.into();
+        assert_eq!(val_u16, NativeIntU64::new(1000));
+
+        // From u32
+        let val_u32: NativeIntU64 = 1_000_000u32.into();
+        assert_eq!(val_u32, NativeIntU64::new(1_000_000));
+
+        // From u64
+        let val_u64: NativeIntU64 = 1_000_000_000u64.into();
+        assert_eq!(val_u64, NativeIntU64::new(1_000_000_000));
+
+        // From u128
+        let val_u128: NativeIntU64 = 1_000_000_000_000u128.into();
+        assert_eq!(val_u128, NativeIntU64::new(1_000_000_000_000u64));
+    }
+
+    #[test]
+    fn test_from_i32() {
+        let val_pos: NativeIntU64 = 42i32.into();
+        assert_eq!(val_pos, NativeIntU64::new(42));
+
+        let val_zero: NativeIntU64 = 0i32.into();
+        assert_eq!(val_zero, NativeIntU64::new(0));
+
+        // Note: Negative i32 values cause underflow in rt mode when converting
+        // (0 - abs(value)), so we only test positive values here
+    }
+
+    #[test]
+    fn test_from_array_u64_2() {
+        let arr = [42u64, 0u64];
+        let val: NativeIntU64 = (&arr).into();
+        assert_eq!(val, NativeIntU64::new(42));
+    }
+
+    #[test]
+    fn test_from_array_u64_4() {
+        let arr = [100u64, 0u64, 0u64, 0u64];
+        let val: NativeIntU64 = (&arr).into();
+        assert_eq!(val, NativeIntU64::new(100));
+    }
+
+    #[test]
+    fn test_from_array_u8_32() {
+        let mut arr = [0u8; 32];
+        // Set first 8 bytes to represent 0x1234567890abcdef in little-endian
+        arr[0..8].copy_from_slice(&0x1234567890abcdefu64.to_le_bytes());
+        let val: NativeIntU64 = (&arr).into();
+        assert_eq!(val, NativeIntU64::new(0x1234567890abcdefu64));
+    }
+
+    #[test]
+    fn test_max_functions() {
+        let u64_max = NativeIntU64::u64_max();
+        assert_eq!(u64_max, NativeIntU64::new(u64::MAX));
+    }
+
+    #[test]
+    fn test_is_uint_functions() {
+        // Test is_u8
+        assert!(NativeIntU64::new(0).is_u8());
+        assert!(NativeIntU64::new(255).is_u8());
+        assert!(!NativeIntU64::new(256).is_u8());
+
+        // Test is_u16
+        assert!(NativeIntU64::new(0).is_u16());
+        assert!(NativeIntU64::new(65535).is_u16());
+        assert!(!NativeIntU64::new(65536).is_u16());
+
+        // Test is_u32
+        assert!(NativeIntU64::new(0).is_u32());
+        assert!(NativeIntU64::new(4294967295u32).is_u32());
+        assert!(!NativeIntU64::new(4294967296u64).is_u32());
+
+        // Test is_u64
+        assert!(NativeIntU64::new(0).is_u64());
+        assert!(NativeIntU64::new(u64::MAX).is_u64());
+
+        // Test is_u128
+        // Note: u128_max() panics in rt mode, so we skip testing is_u128()
+        // as it would call u128_max() which panics
+
+        // Test is_u256
+        assert!(NativeIntU64::new(0).is_u256());
+        assert!(NativeIntU64::new(u64::MAX).is_u256());
+    }
+
+    #[test]
+    fn test_ord_trait_methods() {
+        let a = NativeIntU64::new(5);
+        let b = NativeIntU64::new(10);
+        let c = NativeIntU64::new(7);
+
+        // Test cmp
+        assert_eq!(a.cmp(&b), core::cmp::Ordering::Less);
+        assert_eq!(b.cmp(&a), core::cmp::Ordering::Greater);
+        assert_eq!(a.cmp(&a), core::cmp::Ordering::Equal);
+
+        // Test max
+        assert_eq!(a.max(b), b);
+        assert_eq!(b.max(a), b);
+        assert_eq!(a.max(a), a);
+
+        // Test min
+        assert_eq!(a.min(b), a);
+        assert_eq!(b.min(a), a);
+        assert_eq!(a.min(a), a);
+
+        // Test clamp
+        assert_eq!(c.clamp(a, b), c); // c is between a and b
+        assert_eq!(a.clamp(c, b), c); // a is less than min
+        assert_eq!(b.clamp(a, c), c); // b is greater than max
+        assert_eq!(a.clamp(a, b), a); // a is at min
+        assert_eq!(b.clamp(a, b), b); // b is at max
+    }
+
+    #[test]
+    fn test_edge_cases() {
+        // Zero
+        let zero = NativeIntU64::new(0);
+        assert_eq!(zero + zero, zero);
+        assert_eq!(zero * NativeIntU64::new(100), zero);
+        assert_eq!(zero / NativeIntU64::new(1), zero);
+
+        // One
+        let one = NativeIntU64::new(1);
+        assert_eq!(zero + one, one);
+        assert_eq!(one * NativeIntU64::new(100), NativeIntU64::new(100));
+        assert_eq!(one / one, one);
+
+        // Maximum u64
+        let max = NativeIntU64::new(u64::MAX);
+        assert_eq!(max, NativeIntU64::u64_max());
+        assert!(max.is_u64());
+    }
+
+    #[test]
+    fn test_checked_sub() {
+        let a = NativeIntU64::new(10);
+        let b = NativeIntU64::new(3);
+        assert_eq!(a.checked_sub(b), NativeIntU64::new(7));
+
+        // Note: checked_sub is just an alias for sub, so underflow will panic in rt mode
+        // We test the normal case only
+    }
+
+    #[test]
+    fn test_new_method() {
+        let val1 = NativeIntU64::new(42u8);
+        assert_eq!(val1, NativeIntU64::new(42u64));
+
+        let val2 = NativeIntU64::new(1000u16);
+        assert_eq!(val2, NativeIntU64::new(1000u64));
+
+        let val3 = NativeIntU64::new(1_000_000u32);
+        assert_eq!(val3, NativeIntU64::new(1_000_000u64));
+    }
+
+    #[test]
+    fn test_as_internal() {
+        let val = NativeIntU64::new(42);
+        assert_eq!(val.as_internal(), 42u64);
+
+        let max = NativeIntU64::new(u64::MAX);
+        assert_eq!(max.as_internal(), u64::MAX);
+    }
+
+    #[test]
+    fn test_arithmetic_with_primitives() {
+        let a = NativeIntU64::new(10);
+
+        // Addition with primitives
+        assert_eq!(a + 5u8, NativeIntU64::new(15));
+        assert_eq!(a + 5u16, NativeIntU64::new(15));
+        assert_eq!(a + 5u32, NativeIntU64::new(15));
+        assert_eq!(a + 5u64, NativeIntU64::new(15));
+        assert_eq!(a + 5u128, NativeIntU64::new(15));
+
+        // Multiplication with primitives
+        assert_eq!(a * 3u8, NativeIntU64::new(30));
+        assert_eq!(a * 3u16, NativeIntU64::new(30));
+        assert_eq!(a * 3u32, NativeIntU64::new(30));
+        assert_eq!(a * 3u64, NativeIntU64::new(30));
+        assert_eq!(a * 3u128, NativeIntU64::new(30));
+
+        // Division with primitives
+        assert_eq!(a / 2u8, NativeIntU64::new(5));
+        assert_eq!(a / 2u16, NativeIntU64::new(5));
+        assert_eq!(a / 2u32, NativeIntU64::new(5));
+        assert_eq!(a / 2u64, NativeIntU64::new(5));
+        assert_eq!(a / 2u128, NativeIntU64::new(5));
+    }
 }
