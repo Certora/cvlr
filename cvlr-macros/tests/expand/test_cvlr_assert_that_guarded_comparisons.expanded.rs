@@ -18,7 +18,7 @@ pub fn test_guarded_comparisons() {
     let n = 10;
     {
         let guard = flag;
-        ::cvlr_log::cvlr_log("_", &("assert flag == > a < b"));
+        ::cvlr_log::cvlr_log("_", &("assert if flag { a < b }"));
         ::cvlr_log::cvlr_log("flag", &(guard));
         if guard {
             let lhs = a;
@@ -34,7 +34,7 @@ pub fn test_guarded_comparisons() {
     };
     {
         let guard = x > 0;
-        ::cvlr_log::cvlr_log("_", &("assert x > 0 == > y <= z"));
+        ::cvlr_log::cvlr_log("_", &("assert if x > 0 { y <= z }"));
         ::cvlr_log::cvlr_log("x > 0", &(guard));
         if guard {
             let lhs = y;
@@ -50,7 +50,7 @@ pub fn test_guarded_comparisons() {
     };
     {
         let guard = cond;
-        ::cvlr_log::cvlr_log("_", &("assert cond == > p > q"));
+        ::cvlr_log::cvlr_log("_", &("assert if cond { p > q }"));
         ::cvlr_log::cvlr_log("cond", &(guard));
         if guard {
             let lhs = p;
@@ -66,7 +66,7 @@ pub fn test_guarded_comparisons() {
     };
     {
         let guard = guard;
-        ::cvlr_log::cvlr_log("_", &("assert guard == > m >= n"));
+        ::cvlr_log::cvlr_log("_", &("assert if guard { m >= n }"));
         ::cvlr_log::cvlr_log("guard", &(guard));
         if guard {
             let lhs = m;
@@ -82,7 +82,7 @@ pub fn test_guarded_comparisons() {
     };
     {
         let guard = test;
-        ::cvlr_log::cvlr_log("_", &("assert test == > x == y"));
+        ::cvlr_log::cvlr_log("_", &("assert if test { x == y }"));
         ::cvlr_log::cvlr_log("test", &(guard));
         if guard {
             let lhs = x;
@@ -98,7 +98,7 @@ pub fn test_guarded_comparisons() {
     };
     {
         let guard = check;
-        ::cvlr_log::cvlr_log("_", &("assert check == > a != b"));
+        ::cvlr_log::cvlr_log("_", &("assert if check { a != b }"));
         ::cvlr_log::cvlr_log("check", &(guard));
         if guard {
             let lhs = a;
@@ -114,7 +114,7 @@ pub fn test_guarded_comparisons() {
     };
     {
         let guard = a > c;
-        ::cvlr_log::cvlr_log("_", &("assert a > c == > d < p"));
+        ::cvlr_log::cvlr_log("_", &("assert if a > c { d < p }"));
         ::cvlr_log::cvlr_log("a > c", &(guard));
         if guard {
             let lhs = d;
@@ -130,7 +130,7 @@ pub fn test_guarded_comparisons() {
     };
     {
         let guard = x + 1 > 0;
-        ::cvlr_log::cvlr_log("_", &("assert x + 1 > 0 == > y * 2 < z"));
+        ::cvlr_log::cvlr_log("_", &("assert if x + 1 > 0 { y * 2 < z }"));
         ::cvlr_log::cvlr_log("x + 1 > 0", &(guard));
         if guard {
             let lhs = y * 2;

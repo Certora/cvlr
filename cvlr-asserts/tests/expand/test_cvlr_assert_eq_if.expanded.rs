@@ -8,7 +8,7 @@ fn main() {
     let y = 2;
     {
         let guard = x > 0;
-        ::cvlr_log::cvlr_log("_", &("assert x > 0 == > a == b"));
+        ::cvlr_log::cvlr_log("_", &("assert if x > 0 { a == b }"));
         ::cvlr_log::cvlr_log("x > 0", &(guard));
         if guard {
             let lhs = a;
@@ -24,7 +24,7 @@ fn main() {
     };
     {
         let guard = flag;
-        ::cvlr_log::cvlr_log("_", &("assert flag == > x == y"));
+        ::cvlr_log::cvlr_log("_", &("assert if flag { x == y }"));
         ::cvlr_log::cvlr_log("flag", &(guard));
         if guard {
             let lhs = x;
