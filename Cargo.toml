@@ -10,7 +10,8 @@ members = [
     "cvlr-hook",
     "cvlr-macros",
     "cvlr-fixed",
-    "cvlr-derive"
+    "cvlr-derive",
+    "cvlr-decimal",
 ]
 
 [workspace.package]
