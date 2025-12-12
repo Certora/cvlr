@@ -220,11 +220,10 @@ impl PartialEq for NativeIntU64 {
     }
 }
 
+// We silence these two warnings from clippy: this code should be left as-is
+// for the Certora Prover TAC slicer.
+#[allow(clippy::comparison_chain, clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for NativeIntU64 {
-    // We silence these two warnings from clippy: this code should be left as-is
-    // for the Certora Prover TAC slicer.
-    #[allow(clippy::non_canonical_partial_ord_impl)]
-    #[allow(clippy::comparison_chain)]
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         let ord = if self.0 == other.0 {
