@@ -15,6 +15,10 @@ impl<const D: u32> NativeDecimal<D> {
     pub fn as_int(&self) -> NativeInt {
         self.val
     }
+
+    pub fn as_decimal<T: Into<NativeInt>>(v: T) -> Self {
+        Self::new(v.into())
+    }
 }
 
 pub trait AsDecimal<const D: u32> {
@@ -26,7 +30,7 @@ where
     T: Into<NativeInt> + Copy,
 {
     fn as_decimal(&self) -> NativeDecimal<D> {
-        NativeDecimal::new((*self).into())
+        NativeDecimal::as_decimal((*self).into())
     }
 }
 
@@ -45,14 +49,14 @@ impl<const D: u32> core::ops::Deref for NativeDecimal<D> {
 
 impl<const D: u32> Nondet for NativeDecimal<D> {
     fn nondet() -> Self {
-        Self::new(nondet::<NativeInt>())
+        Self::as_decimal(nondet::<NativeInt>())
     }
 }
 
 impl<const D: u32> core::ops::Add<NativeDecimal<D>> for NativeDecimal<D> {
     type Output = Self;
     fn add(self, other: NativeDecimal<D>) -> Self::Output {
-        Self::new(self.val + other.val)
+        Self::as_decimal(self.val + other.val)
     }
 }
 
@@ -62,14 +66,14 @@ where
 {
     type Output = Self;
     fn add(self, other: T) -> Self::Output {
-        Self::new(self.as_int() + other.into())
+        Self::as_decimal(self.as_int() + other.into())
     }
 }
 
 impl<const D: u32> core::ops::Add<NativeDecimal<D>> for NativeInt {
     type Output = NativeDecimal<D>;
     fn add(self, other: NativeDecimal<D>) -> Self::Output {
-        Self::Output::new(self + other.as_int())
+        Self::Output::as_decimal(self + other.as_int())
     }
 }
 
@@ -79,14 +83,14 @@ where
 {
     type Output = Self;
     fn mul(self, other: T) -> Self::Output {
-        Self::new(self.as_int() * other.into())
+        Self::as_decimal(self.as_int() * other.into())
     }
 }
 
 impl<const D: u32> core::ops::Mul<NativeDecimal<D>> for NativeInt {
     type Output = NativeDecimal<D>;
     fn mul(self, other: NativeDecimal<D>) -> Self::Output {
-        Self::Output::new(self * other.as_int())
+        Self::Output::as_decimal(self * other.as_int())
     }
 }
 
@@ -259,5 +263,123 @@ mod tests {
 
         let result = a * 2u64 + b;
         assert_eq!(result.as_int(), 40);
+    }
+
+    #[test]
+    fn test_as_decimal_static_method() {
+        // Test with u8
+        let val: u8 = 42;
+        let decimal: NativeDecimal<2> = NativeDecimal::as_decimal(val);
+        let expected: NativeInt = val.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with u16
+        let val: u16 = 1000;
+        let decimal: NativeDecimal<3> = NativeDecimal::as_decimal(val);
+        let expected: NativeInt = val.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with u32
+        let val: u32 = 50000;
+        let decimal: NativeDecimal<4> = NativeDecimal::as_decimal(val);
+        let expected: NativeInt = val.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with u64
+        let val: u64 = 1000000;
+        let decimal: NativeDecimal<5> = NativeDecimal::as_decimal(val);
+        let expected: NativeInt = val.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with u128
+        let val: u128 = 999999999;
+        let decimal: NativeDecimal<6> = NativeDecimal::as_decimal(val);
+        let expected: NativeInt = val.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with i32 (positive)
+        let val: i32 = 42;
+        let decimal: NativeDecimal<2> = NativeDecimal::as_decimal(val);
+        let expected: NativeInt = val.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with i32 (zero)
+        let val: i32 = 0;
+        let decimal: NativeDecimal<2> = NativeDecimal::as_decimal(val);
+        let expected: NativeInt = val.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with NativeInt directly
+        let val: NativeInt = 12345.into();
+        let decimal: NativeDecimal<7> = NativeDecimal::as_decimal(val);
+        assert_eq!(decimal.as_int(), val);
+
+        // Test with different precision constants
+        let val: u64 = 100;
+        let decimal_2: NativeDecimal<2> = NativeDecimal::as_decimal(val);
+        let decimal_4: NativeDecimal<4> = NativeDecimal::as_decimal(val);
+        let decimal_8: NativeDecimal<8> = NativeDecimal::as_decimal(val);
+
+        // All should have the same underlying value
+        let expected: NativeInt = val.into();
+        assert_eq!(decimal_2.as_int(), expected);
+        assert_eq!(decimal_4.as_int(), expected);
+        assert_eq!(decimal_8.as_int(), expected);
+    }
+
+    #[test]
+    fn test_as_decimal_static_method_edge_cases() {
+        // Test with zero
+        let decimal: NativeDecimal<2> = NativeDecimal::as_decimal(0u64);
+        let expected: NativeInt = 0u64.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with maximum u8
+        let decimal: NativeDecimal<2> = NativeDecimal::as_decimal(u8::MAX);
+        let expected: NativeInt = u8::MAX.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with maximum u16
+        let decimal: NativeDecimal<2> = NativeDecimal::as_decimal(u16::MAX);
+        let expected: NativeInt = u16::MAX.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with maximum u32
+        let decimal: NativeDecimal<2> = NativeDecimal::as_decimal(u32::MAX);
+        let expected: NativeInt = u32::MAX.into();
+        assert_eq!(decimal.as_int(), expected);
+
+        // Test with large u64
+        let val: u64 = 18446744073709551615; // u64::MAX
+        let decimal: NativeDecimal<2> = NativeDecimal::as_decimal(val);
+        let expected: NativeInt = val.into();
+        assert_eq!(decimal.as_int(), expected);
+    }
+
+    #[test]
+    fn test_as_decimal_static_method_consistency() {
+        // Test that as_decimal produces the same result as new
+        let val: NativeInt = 42.into();
+        let decimal_new: NativeDecimal<2> = NativeDecimal::new(val);
+        let decimal_as_decimal: NativeDecimal<2> = NativeDecimal::as_decimal(val);
+        assert_eq!(decimal_new, decimal_as_decimal);
+        assert_eq!(decimal_new.as_int(), decimal_as_decimal.as_int());
+
+        // Test with different types but same value
+        let val_u64: u64 = 100;
+        let val_u32: u32 = 100;
+        let val_u16: u16 = 100;
+        let val_u8: u8 = 100;
+
+        let decimal_u64: NativeDecimal<2> = NativeDecimal::as_decimal(val_u64);
+        let decimal_u32: NativeDecimal<2> = NativeDecimal::as_decimal(val_u32);
+        let decimal_u16: NativeDecimal<2> = NativeDecimal::as_decimal(val_u16);
+        let decimal_u8: NativeDecimal<2> = NativeDecimal::as_decimal(val_u8);
+
+        let expected: NativeInt = val_u64.into();
+        assert_eq!(decimal_u64.as_int(), expected);
+        assert_eq!(decimal_u32.as_int(), expected);
+        assert_eq!(decimal_u16.as_int(), expected);
+        assert_eq!(decimal_u8.as_int(), expected);
     }
 }
