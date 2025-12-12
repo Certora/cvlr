@@ -324,3 +324,53 @@ pub fn cvlr_assume_that(input: TokenStream) -> TokenStream {
 pub fn cvlr_assume_all(input: TokenStream) -> TokenStream {
     assert_that::assume_all_impl(input)
 }
+
+/// Evaluate a condition as a boolean expression using the same DSL syntax as `cvlr_assert_that!`
+///
+/// This macro provides the same DSL syntax as `cvlr_assert_that!` but instead of asserting,
+/// it evaluates the condition as a boolean expression. The result is wrapped in its own scope.
+///
+/// # Syntax
+///
+/// The macro accepts either:
+/// - **Unguarded expression**: `cvlr_eval_that!(condition)`
+/// - **Guarded expression**: `cvlr_eval_that!(if guard { condition })`
+///
+/// The `condition` can be:
+/// - A comparison: `a < b`, `x >= y`, `p == q`, etc.
+/// - A boolean expression: `flag`, `x > 0 && y < 10`, etc.
+///
+/// # Examples
+///
+/// ## Unguarded expressions
+///
+/// ```rust,no_run
+/// use cvlr_macros::cvlr_eval_that;
+///
+/// let x = 5;
+/// let y = 10;
+///
+/// let result = cvlr_eval_that!(x < y);        // expands to: { x < y }
+/// let flag = cvlr_eval_that!(x > 0 && y < 20); // expands to: { x > 0 && y < 20 }
+/// ```
+///
+/// ## Guarded expressions
+///
+/// ```rust,no_run
+/// use cvlr_macros::cvlr_eval_that;
+///
+/// let flag = true;
+/// let a = 1;
+/// let b = 2;
+///
+/// let result = cvlr_eval_that!(if flag { a < b });  // expands to: { if flag { a < b } else { true } }
+/// ```
+///
+/// # Expansion
+///
+/// - Unguarded expressions expand to `{ condition }`
+/// - Guarded expressions expand to `{ if guard { condition } else { true } }`
+#[proc_macro]
+pub fn cvlr_eval_that(input: TokenStream) -> TokenStream {
+    assert_that::eval_that_impl(input)
+}
