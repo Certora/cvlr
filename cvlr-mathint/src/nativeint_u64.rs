@@ -214,6 +214,7 @@ impl NativeIntU64 {
 }
 
 impl PartialEq for NativeIntU64 {
+    #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         unsafe { CVT_nativeint_u64_eq(self.0, other.0) != 0 }
     }
@@ -254,6 +255,7 @@ impl PartialOrd for NativeIntU64 {
 }
 
 impl Ord for NativeIntU64 {
+    #[inline(always)]
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         if self.lt(other) {
             core::cmp::Ordering::Less
@@ -333,52 +335,58 @@ macro_rules! impl_from_for_small_uint {
     };
 }
 
-macro_rules! impl_core_traits_for_uint {
-    ($uint:ty) => {
-        impl core::ops::Add<$uint> for NativeIntU64 {
+macro_rules! impl_core_traits_for_num {
+    ($num:ty) => {
+        impl core::ops::Add<$num> for NativeIntU64 {
             type Output = Self;
 
-            fn add(self, rhs: $uint) -> Self::Output {
+            fn add(self, rhs: $num) -> Self::Output {
                 self + Self::from(rhs)
             }
         }
 
-        impl core::ops::Mul<$uint> for NativeIntU64 {
+        impl core::ops::Mul<$num> for NativeIntU64 {
             type Output = Self;
 
-            fn mul(self, rhs: $uint) -> Self::Output {
+            fn mul(self, rhs: $num) -> Self::Output {
                 self * Self::from(rhs)
             }
         }
 
-        impl core::ops::Div<$uint> for NativeIntU64 {
+        impl core::ops::Div<$num> for NativeIntU64 {
             type Output = Self;
 
-            fn div(self, rhs: $uint) -> Self::Output {
+            fn div(self, rhs: $num) -> Self::Output {
                 self / Self::from(rhs)
             }
         }
 
-        impl PartialEq<$uint> for NativeIntU64 {
-            fn eq(&self, other: &$uint) -> bool {
+        impl PartialEq<$num> for NativeIntU64 {
+            #[inline(always)]
+            fn eq(&self, other: &$num) -> bool {
                 *self == Self::from(*other)
             }
         }
 
-        impl PartialOrd<$uint> for NativeIntU64 {
-            fn partial_cmp(&self, other: &$uint) -> Option<core::cmp::Ordering> {
+        impl PartialOrd<$num> for NativeIntU64 {
+            #[inline(always)]
+            fn partial_cmp(&self, other: &$num) -> Option<core::cmp::Ordering> {
                 self.partial_cmp(&Self::from(*other))
             }
-            fn lt(&self, other: &$uint) -> bool {
+            #[inline(always)]
+            fn lt(&self, other: &$num) -> bool {
                 *self < Self::from(*other)
             }
-            fn le(&self, other: &$uint) -> bool {
+            #[inline(always)]
+            fn le(&self, other: &$num) -> bool {
                 *self <= Self::from(*other)
             }
-            fn gt(&self, other: &$uint) -> bool {
+            #[inline(always)]
+            fn gt(&self, other: &$num) -> bool {
                 *self > Self::from(*other)
             }
-            fn ge(&self, other: &$uint) -> bool {
+            #[inline(always)]
+            fn ge(&self, other: &$num) -> bool {
                 *self >= Self::from(*other)
             }
         }
@@ -400,11 +408,11 @@ impl From<u128> for NativeIntU64 {
     }
 }
 
-impl_core_traits_for_uint!(u8);
-impl_core_traits_for_uint!(u16);
-impl_core_traits_for_uint!(u32);
-impl_core_traits_for_uint!(u64);
-impl_core_traits_for_uint!(u128);
+impl_core_traits_for_num!(u8);
+impl_core_traits_for_num!(u16);
+impl_core_traits_for_num!(u32);
+impl_core_traits_for_num!(u64);
+impl_core_traits_for_num!(u128);
 
 impl From<i32> for NativeIntU64 {
     fn from(value: i32) -> Self {
@@ -415,7 +423,7 @@ impl From<i32> for NativeIntU64 {
         }
     }
 }
-impl_core_traits_for_uint!(i32);
+impl_core_traits_for_num!(i32);
 
 impl From<NativeIntU64> for u64 {
     fn from(value: NativeIntU64) -> Self {
@@ -434,18 +442,21 @@ impl From<NativeIntU64> for u128 {
 }
 
 impl From<&[u64; 2]> for NativeIntU64 {
+    #[inline(always)]
     fn from(value: &[u64; 2]) -> Self {
         Self::from_u128(value[0], value[1])
     }
 }
 
 impl From<&[u64; 4]> for NativeIntU64 {
+    #[inline(always)]
     fn from(value: &[u64; 4]) -> Self {
         Self::from_u256(value[0], value[1], value[2], value[3])
     }
 }
 
 impl From<&[u8; 32]> for NativeIntU64 {
+    #[inline(always)]
     fn from(value: &[u8; 32]) -> Self {
         let (w0, rest) = value.split_at(8);
         let w0 = u64::from_le_bytes(w0.try_into().unwrap());
@@ -459,6 +470,7 @@ impl From<&[u8; 32]> for NativeIntU64 {
 }
 
 impl From<&[u8]> for NativeIntU64 {
+    #[inline(always)]
     fn from(value: &[u8]) -> Self {
         let v: &[u8; 32] = value.try_into().unwrap();
         Self::from(v)
