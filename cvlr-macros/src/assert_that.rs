@@ -264,3 +264,37 @@ pub fn assume_all_impl(input: TokenStream) -> TokenStream {
     }
     .into()
 }
+
+fn analyze_eval_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
+    if let Some(guard_expr) = guard {
+        // Guarded expression: if guard { condition } else { true }
+        Ok(quote! {
+            {
+                if #guard_expr {
+                    #condition
+                } else {
+                    true
+                }
+            }
+        })
+    } else {
+        // Unguarded expression: { condition }
+        Ok(quote! {
+            {
+                #condition
+            }
+        })
+    }
+}
+
+pub fn eval_that_impl(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as AssertThatInput);
+
+    // Generate the boolean expression wrapped in a scope
+    let expanded = match analyze_eval_condition(&input.condition, input.guard.as_ref()) {
+        Ok(ts) => ts,
+        Err(e) => e.to_compile_error(),
+    };
+
+    expanded.into()
+}
