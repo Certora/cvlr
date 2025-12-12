@@ -14,4 +14,5 @@ fn test_cvlr_assert_that_compiles() {
     t.pass("tests/expand/test_cvlr_assert_all.rs");
     t.pass("tests/expand/test_cvlr_assume_that.rs");
     t.pass("tests/expand/test_cvlr_assume_all.rs");
+    t.pass("tests/expand/test_cvlr_eval_that.rs");
 }
