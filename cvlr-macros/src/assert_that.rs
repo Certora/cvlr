@@ -298,3 +298,42 @@ pub fn eval_that_impl(input: TokenStream) -> TokenStream {
 
     expanded.into()
 }
+
+pub fn eval_all_impl(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as AssertAllInput);
+
+    // Generate evaluated expressions for each input
+    let mut evaluated_exprs = Vec::new();
+
+    for expr in &input.expressions {
+        match analyze_eval_condition(&expr.condition, expr.guard.as_ref()) {
+            Ok(eval_expr) => evaluated_exprs.push(eval_expr),
+            // stop on first error
+            Err(e) => return e.to_compile_error().into(),
+        }
+    }
+
+    // Create the accumulator variable name
+    let res_var = syn::Ident::new("__cvlr_eval_all_res", Span::call_site());
+
+    // Build the block that accumulates results using shadowing
+    // Start with initial value
+    let mut statements = vec![quote! { let #res_var = true; }];
+
+    // Add accumulation statements for each expression
+    for eval_expr in &evaluated_exprs {
+        statements.push(quote! {
+            let #res_var = #res_var && #eval_expr;
+        });
+    }
+
+    // Add final return
+    statements.push(quote! { #res_var });
+
+    quote! {
+        {
+            #(#statements)*
+        }
+    }
+    .into()
+}

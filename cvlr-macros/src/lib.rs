@@ -374,3 +374,60 @@ pub fn cvlr_assume_all(input: TokenStream) -> TokenStream {
 pub fn cvlr_eval_that(input: TokenStream) -> TokenStream {
     assert_that::eval_that_impl(input)
 }
+
+/// Evaluate multiple conditions as a boolean expression using the same DSL syntax as `cvlr_eval_that!`
+///
+/// This macro takes a list of DSL expressions (same syntax as `cvlr_eval_that!`)
+/// and evaluates them all, aggregating the results with `&&`. The result is wrapped in its own scope.
+/// Expressions can be separated by either commas (`,`) or semicolons (`;`).
+///
+/// # Syntax
+///
+/// Expressions can be separated by commas or semicolons:
+/// - `cvlr_eval_all!(expr1, expr2, expr3);`
+/// - `cvlr_eval_all!(expr1; expr2; expr3);`
+/// - `cvlr_eval_all!(expr1, expr2; expr3);`  // Mixed separators are also allowed
+///
+/// Each expression follows the same syntax as `cvlr_eval_that!`:
+/// - Unguarded: `condition`
+/// - Guarded: `if guard { condition }`
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use cvlr_macros::cvlr_eval_all;
+///
+/// let x = 5;
+/// let y = 10;
+/// let c = true;
+///
+/// // Multiple unguarded expressions
+/// let result = cvlr_eval_all!(x > 0, y < 20, x < y);
+///
+/// // Mixed guarded and unguarded
+/// let result = cvlr_eval_all!(x > 0, if c { x < y });
+///
+/// // Using semicolons
+/// let result = cvlr_eval_all!(x > 0; y < 20; if c { x < y });
+/// ```
+///
+/// # Expansion
+///
+/// This macro expands to a block that evaluates each expression and aggregates with `&&`:
+///
+/// ```text
+/// // Input:
+/// cvlr_eval_all!(x > 0, y > 0);
+///
+/// // Expands to:
+/// {
+///     let mut __cvlr_eval_all_res = true;
+///     __cvlr_eval_all_res = __cvlr_eval_all_res && { x > 0 };
+///     __cvlr_eval_all_res = __cvlr_eval_all_res && { y > 0 };
+///     __cvlr_eval_all_res
+/// }
+/// ```
+#[proc_macro]
+pub fn cvlr_eval_all(input: TokenStream) -> TokenStream {
+    assert_that::eval_all_impl(input)
+}
