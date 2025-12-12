@@ -25,6 +25,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cvlr-decimal"
+version = "0.4.1"
+dependencies = [
+ "cvlr",
+ "cvlr-asserts",
+ "cvlr-log",
+ "cvlr-mathint",
+ "cvlr-nondet",
+]
+
+[[package]]
 name = "cvlr-derive"
 version = "0.4.1"
 dependencies = [
@@ -40,9 +51,11 @@ dependencies = [
 name = "cvlr-early-panic"
 version = "0.4.1"
 dependencies = [
+ "macrotest",
  "proc-macro2",
  "quote",
  "syn",
+ "trybuild",
 ]
 
 [[package]]
@@ -92,8 +105,8 @@ dependencies = [
 name = "cvlr-mathint"
 version = "0.4.1"
 dependencies = [
+ "cvlr",
  "cvlr-asserts",
- "cvlr-mathint",
  "cvlr-nondet",
 ]
 
