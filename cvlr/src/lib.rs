@@ -18,6 +18,14 @@ pub mod log {
     pub use cvlr_log::*;
 }
 
+pub mod macros {
+    pub use cvlr_macros::*;
+}
+
+pub mod derive {
+    pub use cvlr_derive::*;
+}
+
 pub mod prelude {
     pub use super::asserts::*;
 
@@ -35,6 +43,13 @@ pub mod prelude {
     pub use cvlr_hook::cvlr_hook_on_exit as hook_on_exit;
     pub use cvlr_macros::mock_fn;
     pub use cvlr_macros::rule;
+
+    pub use cvlr_macros::{
+        cvlr_assert_all, cvlr_assert_that, cvlr_assume_all, cvlr_assume_that, cvlr_eval_all,
+        cvlr_eval_that,
+    };
+
+    pub use cvlr_derive::{CvlrLog, Nondet};
 }
 
 pub use prelude::*;

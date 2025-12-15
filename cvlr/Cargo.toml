@@ -26,3 +26,6 @@ cvlr-nondet = { workspace = true, default-features = false}
 cvlr-macros = { workspace = true }
 cvlr-early-panic = { workspace = true }
 cvlr-hook = { workspace = true }
+cvlr-derive = { workspace = true }
+cvlr-decimal = { workspace = true }
+cvlr-fixed = { workspace = true }
