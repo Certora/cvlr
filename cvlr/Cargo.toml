@@ -22,8 +22,6 @@ pre-release-replacements = [
   {file="../CHANGELOG.md", search="<!-- next-url -->", replace="<!-- next-url -->\n[Unreleased]: https://github.com/crate-ci/cargo-release/compare/{{tag_name}}...HEAD", exactly=1},
 ]
 
-
-
 [features]
 default = ["cvlr-nondet/std"]
 vacuity = ["cvlr-asserts/vacuity"]
@@ -38,4 +36,7 @@ cvlr-nondet = { workspace = true, default-features = false}
 cvlr-macros = { workspace = true }
 cvlr-early-panic = { workspace = true }
 cvlr-hook = { workspace = true }
+cvlr-derive = { workspace = true }
+cvlr-decimal = { workspace = true }
+cvlr-fixed = { workspace = true }
 
