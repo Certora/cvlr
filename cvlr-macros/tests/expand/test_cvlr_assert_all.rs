@@ -10,6 +10,10 @@ pub fn test_assert_all_comma_separated() {
     // Multiple unguarded comparisons with commas
     cvlr_assert_all!(x > 0, y < 20, z > x);
     cvlr_assert_all!(a < b, x == 5, y != 0);
+
+    // Group-wrapped comparisons
+    cvlr_assert_all!((x > 0), (y < 20), (z > x));
+    cvlr_assert_all!((a < b), ((x == 5)), (y != 0));
 }
 
 pub fn test_assert_all_semicolon_separated() {
@@ -65,6 +69,10 @@ pub fn test_assert_all_boolean_expressions() {
     // Boolean expressions
     cvlr_assert_all!(flag, x > 0 && y < 10);
     cvlr_assert_all!(if flag { x > 0 }, if x > 0 { y > 0 && z < 10 });
+
+    // Group-wrapped boolean expressions
+    cvlr_assert_all!((flag), (x > 0 && y < 10));
+    cvlr_assert_all!((((flag))), ((x > 0 && y < 10)));
 }
 
 pub fn main() {}
