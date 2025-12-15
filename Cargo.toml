@@ -12,6 +12,7 @@ members = [
     "cvlr-fixed",
     "cvlr-derive",
     "cvlr-decimal",
+    "cvlr-spec",
 ]
 
 [workspace.package]

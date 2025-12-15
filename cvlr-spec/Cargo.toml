@@ -1,0 +1,27 @@
+[package]
+name = "cvlr-spec"
+description = "Specification and Logic primitives for CVLR" 
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
+authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+
+[features]
+rt = ["cvlr-mathint/rt", "cvlr-nondet/rt", "cvlr-asserts/rt", "cvlr-log/rt"]
+
+[dependencies]
+cvlr-nondet = { workspace = true, default-features = false }
+cvlr-asserts = { workspace = true }
+cvlr-mathint = { workspace = true }
+cvlr-log = { workspace = true }
+cvlr-macros = { workspace = true }
+
+[dev-dependencies]
+cvlr = { path = "../cvlr", features = ["rt", "no-loc"] }
