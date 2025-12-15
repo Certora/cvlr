@@ -20,6 +20,11 @@ pub fn test() {
     cvlr_assert_that!(!condition);
     cvlr_assert_that!(x + y > 0);
 
+    // Group-wrapped boolean expressions
+    cvlr_assert_that!((flag));
+    cvlr_assert_that!((x > 0 && y < 10));
+    cvlr_assert_that!(((a || b)));
+
     // Guarded boolean expressions
     cvlr_assert_that!(if guard { condition });
     cvlr_assert_that!(if x > 0 { y > 0 && z < 10 });

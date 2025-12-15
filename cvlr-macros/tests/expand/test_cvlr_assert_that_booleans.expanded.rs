@@ -43,6 +43,21 @@ pub fn test() {
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };
     };
+    {
+        let c_ = flag;
+        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+        ::cvlr_asserts::cvlr_assert_checked(c_);
+    };
+    {
+        let c_ = x > 0 && y < 10;
+        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+        ::cvlr_asserts::cvlr_assert_checked(c_);
+    };
+    {
+        let c_ = a || b;
+        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+        ::cvlr_asserts::cvlr_assert_checked(c_);
+    };
     if guard {
         {
             let c_ = condition;

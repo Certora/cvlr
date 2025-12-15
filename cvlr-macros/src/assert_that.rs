@@ -60,7 +60,18 @@ pub fn assert_that_impl(input: TokenStream) -> TokenStream {
     expanded.into()
 }
 
+// Helper function to unwrap Expr::Group and Expr::Paren expressions
+fn unwrap_groups(expr: &Expr) -> &Expr {
+    match expr {
+        Expr::Group(group) => unwrap_groups(&group.expr),
+        Expr::Paren(paren) => unwrap_groups(&paren.expr),
+        _ => expr,
+    }
+}
+
 fn analyze_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
+    // Unwrap any groups first
+    let condition = unwrap_groups(condition);
     // Check if condition is a binary comparison
     if let Expr::Binary(bin) = condition {
         let op = &bin.op;
@@ -171,6 +182,9 @@ pub fn assert_all_impl(input: TokenStream) -> TokenStream {
 }
 
 fn analyze_assume_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
+    // Unwrap any groups first
+    let condition = unwrap_groups(condition);
+
     // Check if condition is a binary comparison
     if let Expr::Binary(bin) = condition {
         let op = &bin.op;
@@ -258,7 +272,6 @@ pub fn assume_all_impl(input: TokenStream) -> TokenStream {
             Err(e) => return e.to_compile_error().into(),
         }
     }
-
     quote! {
         #(#assumptions)*
     }
