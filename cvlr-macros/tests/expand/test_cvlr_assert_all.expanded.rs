@@ -77,6 +77,78 @@ pub fn test_assert_all_comma_separated() {
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };
     };
+    {
+        let lhs = x;
+        let rhs = 0;
+        ::cvlr_log::cvlr_log("_", &("assert x > 0"));
+        ::cvlr_log::cvlr_log("x", &(lhs));
+        ::cvlr_log::cvlr_log("0", &(rhs));
+        {
+            let c_ = lhs > rhs;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    };
+    {
+        let lhs = y;
+        let rhs = 20;
+        ::cvlr_log::cvlr_log("_", &("assert y < 20"));
+        ::cvlr_log::cvlr_log("y", &(lhs));
+        ::cvlr_log::cvlr_log("20", &(rhs));
+        {
+            let c_ = lhs < rhs;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    };
+    {
+        let lhs = z;
+        let rhs = x;
+        ::cvlr_log::cvlr_log("_", &("assert z > x"));
+        ::cvlr_log::cvlr_log("z", &(lhs));
+        ::cvlr_log::cvlr_log("x", &(rhs));
+        {
+            let c_ = lhs > rhs;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    };
+    {
+        let lhs = a;
+        let rhs = b;
+        ::cvlr_log::cvlr_log("_", &("assert a < b"));
+        ::cvlr_log::cvlr_log("a", &(lhs));
+        ::cvlr_log::cvlr_log("b", &(rhs));
+        {
+            let c_ = lhs < rhs;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    };
+    {
+        let lhs = x;
+        let rhs = 5;
+        ::cvlr_log::cvlr_log("_", &("assert x == 5"));
+        ::cvlr_log::cvlr_log("x", &(lhs));
+        ::cvlr_log::cvlr_log("5", &(rhs));
+        {
+            let c_ = lhs == rhs;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    };
+    {
+        let lhs = y;
+        let rhs = 0;
+        ::cvlr_log::cvlr_log("_", &("assert y != 0"));
+        ::cvlr_log::cvlr_log("y", &(lhs));
+        ::cvlr_log::cvlr_log("0", &(rhs));
+        {
+            let c_ = lhs != rhs;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    };
 }
 pub fn test_assert_all_semicolon_separated() {
     let x = 5;
@@ -416,5 +488,25 @@ pub fn test_assert_all_boolean_expressions() {
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };
     }
+    {
+        let c_ = flag;
+        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+        ::cvlr_asserts::cvlr_assert_checked(c_);
+    };
+    {
+        let c_ = x > 0 && y < 10;
+        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+        ::cvlr_asserts::cvlr_assert_checked(c_);
+    };
+    {
+        let c_ = flag;
+        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+        ::cvlr_asserts::cvlr_assert_checked(c_);
+    };
+    {
+        let c_ = x > 0 && y < 10;
+        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+        ::cvlr_asserts::cvlr_assert_checked(c_);
+    };
 }
 pub fn main() {}

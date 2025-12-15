@@ -10,6 +10,10 @@ pub fn test_assume_all_comma_separated() {
     // Multiple unguarded assumptions with commas
     cvlr_assume_all!(x > 0, y < 20, z > x);
     cvlr_assume_all!(a < b, x == 5, y != 0);
+
+    // Group-wrapped comparisons
+    cvlr_assume_all!((x > 0), (y < 20), (z > x));
+    cvlr_assume_all!((a < b), ((x == 5)), (y != 0));
 }
 
 pub fn test_assume_all_semicolon_separated() {
@@ -53,6 +57,11 @@ pub fn test_assume_all_mixed_guarded_unguarded() {
     cvlr_assume_all!(x > 0, if flag { x < y });
     cvlr_assume_all!(if flag { a < b }, y > 0);
     cvlr_assume_all!(x > 0, if flag { a < b }, y < 20);
+
+    // Mixed with group-wrapped expressions
+    cvlr_assume_all!((x > 0), if flag { (x < y) });
+    cvlr_assume_all!(if flag { (a < b) }, (y > 0));
+    cvlr_assume_all!((x > 0), if flag { ((a < b)) }, (y < 20));
 }
 
 pub fn main() {}

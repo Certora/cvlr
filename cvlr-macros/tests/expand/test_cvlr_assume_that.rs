@@ -22,6 +22,18 @@ pub fn test_assume_comparisons() {
     // With expressions
     cvlr_assume_that!(x + 1 < y * 2);
     cvlr_assume_that!(a > c);
+
+    // Group-wrapped comparisons
+    cvlr_assume_that!((a < b));
+    cvlr_assume_that!((x > y));
+    cvlr_assume_that!((p <= q));
+    cvlr_assume_that!((m >= n));
+    cvlr_assume_that!((x == y));
+    cvlr_assume_that!((a != b));
+
+    // Nested groups
+    cvlr_assume_that!(((a < b)));
+    cvlr_assume_that!((((x > y))));
 }
 
 pub fn test_assume_guarded_comparisons() {
@@ -34,6 +46,11 @@ pub fn test_assume_guarded_comparisons() {
     // Guarded comparisons
     cvlr_assume_that!(if flag { a < b });
     cvlr_assume_that!(if x > 0 { y <= 20 });
+
+    // Guarded comparisons with groups
+    cvlr_assume_that!(if flag { (a < b) });
+    cvlr_assume_that!(if x > 0 { (y <= 20) });
+    cvlr_assume_that!(if flag { ((a < b)) });
 }
 
 pub fn test_assume_booleans() {

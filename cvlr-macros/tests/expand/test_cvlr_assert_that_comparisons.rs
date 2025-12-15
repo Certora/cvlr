@@ -22,6 +22,18 @@ pub fn test_comparisons() {
     // With expressions
     cvlr_assert_that!(x + 1 < y * 2);
     cvlr_assert_that!(a > c);
+
+    // Group-wrapped comparisons
+    cvlr_assert_that!((a < b));
+    cvlr_assert_that!((x > y));
+    cvlr_assert_that!((p <= q));
+    cvlr_assert_that!((m >= n));
+    cvlr_assert_that!((x == y));
+    cvlr_assert_that!((a != b));
+
+    // Nested groups
+    cvlr_assert_that!(((a < b)));
+    cvlr_assert_that!((((x > y))));
 }
 
 pub fn main() {}
