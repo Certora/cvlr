@@ -33,6 +33,13 @@
 //! Use [`cvlr_spec`] to create a specification from requires and ensures clauses,
 //! or [`cvlr_invar_spec`] for specifications with invariants.
 //!
+//! ## Lemmas
+//!
+//! The [`CvlrLemma`](spec::CvlrLemma) trait represents a lemma: a logical statement where if the
+//! preconditions (requires) hold, then the postconditions (ensures) must also hold.
+//! Use [`cvlr_lemma!`] to define lemmas, or [`cvlr_predicate!`] to create anonymous
+//! predicates for use in lemmas.
+//!
 //! # Examples
 //!
 //! ```ignore

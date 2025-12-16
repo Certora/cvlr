@@ -179,24 +179,118 @@ where
     CvlrInvarSpec(assumption, invariant)
 }
 
+/// A trait for defining lemmas with preconditions (requires) and postconditions (ensures).
+///
+/// A lemma is a logical statement that can be verified: if the preconditions hold,
+/// then the postconditions must also hold. This trait provides a way to define
+/// such lemmas and verify them using the CVLR verification framework.
+///
+/// # Type Parameters
+///
+/// * `Ctx` - The context type representing the state. Must implement [`Nondet`](cvlr_nondet::Nondet)
+///   and [`CvlrLog`](cvlr_log::CvlrLog) to support verification.
+///
+/// # Methods
+///
+/// Implementations must provide:
+/// - [`requires`](CvlrLemma::requires) - Returns a boolean expression representing the preconditions
+/// - [`ensures`](CvlrLemma::ensures) - Returns a boolean expression representing the postconditions
+///
+/// The trait provides default implementations for:
+/// - [`verify`](CvlrLemma::verify) - Verifies the lemma with a non-deterministic context
+/// - [`verify_with_context`](CvlrLemma::verify_with_context) - Verifies the lemma with a specific context
+/// - [`apply`](CvlrLemma::apply) - Applies the lemma (assumes requires, asserts ensures)
+///
+/// # Usage
+///
+/// Lemmas are typically created using the [`cvlr_lemma!`] macro:
+///
+/// ```ignore
+/// extern crate cvlr;
+/// use cvlr_spec::cvlr_lemma;
+///
+/// // Counter must implement Nondet and CvlrLog for lemma verification
+/// #[derive(cvlr::derive::Nondet, cvlr::derive::CvlrLog)]
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// cvlr_lemma! {
+///     CounterPositiveLemma(c: Counter) {
+///         requires -> {
+///             c.value > 0
+///         }
+///         ensures -> {
+///             c.value > 0
+///         }
+///     }
+/// }
+///
+/// // Verify the lemma
+/// let lemma = CounterPositiveLemma;
+/// lemma.verify();
+/// ```
+///
+/// # Verification
+///
+/// When verifying a lemma:
+/// 1. The preconditions (requires) are assumed to hold
+/// 2. The postconditions (ensures) are asserted to hold
+///
+/// If the postconditions don't hold when the preconditions are assumed,
+/// the verification will fail.
 pub trait CvlrLemma<Ctx>
 where
     Ctx: cvlr_nondet::Nondet + cvlr_log::CvlrLog,
 {
+    /// Returns a boolean expression representing the preconditions (requires) of the lemma.
+    ///
+    /// This expression will be assumed to hold during verification.
     fn requires(&self) -> impl CvlrBoolExpr<Ctx>;
+
+    /// Returns a boolean expression representing the postconditions (ensures) of the lemma.
+    ///
+    /// This expression will be asserted to hold during verification.
     fn ensures(&self) -> impl CvlrBoolExpr<Ctx>;
 
+    /// Verifies the lemma with a non-deterministic context.
+    ///
+    /// This method:
+    /// 1. Creates a non-deterministic context of type `Ctx`
+    /// 2. Logs the context using [`clog!`](cvlr_log::clog)
+    /// 3. Calls [`verify_with_context`](CvlrLemma::verify_with_context) with that context
+    ///
+    /// This is useful for verifying lemmas over all possible contexts.
     fn verify(&self) {
         let ctx = cvlr_nondet::nondet::<Ctx>();
         cvlr_log::clog!(ctx);
         self.verify_with_context(&ctx);
     }
 
+    /// Verifies the lemma with a specific context.
+    ///
+    /// This method:
+    /// 1. Assumes the preconditions (requires) hold for the given context
+    /// 2. Asserts that the postconditions (ensures) hold for the given context
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context to verify the lemma with
     fn verify_with_context(&self, ctx: &Ctx) {
         self.requires().assume(ctx);
         self.ensures().assert(ctx);
     }
 
+    /// Applies the lemma to a context.
+    ///
+    /// This method assumes the preconditions and asserts the postconditions,
+    /// which is useful for applying lemmas in proofs. It has the same behavior
+    /// as [`verify_with_context`](CvlrLemma::verify_with_context), but the name
+    /// emphasizes that this is for applying the lemma rather than verifying it.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context to apply the lemma to
     fn apply(&self, ctx: &Ctx) {
         self.requires().assume(ctx);
         self.ensures().assert(ctx);

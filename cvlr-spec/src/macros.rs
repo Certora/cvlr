@@ -234,6 +234,60 @@ macro_rules! cvlr_def_state_pair_predicates {
     };
 }
 
+/// Creates an anonymous predicate (boolean expression) over a context type.
+///
+/// This macro creates an anonymous predicate that implements [`CvlrBoolExpr`](crate::CvlrBoolExpr) for the
+/// specified context type. Unlike [`cvlr_def_predicate!`], this macro creates an
+/// unnamed predicate that can be used inline without defining a separate type.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_predicate! {
+///     | <context_var> : <context_type> | -> {
+///         <expression1>;
+///         <expression2>;
+///         ...
+///     }
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * `context_var` - The variable name to use for the context in the predicate body
+/// * `context_type` - The type of the context
+/// * `expressions` - One or more expressions that form the predicate body
+///
+/// # Returns
+///
+/// Returns a value implementing [`CvlrBoolExpr<Ctx>`](crate::CvlrBoolExpr) that can be evaluated,
+/// asserted, or assumed.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_spec::cvlr_predicate;
+///
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// let ctx = Counter { value: 5 };
+///
+/// // Create an anonymous predicate
+/// let pred = cvlr_predicate! { | c : Counter | -> {
+///     c.value > 0;
+///     c.value < 100
+/// } };
+///
+/// assert!(pred.eval(&ctx));
+/// ```
+///
+/// Note: This example is marked `ignore` because it doesn't require special setup.
+/// In actual usage, predicates are often used within lemmas or other verification contexts.
+///
+/// This macro is often used internally by [`cvlr_lemma!`] to create the requires
+/// and ensures predicates.
 #[macro_export]
 macro_rules! cvlr_predicate {
     (| $c:ident : $ctx: ident | -> { $( $e: expr );* $(;)? } ) => {
@@ -246,19 +300,106 @@ macro_rules! cvlr_predicate {
     };
 }
 
-// cvlr_lemma! {
-//     UpdatePriceSolvencyLemma (c: UpdatePriceSolvencyCtx) {
-//         requires -> {
-//             c.supply_price.as_int().is_u64();
-//             c.borrow_price.as_int().is_u64();
-//             c.supply_price.as_int() >= EXCHANGE_PRICES_PRECISION as u64;
-//             c.borrow_price.as_int() >= EXCHANGE_PRICES_PRECISION as u64;
-//         }
-//     }
-//     ensures -> {
-//         c.supply_delta <= c.borrow_delta
-//     }
-// }
+/// Defines a lemma with preconditions (requires) and postconditions (ensures).
+///
+/// This macro creates a new type implementing [`CvlrLemma`](spec::CvlrLemma) for the specified context.
+/// A lemma is a logical statement: if the preconditions hold, then the postconditions
+/// must also hold. Lemmas can be verified using the [`verify`](spec::CvlrLemma::verify) or
+/// [`verify_with_context`](spec::CvlrLemma::verify_with_context) methods.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_lemma! {
+///     <name> ( <context_var> : <context_type> ) {
+///         requires -> {
+///             <requires_expr1>;
+///             <requires_expr2>;
+///             ...
+///         }
+///         ensures -> {
+///             <ensures_expr1>;
+///             <ensures_expr2>;
+///             ...
+///         }
+///     }
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * `name` - The name of the lemma type to create
+/// * `context_var` - The variable name to use for the context in the requires/ensures clauses
+/// * `context_type` - The type of the context (must implement [`Nondet`](cvlr_nondet::Nondet) and [`CvlrLog`](cvlr_log::CvlrLog))
+/// * `requires` - One or more expressions that form the preconditions
+/// * `ensures` - One or more expressions that form the postconditions
+///
+/// # Returns
+///
+/// Creates a struct with the given name that implements [`CvlrLemma<Ctx>`](spec::CvlrLemma).
+///
+/// # Examples
+///
+/// ```ignore
+/// extern crate cvlr;
+/// use cvlr_spec::cvlr_lemma;
+///
+/// // Counter must implement Nondet and CvlrLog for lemma verification
+/// #[derive(cvlr::derive::Nondet, cvlr::derive::CvlrLog)]
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Define a lemma: if value > 0, then value > 0 (trivial but demonstrates syntax)
+/// cvlr_lemma! {
+///     CounterPositiveLemma(c: Counter) {
+///         requires -> {
+///             c.value > 0
+///         }
+///         ensures -> {
+///             c.value > 0
+///         }
+///     }
+/// }
+///
+/// // Use the lemma
+/// let lemma = CounterPositiveLemma;
+/// lemma.verify(); // Verifies the lemma holds for all contexts
+/// ```
+///
+/// More complex example:
+///
+/// ```ignore
+/// extern crate cvlr;
+/// use cvlr_spec::cvlr_lemma;
+///
+/// #[derive(cvlr::derive::Nondet, cvlr::derive::CvlrLog)]
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// cvlr_lemma! {
+///     CounterDoublesLemma(c: Counter) {
+///         requires -> {
+///             c.value > 0;
+///             c.value < 100
+///         }
+///         ensures -> {
+///             c.value > 0;
+///             c.value * 2 > c.value
+///         }
+///     }
+/// }
+/// ```
+///
+/// # Verification
+///
+/// When verifying a lemma:
+/// 1. The preconditions (requires) are assumed to hold
+/// 2. The postconditions (ensures) are asserted to hold
+///
+/// If the postconditions don't hold when the preconditions are assumed,
+/// the verification will fail.
 #[macro_export]
 macro_rules! cvlr_lemma {
     ($name: ident ( $c:ident : $ctx: ident ) {
