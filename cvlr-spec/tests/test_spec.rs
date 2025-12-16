@@ -2,10 +2,11 @@
 
 extern crate cvlr;
 
+use cvlr_spec::spec::CvlrLemma;
 use cvlr_spec::*;
 
 // Test context type
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, cvlr::derive::Nondet, cvlr::derive::CvlrLog)]
 struct TestCtx {
     x: i32,
     y: i32,
@@ -604,4 +605,270 @@ fn test_cvlr_def_state_pair_predicates() {
     assert!(XIncreased.eval(&pair2));
     assert!(!YIncreased.eval(&pair2));
     assert!(!BothIncreased.eval(&pair2));
+}
+
+#[test]
+fn test_cvlr_predicate() {
+    // Test cvlr_predicate! macro creates an anonymous predicate
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+
+    let pred = cvlr_predicate! { | c : TestCtx | -> {
+        c.x > 0;
+        c.y > 0
+    } };
+
+    assert!(pred.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!pred.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_predicate_single_condition() {
+    let ctx = TestCtx {
+        x: 5,
+        y: 0,
+        flag: false,
+    };
+
+    let pred = cvlr_predicate! { | c : TestCtx | -> {
+        c.x > 0
+    } };
+
+    assert!(pred.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 0,
+        flag: false,
+    };
+    assert!(!pred.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_lemma() {
+    // Test cvlr_lemma! macro creates a lemma
+    cvlr_lemma! {
+        TestLemma(c: TestCtx) {
+            requires -> {
+                c.x > 0
+            }
+            ensures -> {
+                c.x > 0;
+                c.y >= 0
+            }
+        }
+    }
+
+    let lemma = TestLemma;
+
+    // Test requires() returns a predicate
+    let ctx1 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    assert!(lemma.requires().eval(&ctx1));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!lemma.requires().eval(&ctx2));
+
+    // Test ensures() returns a predicate
+    assert!(lemma.ensures().eval(&ctx1));
+
+    let ctx3 = TestCtx {
+        x: 5,
+        y: -1,
+        flag: true,
+    };
+    assert!(!lemma.ensures().eval(&ctx3));
+}
+
+#[test]
+fn test_cvlr_lemma_verify_with_context() {
+    cvlr_lemma! {
+        PositiveXLemma(c: TestCtx) {
+            requires -> {
+                c.x > 0
+            }
+            ensures -> {
+                c.x > 0
+            }
+        }
+    }
+
+    let lemma = PositiveXLemma;
+
+    // Test verify_with_context - should assume requires and assert ensures
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+
+    // This should not panic since requires and ensures both hold
+    lemma.verify_with_context(&ctx);
+}
+
+#[test]
+fn test_cvlr_lemma_apply() {
+    cvlr_lemma! {
+        XAndYPositiveLemma(c: TestCtx) {
+            requires -> {
+                c.x > 0
+            }
+            ensures -> {
+                c.x > 0;
+                c.y > 0
+            }
+        }
+    }
+
+    let lemma = XAndYPositiveLemma;
+
+    // Test apply - should assume requires and assert ensures
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+
+    // This should not panic since both requires and ensures hold
+    lemma.apply(&ctx);
+}
+
+#[test]
+fn test_cvlr_lemma_multiple_conditions() {
+    cvlr_lemma! {
+        ComplexLemma(c: TestCtx) {
+            requires -> {
+                c.x > 0;
+                c.y > 0;
+                c.flag
+            }
+            ensures -> {
+                c.x > 0;
+                c.y > 0;
+                c.x + c.y > 10
+            }
+        }
+    }
+
+    let lemma = ComplexLemma;
+
+    let ctx1 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+
+    // Test requires
+    assert!(lemma.requires().eval(&ctx1));
+
+    let ctx2 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: false,
+    };
+    assert!(!lemma.requires().eval(&ctx2));
+
+    // Test ensures
+    assert!(lemma.ensures().eval(&ctx1));
+
+    let ctx3 = TestCtx {
+        x: 1,
+        y: 2,
+        flag: true,
+    };
+    assert!(!lemma.ensures().eval(&ctx3));
+}
+
+// Manual implementation of CvlrLemma for testing
+struct ManualLemma;
+
+impl cvlr_spec::spec::CvlrLemma<TestCtx> for ManualLemma {
+    fn requires(&self) -> impl CvlrBoolExpr<TestCtx> {
+        cvlr_predicate! { | c : TestCtx | -> {
+            c.x > 0
+        } }
+    }
+
+    fn ensures(&self) -> impl CvlrBoolExpr<TestCtx> {
+        cvlr_predicate! { | c : TestCtx | -> {
+            c.x > 0;
+            c.y > 0
+        } }
+    }
+}
+
+#[test]
+fn test_cvlr_lemma_trait_manual_impl() {
+    let lemma = ManualLemma;
+
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+
+    // Test requires
+    assert!(lemma.requires().eval(&ctx));
+
+    // Test ensures
+    assert!(lemma.ensures().eval(&ctx));
+
+    // Test verify_with_context
+    lemma.verify_with_context(&ctx);
+
+    // Test apply
+    lemma.apply(&ctx);
+}
+
+#[test]
+fn test_cvlr_lemma_requires_ensures_interaction() {
+    cvlr_lemma! {
+        ImplicationLemma(c: TestCtx) {
+            requires -> {
+                c.x > 0
+            }
+            ensures -> {
+                c.x > 0;
+                c.y == c.x * 2
+            }
+        }
+    }
+
+    let lemma = ImplicationLemma;
+
+    // Test that requires can be true while ensures is false
+    let ctx1 = TestCtx {
+        x: 5,
+        y: 5, // y != x * 2
+        flag: false,
+    };
+
+    assert!(lemma.requires().eval(&ctx1));
+    assert!(!lemma.ensures().eval(&ctx1));
+
+    // Test that both can be true
+    let ctx2 = TestCtx {
+        x: 5,
+        y: 10, // y == x * 2
+        flag: false,
+    };
+
+    assert!(lemma.requires().eval(&ctx2));
+    assert!(lemma.ensures().eval(&ctx2));
 }
