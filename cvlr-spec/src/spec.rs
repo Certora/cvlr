@@ -178,3 +178,27 @@ where
 {
     CvlrInvarSpec(assumption, invariant)
 }
+
+pub trait CvlrLemma<Ctx>
+where
+    Ctx: cvlr_nondet::Nondet + cvlr_log::CvlrLog,
+{
+    fn requires(&self) -> impl CvlrBoolExpr<Ctx>;
+    fn ensures(&self) -> impl CvlrBoolExpr<Ctx>;
+
+    fn verify(&self) {
+        let ctx = cvlr_nondet::nondet::<Ctx>();
+        cvlr_log::clog!(ctx);
+        self.verify_with_context(&ctx);
+    }
+
+    fn verify_with_context(&self, ctx: &Ctx) {
+        self.requires().assume(ctx);
+        self.ensures().assert(ctx);
+    }
+
+    fn apply(&self, ctx: &Ctx) {
+        self.requires().assume(ctx);
+        self.ensures().assert(ctx);
+    }
+}
