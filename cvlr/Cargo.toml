@@ -29,3 +29,4 @@ cvlr-hook = { workspace = true }
 cvlr-derive = { workspace = true }
 cvlr-decimal = { workspace = true }
 cvlr-fixed = { workspace = true }
+cvlr-spec = { workspace = true }

@@ -62,3 +62,4 @@ cvlr-hook = { path = "cvlr-hook", version = "=0.4.1" }
 cvlr-derive = { path = "cvlr-derive", version = "=0.4.1" }
 cvlr-fixed = { path = "cvlr-fixed", version = "=0.4.1" }
 cvlr-decimal = { path = "cvlr-decimal", version = "=0.4.1" }
+cvlr-spec = { path = "cvlr-spec", version = "=0.4.1" }
