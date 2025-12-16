@@ -49,10 +49,11 @@
 mod bool_expr;
 mod combinators;
 mod macros;
-mod spec;
+pub mod spec;
 mod state_pair;
 
-pub mod cvlr_macros {
+#[doc(hidden)]
+pub mod __macro_support {
     pub use cvlr_macros::*;
 }
 

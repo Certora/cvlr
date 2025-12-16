@@ -53,20 +53,20 @@ macro_rules! cvlr_def_predicate {
         impl $crate::CvlrBoolExpr<$ctx> for $name {
             fn eval(&self, ctx: &$ctx) -> bool {
                 let $c = ctx;
-                $crate::cvlr_macros::cvlr_eval_all!(
+                $crate::__macro_support::cvlr_eval_all!(
                     $($e),*
                 )
             }
             fn assert(&self, ctx: &$ctx) {
                 let $c = ctx;
-                $crate::cvlr_macros::cvlr_assert_all!(
+                $crate::__macro_support::cvlr_assert_all!(
                     $($e),*
                 );
             }
 
             fn assume(&self, ctx: &$ctx) {
                 let $c = ctx;
-                $crate::cvlr_macros::cvlr_assume_all!(
+                $crate::__macro_support::cvlr_assume_all!(
                     $($e),*
                 );
             }
@@ -123,14 +123,14 @@ macro_rules! cvlr_def_state_pair_predicate {
             fn eval(&self, ctx: &$crate::StatePair<'_, $ctx>) -> bool {
                 let $c = ctx.ctx();
                 let $o = ctx.old();
-                $crate::cvlr_macros::cvlr_eval_all!(
+                $crate::__macro_support::cvlr_eval_all!(
                     $($e),*
                 )
             }
             fn assert(&self, ctx: &$crate::StatePair<'_, $ctx>) {
                 let $c = ctx.ctx();
                 let $o = ctx.old();
-                $crate::cvlr_macros::cvlr_assert_all!(
+                $crate::__macro_support::cvlr_assert_all!(
                     $($e),*
                 );
             }
@@ -138,7 +138,7 @@ macro_rules! cvlr_def_state_pair_predicate {
             fn assume(&self, ctx: &$crate::StatePair<'_, $ctx>) {
                 let $c = ctx.ctx();
                 let $o = ctx.old();
-                $crate::cvlr_macros::cvlr_assume_all!(
+                $crate::__macro_support::cvlr_assume_all!(
                     $($e),*
                 );
             }
@@ -232,4 +232,46 @@ macro_rules! cvlr_def_state_pair_predicates {
             }
         )*
     };
+}
+
+#[macro_export]
+macro_rules! cvlr_predicate {
+    (| $c:ident : $ctx: ident | -> { $( $e: expr );* $(;)? } ) => {
+        {
+            $crate::cvlr_def_predicate! {
+                pred __AnonymousPredicate ($c : $ctx) { $( $e );* }
+            }
+            __AnonymousPredicate
+        }
+    };
+}
+
+// cvlr_lemma! {
+//     UpdatePriceSolvencyLemma (c: UpdatePriceSolvencyCtx) {
+//         requires -> {
+//             c.supply_price.as_int().is_u64();
+//             c.borrow_price.as_int().is_u64();
+//             c.supply_price.as_int() >= EXCHANGE_PRICES_PRECISION as u64;
+//             c.borrow_price.as_int() >= EXCHANGE_PRICES_PRECISION as u64;
+//         }
+//     }
+//     ensures -> {
+//         c.supply_delta <= c.borrow_delta
+//     }
+// }
+#[macro_export]
+macro_rules! cvlr_lemma {
+    ($name: ident ( $c:ident : $ctx: ident ) {
+        requires -> { $( $requires: expr );* $(;)? }
+        ensures -> { $( $ensures: expr );* $(;)? } }) => {
+            struct $name;
+            impl $crate::spec::CvlrLemma<$ctx> for $name {
+                fn requires(&self) -> impl $crate::CvlrBoolExpr<$ctx> {
+                    $crate::cvlr_predicate! { | $c : $ctx | -> { $( $requires );* } }
+                }
+                fn ensures(&self) -> impl $crate::CvlrBoolExpr<$ctx> {
+                    $crate::cvlr_predicate! { | $c : $ctx | -> { $( $ensures );* } }
+                }
+            }
+        };
 }
