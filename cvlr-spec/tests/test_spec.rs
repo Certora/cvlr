@@ -21,25 +21,28 @@ struct XPositive;
 #[derive(Copy, Clone)]
 struct YPositive;
 
-// Boolean expression for StatePair that checks if post.y > 0
+// Boolean expression for (TestCtx, TestCtx) tuple that checks if post.y > 0
 #[derive(Copy, Clone)]
 struct PostYPositive;
 
-impl CvlrBoolExpr<TestCtx> for XPositive {
-    fn eval(&self, ctx: &TestCtx) -> bool {
+impl CvlrBoolExpr for XPositive {
+    type Context = TestCtx;
+    fn eval(&self, ctx: &Self::Context) -> bool {
         ctx.x > 0
     }
 }
 
-impl CvlrBoolExpr<TestCtx> for YPositive {
-    fn eval(&self, ctx: &TestCtx) -> bool {
+impl CvlrBoolExpr for YPositive {
+    type Context = TestCtx;
+    fn eval(&self, ctx: &Self::Context) -> bool {
         ctx.y > 0
     }
 }
 
-impl<'a> CvlrBoolExpr<StatePair<'a, TestCtx>> for PostYPositive {
-    fn eval(&self, pair: &StatePair<'a, TestCtx>) -> bool {
-        pair.ctx().y > 0
+impl CvlrBoolExpr for PostYPositive {
+    type Context = (TestCtx, TestCtx);
+    fn eval(&self, pair: &Self::Context) -> bool {
+        pair.0.y > 0
     }
 }
 
@@ -50,7 +53,7 @@ fn test_cvlr_true() {
         y: 0,
         flag: false,
     };
-    let true_expr = CvlrTrue;
+    let true_expr = cvlr_true::<TestCtx>();
     assert!(true_expr.eval(&ctx));
 
     let ctx2 = TestCtx {
@@ -100,7 +103,7 @@ fn test_cvlr_and_chained() {
         y: 10,
         flag: true,
     };
-    let true_expr = CvlrTrue;
+    let true_expr = cvlr_true::<TestCtx>();
     let and1 = cvlr_and(XPositive, YPositive);
     let and2 = cvlr_and(and1, true_expr);
     assert!(and2.eval(&ctx));
@@ -154,12 +157,13 @@ fn test_state_pair_new() {
         y: 4,
         flag: false,
     };
-    let pair = StatePair::new(&ctx1, &ctx2);
+    let pair = (&ctx1, &ctx2);
 
-    assert_eq!(pair.ctx(), &ctx1);
-    assert_eq!(pair.old(), &ctx2);
-    assert_eq!(pair.pre(), &ctx2);
-    assert_eq!(pair.post(), &ctx1);
+    assert_eq!(pair.0, &ctx1);
+    assert_eq!(pair.1, &ctx2);
+    // For tuple, .0 is post, .1 is pre
+    assert_eq!(pair.1, &ctx2);
+    assert_eq!(pair.0, &ctx1);
 }
 
 #[test]
@@ -169,12 +173,12 @@ fn test_state_pair_singleton() {
         y: 2,
         flag: true,
     };
-    let pair = StatePair::singleton(&ctx);
+    let pair = (&ctx, &ctx);
 
-    assert_eq!(pair.ctx(), &ctx);
-    assert_eq!(pair.old(), &ctx);
-    assert_eq!(pair.pre(), &ctx);
-    assert_eq!(pair.post(), &ctx);
+    assert_eq!(pair.0, &ctx);
+    assert_eq!(pair.1, &ctx);
+    assert_eq!(pair.1, &ctx);
+    assert_eq!(pair.0, &ctx);
 }
 
 #[test]
@@ -184,12 +188,12 @@ fn test_state_pair_deref() {
         y: 2,
         flag: true,
     };
-    let pair = StatePair::singleton(&ctx);
+    let pair = (&ctx, &ctx);
 
-    // Test Deref implementation
-    assert_eq!(pair.x, 1);
-    assert_eq!(pair.y, 2);
-    assert_eq!(pair.flag, true);
+    // Test tuple access
+    assert_eq!(pair.0.x, 1);
+    assert_eq!(pair.0.y, 2);
+    assert_eq!(pair.0.flag, true);
 }
 
 #[test]
@@ -265,12 +269,12 @@ fn test_cvlr_def_two_predicate() {
         y: 0,
         flag: false,
     };
-    let pair = StatePair::new(&post, &pre);
+    let pair = (post, pre);
 
     let pred = XIncreased;
     assert!(pred.eval(&pair));
 
-    let pair2 = StatePair::new(&pre, &post);
+    let pair2 = (pre, post);
     assert!(!pred.eval(&pair2));
 }
 
@@ -293,7 +297,7 @@ fn test_cvlr_def_two_predicate_multiple_conditions() {
         y: 10,
         flag: false,
     };
-    let pair = StatePair::new(&post, &pre);
+    let pair = (post, pre);
 
     let pred = XAndYIncreased;
     assert!(pred.eval(&pair));
@@ -303,7 +307,7 @@ fn test_cvlr_def_two_predicate_multiple_conditions() {
         y: 1,
         flag: false,
     };
-    let pair2 = StatePair::new(&post2, &pre);
+    let pair2 = (post2, pre);
     assert!(!pred.eval(&pair2));
 }
 
@@ -329,8 +333,8 @@ fn test_cvlr_spec() {
         y: 10,
         flag: false,
     };
-    let pair = StatePair::new(&post, &pre);
-    spec.check_ensures(pair);
+    let pair = (post, pre);
+    spec.check_ensures(&pair);
 }
 // Define predicates for the ensures condition
 cvlr_def_state_pair_predicate! {
@@ -348,9 +352,9 @@ fn test_cvlr_spec_with_implication() {
     }
 
     // Create a spec: requires x > 0, ensures if x > 0 then y > 0
-    // Test that cvlr_impl_statepair preserves HRTB bounds
+    // Test that cvlr_impl preserves HRTB bounds
     let requires = XPositive;
-    let ensures = cvlr_impl_pair(PostXPositive, PostYPositive);
+    let ensures = cvlr_impl(PostXPositive, PostYPositive);
 
     let spec = cvlr_spec(requires, ensures);
 
@@ -368,15 +372,15 @@ fn test_cvlr_spec_with_implication() {
         y: 0,
         flag: false,
     };
-    let pair = StatePair::new(&post, &pre);
-    spec.check_ensures(pair);
+    let pair = (post, pre);
+    spec.check_ensures(&pair);
 }
 
 #[test]
 fn test_cvlr_spec_with_and() {
-    // Test that cvlr_and_statepair preserves HRTB bounds
+    // Test that cvlr_and preserves HRTB bounds
     let requires = XPositive;
-    let ensures = cvlr_and_pair(PostXPositive, PostYPositive);
+    let ensures = cvlr_and(PostXPositive, PostYPositive);
 
     let spec = cvlr_spec(requires, ensures);
 
@@ -392,8 +396,8 @@ fn test_cvlr_spec_with_and() {
         y: 10,
         flag: false,
     };
-    let pair = StatePair::new(&post, &pre);
-    spec.check_ensures(pair);
+    let pair = (post, pre);
+    spec.check_ensures(&pair);
 }
 
 #[test]
@@ -418,8 +422,8 @@ fn test_cvlr_invar_spec() {
         y: 10,
         flag: false,
     };
-    let pair = StatePair::new(&post, &pre);
-    spec.check_ensures(pair);
+    let pair = (post, pre);
+    spec.check_ensures(&pair);
 }
 
 #[test]
@@ -480,7 +484,7 @@ fn test_cvlr_true_optimized() {
         y: 0,
         flag: false,
     };
-    let true_expr = CvlrTrue;
+    let true_expr = cvlr_true::<TestCtx>();
 
     // CvlrTrue has optimized assert and assume that do nothing
     true_expr.assert(&ctx);
@@ -497,7 +501,7 @@ fn test_nested_expressions() {
     };
 
     // (x > 0 && y > 0) && true
-    let expr1 = cvlr_and(cvlr_and(XPositive, YPositive), CvlrTrue);
+    let expr1 = cvlr_and(cvlr_and(XPositive, YPositive), cvlr_true::<TestCtx>());
     assert!(expr1.eval(&ctx));
 
     // (x > 0 -> y > 0) && (y > 0 -> x > 0)
@@ -522,9 +526,9 @@ fn test_state_pair_lifetime() {
     };
 
     {
-        let pair = StatePair::new(&ctx1, &ctx2);
-        assert_eq!(pair.ctx().x, 1);
-        assert_eq!(pair.old().x, 3);
+        let pair = (ctx1, ctx2);
+        assert_eq!(pair.0.x, 1);
+        assert_eq!(pair.1.x, 3);
     }
 
     // pair is dropped, but contexts are still valid
@@ -590,7 +594,7 @@ fn test_cvlr_def_state_pair_predicates() {
         y: 10,
         flag: false,
     };
-    let pair = StatePair::new(&post, &pre);
+    let pair = (post, pre);
 
     assert!(XIncreased.eval(&pair));
     assert!(YIncreased.eval(&pair));
@@ -601,7 +605,7 @@ fn test_cvlr_def_state_pair_predicates() {
         y: 1,
         flag: false,
     };
-    let pair2 = StatePair::new(&post2, &pre);
+    let pair2 = (post2, pre);
     assert!(XIncreased.eval(&pair2));
     assert!(!YIncreased.eval(&pair2));
     assert!(!BothIncreased.eval(&pair2));
@@ -798,14 +802,15 @@ fn test_cvlr_lemma_multiple_conditions() {
 // Manual implementation of CvlrLemma for testing
 struct ManualLemma;
 
-impl cvlr_spec::spec::CvlrLemma<TestCtx> for ManualLemma {
-    fn requires(&self) -> impl CvlrBoolExpr<TestCtx> {
+impl cvlr_spec::spec::CvlrLemma for ManualLemma {
+    type Context = TestCtx;
+    fn requires(&self) -> impl CvlrBoolExpr<Context = Self::Context> {
         cvlr_predicate! { | c : TestCtx | -> {
             c.x > 0
         } }
     }
 
-    fn ensures(&self) -> impl CvlrBoolExpr<TestCtx> {
+    fn ensures(&self) -> impl CvlrBoolExpr<Context = Self::Context> {
         cvlr_predicate! { | c : TestCtx | -> {
             c.x > 0;
             c.y > 0
@@ -875,7 +880,7 @@ fn test_cvlr_lemma_requires_ensures_interaction() {
 
 #[test]
 fn test_to_two_state() {
-    // Test converting a boolean expression over TestCtx to one over StatePair
+    // Test converting a boolean expression over TestCtx to one over (TestCtx, TestCtx) tuple
     let pre = TestCtx {
         x: 1,
         y: 2,
@@ -886,7 +891,7 @@ fn test_to_two_state() {
         y: 10,
         flag: true,
     };
-    let pair = StatePair::new(&post, &pre);
+    let pair = (post, pre);
 
     // Test with XPositive - should only check post.x > 0
     let x_positive = XPositive;
@@ -909,7 +914,7 @@ fn test_to_two_state() {
         y: 10,
         flag: true,
     };
-    let pair2 = StatePair::new(&post2, &pre2);
+    let pair2 = (post2, pre2);
     assert!(x_positive_state_pair.eval(&pair2)); // post.x = 5 > 0, ignores pre.x = -10
     assert!(y_positive_state_pair.eval(&pair2)); // post.y = 10 > 0, ignores pre.y = -5
 
@@ -924,7 +929,7 @@ fn test_to_two_state() {
         y: -10,
         flag: false,
     };
-    let pair3 = StatePair::new(&post3, &pre3);
+    let pair3 = (post3, pre3);
     assert!(!x_positive_state_pair.eval(&pair3)); // post.x = -5 <= 0
     assert!(!y_positive_state_pair.eval(&pair3)); // post.y = -10 <= 0
 }
@@ -942,9 +947,9 @@ fn test_to_two_state_with_cvlr_true() {
         y: 10,
         flag: true,
     };
-    let pair = StatePair::new(&post, &pre);
+    let pair = (post, pre);
 
-    let true_expr = CvlrTrue;
+    let true_expr = cvlr_true::<TestCtx>();
     let true_state_pair = true_expr.to_two_state();
     assert!(true_state_pair.eval(&pair)); // CvlrTrue always evaluates to true
 }
@@ -962,7 +967,7 @@ fn test_to_two_state_with_composed_expressions() {
         y: 10,
         flag: true,
     };
-    let pair = StatePair::new(&post, &pre);
+    let pair = (post, pre);
 
     // Test with AND expression
     let and_expr = cvlr_and(XPositive, YPositive);
@@ -975,7 +980,7 @@ fn test_to_two_state_with_composed_expressions() {
         y: 10,
         flag: false,
     };
-    let pair2 = StatePair::new(&post2, &pre);
+    let pair2 = (post2, pre);
     assert!(!and_state_pair.eval(&pair2)); // post.x = -5 <= 0
 
     // Test with implication
@@ -988,6 +993,6 @@ fn test_to_two_state_with_composed_expressions() {
         y: -10,
         flag: false,
     };
-    let pair3 = StatePair::new(&post3, &pre);
+    let pair3 = (post3, pre);
     assert!(!impl_state_pair.eval(&pair3)); // post.x > 0 -> post.y > 0 (antecedent true, consequent false)
 }

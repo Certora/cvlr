@@ -41,9 +41,9 @@ where
 /// # Examples
 ///
 /// ```
-/// use cvlr_spec::{cvlr_and, CvlrTrue, CvlrBoolExpr};
+/// use cvlr_spec::{cvlr_and, cvlr_true, CvlrBoolExpr};
 ///
-/// let expr = cvlr_and(CvlrTrue, CvlrTrue);
+/// let expr = cvlr_and(cvlr_true::<()>(), cvlr_true::<()>());
 /// assert!(expr.eval(&()));
 /// ```
 pub fn cvlr_and<A, B>(a: A, b: B) -> CvlrAnd<A, B>
@@ -102,10 +102,10 @@ where
 /// # Examples
 ///
 /// ```
-/// use cvlr_spec::{cvlr_impl, CvlrTrue, CvlrBoolExpr};
+/// use cvlr_spec::{cvlr_impl, cvlr_true, CvlrBoolExpr};
 ///
 /// // true → true evaluates to true
-/// let expr = cvlr_impl(CvlrTrue, CvlrTrue);
+/// let expr = cvlr_impl(cvlr_true::<()>(), cvlr_true::<()>());
 /// assert!(expr.eval(&()));
 /// ```
 pub fn cvlr_impl<A, B>(a: A, b: B) -> CvlrImpl<A, B>
