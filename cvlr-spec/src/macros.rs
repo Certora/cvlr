@@ -50,21 +50,22 @@
 macro_rules! cvlr_def_predicate {
     (pred $name: ident ( $c:ident : $ctx: ident ) {  $( $e: expr );* $(;)? }) => {
         struct $name;
-        impl $crate::CvlrBoolExpr<$ctx> for $name {
-            fn eval(&self, ctx: &$ctx) -> bool {
+        impl $crate::CvlrBoolExpr for $name {
+            type Context = $ctx;
+            fn eval(&self, ctx: &Self::Context) -> bool {
                 let $c = ctx;
                 $crate::__macro_support::cvlr_eval_all!(
                     $($e),*
                 )
             }
-            fn assert(&self, ctx: &$ctx) {
+            fn assert(&self, ctx: &Self::Context) {
                 let $c = ctx;
                 $crate::__macro_support::cvlr_assert_all!(
                     $($e),*
                 );
             }
 
-            fn assume(&self, ctx: &$ctx) {
+            fn assume(&self, ctx: &Self::Context) {
                 let $c = ctx;
                 $crate::__macro_support::cvlr_assume_all!(
                     $($e),*
@@ -119,25 +120,26 @@ macro_rules! cvlr_def_predicate {
 macro_rules! cvlr_def_state_pair_predicate {
     (pred $name: ident ( [ $c:ident, $o: ident ] : $ctx: ident ) {  $( $e: expr );* $(;)? }) => {
         struct $name;
-        impl $crate::CvlrBoolExpr<$crate::StatePair<'_, $ctx>> for $name {
-            fn eval(&self, ctx: &$crate::StatePair<'_, $ctx>) -> bool {
-                let $c = ctx.ctx();
-                let $o = ctx.old();
+        impl $crate::CvlrBoolExpr for $name {
+            type Context = ($ctx, $ctx);
+            fn eval(&self, ctx: &Self::Context) -> bool {
+                let $c = ctx.0;
+                let $o = ctx.1;
                 $crate::__macro_support::cvlr_eval_all!(
                     $($e),*
                 )
             }
-            fn assert(&self, ctx: &$crate::StatePair<'_, $ctx>) {
-                let $c = ctx.ctx();
-                let $o = ctx.old();
+            fn assert(&self, ctx: &Self::Context) {
+                let $c = ctx.0;
+                let $o = ctx.1;
                 $crate::__macro_support::cvlr_assert_all!(
                     $($e),*
                 );
             }
 
-            fn assume(&self, ctx: &$crate::StatePair<'_, $ctx>) {
-                let $c = ctx.ctx();
-                let $o = ctx.old();
+            fn assume(&self, ctx: &Self::Context) {
+                let $c = ctx.0;
+                let $o = ctx.1;
                 $crate::__macro_support::cvlr_assume_all!(
                     $($e),*
                 );
@@ -406,11 +408,12 @@ macro_rules! cvlr_lemma {
         requires -> { $( $requires: expr );* $(;)? }
         ensures -> { $( $ensures: expr );* $(;)? } }) => {
             struct $name;
-            impl $crate::spec::CvlrLemma<$ctx> for $name {
-                fn requires(&self) -> impl $crate::CvlrBoolExpr<$ctx> {
+            impl $crate::spec::CvlrLemma for $name {
+                type Context = $ctx;
+                fn requires(&self) -> impl $crate::CvlrBoolExpr<Context = Self::Context> {
                     $crate::cvlr_predicate! { | $c : $ctx | -> { $( $requires );* } }
                 }
-                fn ensures(&self) -> impl $crate::CvlrBoolExpr<$ctx> {
+                fn ensures(&self) -> impl $crate::CvlrBoolExpr<Context = Self::Context> {
                     $crate::cvlr_predicate! { | $c : $ctx | -> { $( $ensures );* } }
                 }
             }

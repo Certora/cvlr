@@ -1,7 +1,6 @@
 //! Specification types and traits.
 
 use crate::bool_expr::CvlrBoolExpr;
-use crate::state_pair::StatePair;
 
 /// A specification that defines preconditions (requires) and postconditions (ensures).
 ///
@@ -30,7 +29,8 @@ use crate::state_pair::StatePair;
 /// let ctx = MyContext { value: 5 };
 /// spec.assume_requires(&ctx);
 /// ```
-pub trait CvlrSpec<Ctx> {
+pub trait CvlrSpec {
+    type Context;
     /// Assumes that the preconditions (requires) hold for the given pre-state.
     ///
     /// This should be called before executing the operation to add the preconditions
@@ -39,7 +39,7 @@ pub trait CvlrSpec<Ctx> {
     /// # Arguments
     ///
     /// * `pre_state` - The state before the operation
-    fn assume_requires(&self, pre_state: &Ctx);
+    fn assume_requires(&self, pre_state: &Self::Context);
 
     /// Checks that the postconditions (ensures) hold for the given pre/post state pair.
     ///
@@ -49,7 +49,7 @@ pub trait CvlrSpec<Ctx> {
     /// # Arguments
     ///
     /// * `pre_post_state_pair` - A pair containing both the pre-state and post-state
-    fn check_ensures(&self, pre_post_state_pair: StatePair<'_, Ctx>);
+    fn check_ensures(&self, pre_post_state_pair: &(Self::Context, Self::Context));
 }
 
 /// An implementation of [`CvlrSpec`] that combines a precondition and postcondition.
@@ -59,16 +59,18 @@ pub trait CvlrSpec<Ctx> {
 #[derive(Copy, Clone)]
 pub struct CvlrPropImpl<Pre, Post>(Pre, Post);
 
-impl<Ctx, Pre, Post> CvlrSpec<Ctx> for CvlrPropImpl<Pre, Post>
+impl<Pre, Post> CvlrSpec for CvlrPropImpl<Pre, Post>
 where
-    Pre: CvlrBoolExpr<Ctx>,
-    Post: for<'a> CvlrBoolExpr<StatePair<'a, Ctx>>,
+    Pre: CvlrBoolExpr,
+    Post: CvlrBoolExpr<Context = (Pre::Context, Pre::Context)>,
 {
-    fn assume_requires(&self, pre_state: &Ctx) {
+    type Context = Pre::Context;
+
+    fn assume_requires(&self, pre_state: &Self::Context) {
         self.0.assume(pre_state);
     }
-    fn check_ensures(&self, post_pre_state: StatePair<'_, Ctx>) {
-        self.1.assert(&post_pre_state);
+    fn check_ensures(&self, post_pre_state: &(Self::Context, Self::Context)) {
+        self.1.assert(post_pre_state);
     }
 }
 
@@ -99,10 +101,13 @@ where
 ///     |pair: &StatePair<'_, Counter>| pair.ctx().value > pair.old().value,
 /// );
 /// ```
-pub fn cvlr_spec<Ctx, Requires, Ensures>(requires: Requires, ensures: Ensures) -> impl CvlrSpec<Ctx>
+pub fn cvlr_spec<Requires, Ensures>(
+    requires: Requires,
+    ensures: Ensures,
+) -> impl CvlrSpec<Context = Requires::Context>
 where
-    Requires: CvlrBoolExpr<Ctx>,
-    Ensures: for<'a> CvlrBoolExpr<StatePair<'a, Ctx>>,
+    Requires: CvlrBoolExpr,
+    Ensures: CvlrBoolExpr<Context = (Requires::Context, Requires::Context)>,
 {
     CvlrPropImpl(requires, ensures)
 }
@@ -129,17 +134,18 @@ impl<A, B> CvlrInvarSpec<A, B> {
     }
 }
 
-impl<Ctx, A, B> CvlrSpec<Ctx> for CvlrInvarSpec<A, B>
+impl<A, B> CvlrSpec for CvlrInvarSpec<A, B>
 where
-    A: CvlrBoolExpr<Ctx>,
-    B: CvlrBoolExpr<Ctx>,
+    A: CvlrBoolExpr,
+    B: CvlrBoolExpr<Context = A::Context>,
 {
-    fn assume_requires(&self, pre_state: &Ctx) {
+    type Context = A::Context;
+    fn assume_requires(&self, pre_state: &Self::Context) {
         self.0.assume(pre_state);
         self.1.assume(pre_state);
     }
-    fn check_ensures(&self, post_pre_state: StatePair<'_, Ctx>) {
-        self.1.assert(post_pre_state.ctx());
+    fn check_ensures(&self, post_pre_state: &(Self::Context, Self::Context)) {
+        self.1.assert(&post_pre_state.0);
     }
 }
 
@@ -171,10 +177,10 @@ where
 ///     |c: &Counter| c.value >= 0,
 /// );
 /// ```
-pub fn cvlr_invar_spec<Ctx, A, B>(assumption: A, invariant: B) -> CvlrInvarSpec<A, B>
+pub fn cvlr_invar_spec<A, B>(assumption: A, invariant: B) -> CvlrInvarSpec<A, B>
 where
-    A: CvlrBoolExpr<Ctx>,
-    B: CvlrBoolExpr<Ctx>,
+    A: CvlrBoolExpr,
+    B: CvlrBoolExpr<Context = A::Context>,
 {
     CvlrInvarSpec(assumption, invariant)
 }
@@ -239,19 +245,18 @@ where
 ///
 /// If the postconditions don't hold when the preconditions are assumed,
 /// the verification will fail.
-pub trait CvlrLemma<Ctx>
-where
-    Ctx: cvlr_nondet::Nondet + cvlr_log::CvlrLog,
-{
+pub trait CvlrLemma {
+    type Context: cvlr_nondet::Nondet + cvlr_log::CvlrLog;
+
     /// Returns a boolean expression representing the preconditions (requires) of the lemma.
     ///
     /// This expression will be assumed to hold during verification.
-    fn requires(&self) -> impl CvlrBoolExpr<Ctx>;
+    fn requires(&self) -> impl CvlrBoolExpr<Context = Self::Context>;
 
     /// Returns a boolean expression representing the postconditions (ensures) of the lemma.
     ///
     /// This expression will be asserted to hold during verification.
-    fn ensures(&self) -> impl CvlrBoolExpr<Ctx>;
+    fn ensures(&self) -> impl CvlrBoolExpr<Context = Self::Context>;
 
     /// Verifies the lemma with a non-deterministic context.
     ///
@@ -262,7 +267,7 @@ where
     ///
     /// This is useful for verifying lemmas over all possible contexts.
     fn verify(&self) {
-        let ctx = cvlr_nondet::nondet::<Ctx>();
+        let ctx = cvlr_nondet::nondet::<Self::Context>();
         cvlr_log::clog!(ctx);
         self.verify_with_context(&ctx);
     }
@@ -276,7 +281,7 @@ where
     /// # Arguments
     ///
     /// * `ctx` - The context to verify the lemma with
-    fn verify_with_context(&self, ctx: &Ctx) {
+    fn verify_with_context(&self, ctx: &Self::Context) {
         self.requires().assume(ctx);
         self.ensures().assert(ctx);
     }
@@ -291,33 +296,25 @@ where
     /// # Arguments
     ///
     /// * `ctx` - The context to apply the lemma to
-    fn apply(&self, ctx: &Ctx) {
+    fn apply(&self, ctx: &Self::Context) {
         self.requires().assume(ctx);
         self.ensures().assert(ctx);
     }
 }
 
-struct IntoStatePairPrededicate<Ctx, T: CvlrBoolExpr<Ctx>>(T, core::marker::PhantomData<Ctx>);
-impl<'a, Ctx, T> CvlrBoolExpr<StatePair<'a, Ctx>> for IntoStatePairPrededicate<Ctx, T>
-where
-    T: CvlrBoolExpr<Ctx>,
-{
-    fn eval(&self, ctx: &StatePair<'a, Ctx>) -> bool {
-        self.0.eval(ctx.ctx())
-    }
-    fn assert(&self, ctx: &StatePair<'a, Ctx>) {
-        self.0.assert(ctx.ctx());
-    }
-    fn assume(&self, ctx: &StatePair<'a, Ctx>) {
-        self.0.assume(ctx.ctx());
-    }
-}
+struct WrappedAsTwoStatePredicate<T: CvlrBoolExpr>(T);
 
-pub fn cvlr_into_2_state<Ctx, P>(pred: P) -> impl for<'a> CvlrBoolExpr<StatePair<'a, Ctx>>
-where
-    P: CvlrBoolExpr<Ctx>,
-{
-    IntoStatePairPrededicate(pred, core::marker::PhantomData)
+impl<T: CvlrBoolExpr> CvlrBoolExpr for WrappedAsTwoStatePredicate<T> {
+    type Context = (T::Context, T::Context);
+    fn eval(&self, ctx: &Self::Context) -> bool {
+        self.0.eval(&ctx.0)
+    }
+    fn assert(&self, ctx: &Self::Context) {
+        self.0.assert(&ctx.0)
+    }
+    fn assume(&self, ctx: &Self::Context) {
+        self.0.assume(&ctx.0)
+    }
 }
 
 /// A trait for converting a boolean expression over a context type into a boolean expression over [`StatePair`].
@@ -360,7 +357,8 @@ where
 /// The trait is automatically implemented for any type `T` that implements `CvlrBoolExpr<Ctx>`.
 /// The conversion is done by wrapping the expression in [`IntoStatePairPrededicate`], which
 /// evaluates the original expression using only the post-state from the `StatePair`.
-pub trait ToTwoState<Ctx> {
+pub trait ToTwoState {
+    type Context;
     /// Converts this boolean expression into one that operates on [`StatePair`].
     ///
     /// The resulting expression will evaluate the original expression using only the
@@ -369,18 +367,17 @@ pub trait ToTwoState<Ctx> {
     /// # Returns
     ///
     /// A boolean expression that implements `CvlrBoolExpr<StatePair<'a, Ctx>>` for any lifetime `'a`.
-    fn to_two_state(self) -> impl for<'a> CvlrBoolExpr<StatePair<'a, Ctx>>;
+    fn to_two_state(self) -> impl CvlrBoolExpr<Context = (Self::Context, Self::Context)>;
 }
 
 /// Blanket implementation of [`ToTwoState`] for any type that implements [`CvlrBoolExpr<Ctx>`].
 ///
 /// This allows any boolean expression over a context type to be automatically converted
 /// to a boolean expression over `StatePair` using the [`to_two_state`](ToTwoState::to_two_state) method.
-impl<Ctx, T> ToTwoState<Ctx> for T
-where
-    T: CvlrBoolExpr<Ctx>,
-{
-    fn to_two_state(self) -> impl for<'a> CvlrBoolExpr<StatePair<'a, Ctx>> {
-        cvlr_into_2_state(self)
+impl<T: CvlrBoolExpr> ToTwoState for T {
+    type Context = T::Context;
+
+    fn to_two_state(self) -> impl CvlrBoolExpr<Context = (Self::Context, Self::Context)> {
+        WrappedAsTwoStatePredicate(self)
     }
 }

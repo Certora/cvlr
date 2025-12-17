@@ -32,17 +32,19 @@ use cvlr_asserts::{cvlr_assert, cvlr_assume};
 ///     }
 /// }
 /// ```
-pub trait CvlrBoolExpr<Ctx> {
+pub trait CvlrBoolExpr {
+    type Context;
+
     /// Evaluates the expression in the given context.
     ///
     /// Returns `true` if the expression holds, `false` otherwise.
-    fn eval(&self, ctx: &Ctx) -> bool;
+    fn eval(&self, ctx: &Self::Context) -> bool;
 
     /// Asserts that the expression holds in the given context.
     ///
     /// This will cause a verification failure if the expression evaluates to `false`.
     /// The default implementation uses [`cvlr_assert!`] to check the result of [`eval`](CvlrBoolExpr::eval).
-    fn assert(&self, ctx: &Ctx) {
+    fn assert(&self, ctx: &Self::Context) {
         cvlr_assert!(self.eval(ctx));
     }
 
@@ -50,7 +52,7 @@ pub trait CvlrBoolExpr<Ctx> {
     ///
     /// This adds the expression as a precondition that the verifier will assume to be true.
     /// The default implementation uses [`cvlr_assume!`] to assume the result of [`eval`](CvlrBoolExpr::eval).
-    fn assume(&self, ctx: &Ctx) {
+    fn assume(&self, ctx: &Self::Context) {
         cvlr_assume!(self.eval(ctx));
     }
 }
@@ -60,12 +62,17 @@ pub trait CvlrBoolExpr<Ctx> {
 /// This is a constant expression that can be used as a base case or placeholder
 /// in boolean expression compositions.
 #[derive(Copy, Clone)]
-pub struct CvlrTrue;
+pub struct CvlrTrue<Ctx>(core::marker::PhantomData<Ctx>);
 
-impl<Ctx> CvlrBoolExpr<Ctx> for CvlrTrue {
-    fn eval(&self, _ctx: &Ctx) -> bool {
+impl<Ctx> CvlrBoolExpr for CvlrTrue<Ctx> {
+    type Context = Ctx;
+    fn eval(&self, _ctx: &Self::Context) -> bool {
         true
     }
-    fn assert(&self, _ctx: &Ctx) {}
-    fn assume(&self, _ctx: &Ctx) {}
+    fn assert(&self, _ctx: &Self::Context) {}
+    fn assume(&self, _ctx: &Self::Context) {}
+}
+
+pub fn cvlr_true<Ctx>() -> impl CvlrBoolExpr<Context = Ctx> {
+    CvlrTrue(core::marker::PhantomData)
 }

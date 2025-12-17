@@ -57,7 +57,6 @@ mod bool_expr;
 mod combinators;
 mod macros;
 pub mod spec;
-mod state_pair;
 
 #[doc(hidden)]
 pub mod __macro_support {
@@ -65,10 +64,6 @@ pub mod __macro_support {
 }
 
 // Re-export core types and traits
-pub use bool_expr::{CvlrBoolExpr, CvlrTrue};
-pub use combinators::{
-    cvlr_and, cvlr_and_pair, cvlr_impl, cvlr_impl_pair, CvlrAnd, CvlrAndStatePair, CvlrImpl,
-    CvlrImplStatePair,
-};
+pub use bool_expr::{CvlrBoolExpr, cvlr_true};
+pub use combinators::{cvlr_and, cvlr_impl, CvlrAnd, CvlrImpl};
 pub use spec::{cvlr_invar_spec, cvlr_spec, CvlrInvarSpec, CvlrPropImpl, CvlrSpec, ToTwoState};
-pub use state_pair::StatePair;
