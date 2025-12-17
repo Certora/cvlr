@@ -541,7 +541,7 @@ pub fn cvlr_eval_all(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// // Expands to:
-/// // cvlr_impl_rule!(solvency_update_exchange_price_no_interest_free_new, expr, base_update_exchange_price_no_interest_free_new,)
+/// // cvlr_impl_rule!{solvency_update_exchange_price_no_interest_free_new, expr, base_update_exchange_price_no_interest_free_new}
 /// ```
 #[proc_macro]
 pub fn cvlr_rule_for_spec(input: TokenStream) -> TokenStream {
