@@ -58,13 +58,64 @@ pub trait CvlrBoolExpr {
         cvlr_assume!(self.eval(ctx));
     }
 
+    /// Evaluates the expression over two states (pre-state and post-state).
+    ///
+    /// This method allows expressions to be evaluated in contexts that require
+    /// comparing values from two different states, such as checking invariants
+    /// across state transitions or comparing before and after values.
+    ///
+    /// # Parameters
+    ///
+    /// * `ctx0` - The pre-state context (before the transition)
+    /// * `ctx1` - The post-state context (after the transition)
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the expression holds across both states, `false` otherwise.
+    ///
+    /// # Default Implementation
+    ///
+    /// The default implementation evaluates the expression using only the pre-state
+    /// context (`ctx0`). Expressions that need to compare both states should override
+    /// this method.
     fn eval_with_states(&self, ctx0: &Self::Context, _: &Self::Context) -> bool {
         self.eval(ctx0)
     }
+
+    /// Asserts that the expression holds across two states (pre-state and post-state).
+    ///
+    /// This will cause a verification failure if the expression evaluates to `false`
+    /// when considering both the pre-state and post-state contexts.
+    ///
+    /// # Parameters
+    ///
+    /// * `ctx0` - The pre-state context (before the transition)
+    /// * `ctx1` - The post-state context (after the transition)
+    ///
+    /// # Default Implementation
+    ///
+    /// The default implementation asserts the expression using only the pre-state
+    /// context (`ctx0`). Expressions that need to compare both states should override
+    /// this method.
     fn assert_with_states(&self, ctx0: &Self::Context, _: &Self::Context) {
         self.assert(ctx0);
     }
 
+    /// Assumes that the expression holds across two states (pre-state and post-state).
+    ///
+    /// This adds the expression as a precondition that the verifier will assume to be true
+    /// when considering both the pre-state and post-state contexts.
+    ///
+    /// # Parameters
+    ///
+    /// * `ctx0` - The pre-state context (before the transition)
+    /// * `ctx1` - The post-state context (after the transition)
+    ///
+    /// # Default Implementation
+    ///
+    /// The default implementation assumes the expression using only the pre-state
+    /// context (`ctx0`). Expressions that need to compare both states should override
+    /// this method.
     fn assume_with_states(&self, ctx0: &Self::Context, _: &Self::Context) {
         self.assume(ctx0);
     }
