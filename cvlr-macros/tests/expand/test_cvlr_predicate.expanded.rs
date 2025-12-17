@@ -4,11 +4,12 @@ struct Ctx {
     x: i32,
     y: i32,
 }
+#[allow(unused_must_use, dead_code)]
 pub fn x_gt_zero(c: &Ctx) {
     c.x > 0;
 }
 pub struct XGtZero;
-impl ::cvlr_spec::CvlrBoolExpr<Ctx> for XGtZero {
+impl ::cvlr::spec::CvlrBoolExpr<Ctx> for XGtZero {
     fn eval(&self, ctx: &Ctx) -> bool {
         let c = ctx;
         {
@@ -44,11 +45,12 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for XGtZero {
         };
     }
 }
+#[allow(unused_must_use, dead_code)]
 fn y_lt_hundred(c: &Ctx) {
     c.y < 100;
 }
 struct YLtHundred;
-impl ::cvlr_spec::CvlrBoolExpr<Ctx> for YLtHundred {
+impl ::cvlr::spec::CvlrBoolExpr<Ctx> for YLtHundred {
     fn eval(&self, ctx: &Ctx) -> bool {
         let c = ctx;
         {
@@ -84,12 +86,13 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for YLtHundred {
         };
     }
 }
+#[allow(unused_must_use, dead_code)]
 fn multiple_conditions(c: &Ctx) {
     c.x > 0;
     c.y < 100;
 }
 struct MultipleConditions;
-impl ::cvlr_spec::CvlrBoolExpr<Ctx> for MultipleConditions {
+impl ::cvlr::spec::CvlrBoolExpr<Ctx> for MultipleConditions {
     fn eval(&self, ctx: &Ctx) -> bool {
         let c = ctx;
         {
@@ -146,12 +149,13 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for MultipleConditions {
         };
     }
 }
+#[allow(unused_must_use, dead_code)]
 fn with_let_statement(c: &Ctx) {
     let threshold = 0;
     c.x > threshold;
 }
 struct WithLetStatement;
-impl ::cvlr_spec::CvlrBoolExpr<Ctx> for WithLetStatement {
+impl ::cvlr::spec::CvlrBoolExpr<Ctx> for WithLetStatement {
     fn eval(&self, ctx: &Ctx) -> bool {
         let c = ctx;
         {
@@ -190,6 +194,7 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for WithLetStatement {
         };
     }
 }
+#[allow(unused_must_use, dead_code)]
 fn with_multiple_lets(c: &Ctx) {
     let min_x = 0;
     let max_y = 100;
@@ -197,7 +202,7 @@ fn with_multiple_lets(c: &Ctx) {
     c.y < max_y;
 }
 struct WithMultipleLets;
-impl ::cvlr_spec::CvlrBoolExpr<Ctx> for WithMultipleLets {
+impl ::cvlr::spec::CvlrBoolExpr<Ctx> for WithMultipleLets {
     fn eval(&self, ctx: &Ctx) -> bool {
         let c = ctx;
         {
@@ -260,6 +265,7 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for WithMultipleLets {
         };
     }
 }
+#[allow(unused_must_use, dead_code)]
 fn let_before_expressions(c: &Ctx) {
     let threshold = 5;
     let limit = 100;
@@ -268,7 +274,7 @@ fn let_before_expressions(c: &Ctx) {
     c.x + c.y > threshold;
 }
 struct LetBeforeExpressions;
-impl ::cvlr_spec::CvlrBoolExpr<Ctx> for LetBeforeExpressions {
+impl ::cvlr::spec::CvlrBoolExpr<Ctx> for LetBeforeExpressions {
     fn eval(&self, ctx: &Ctx) -> bool {
         let c = ctx;
         {

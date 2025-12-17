@@ -149,11 +149,13 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
     // Generate the struct and impl, keeping the original function for IDE error checking
     let expanded = quote! {
         // Keep the original function so IDEs can report errors
+        // But mark it dead code and unused must use to avoid warnings
+        #[allow(unused_must_use, dead_code)]
         #fn_item
 
         #vis struct #struct_name;
 
-        impl ::cvlr_spec::CvlrBoolExpr<#ctx_type> for #struct_name {
+        impl ::cvlr::spec::CvlrBoolExpr<#ctx_type> for #struct_name {
             fn eval(&self, ctx: &#ctx_type) -> bool {
                 let #param_name = ctx;
                 {
