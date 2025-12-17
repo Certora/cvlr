@@ -1,11 +1,9 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
-use syn::{
-    parse_macro_input, Expr, FnArg, ItemFn, Pat, PatType, Stmt, Type, TypeReference,
-};
+use syn::{parse_macro_input, Expr, FnArg, ItemFn, Pat, PatType, Stmt, Type, TypeReference};
 
-use crate::assert_that::{analyze_condition, analyze_assume_condition, analyze_eval_condition};
+use crate::assert_that::{analyze_assume_condition, analyze_condition, analyze_eval_condition};
 
 /// Converts a snake_case identifier to PascalCase
 fn to_pascal_case(s: &str) -> String {
@@ -180,4 +178,3 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
 
     expanded.into()
 }
-
