@@ -723,65 +723,200 @@ macro_rules! cvlr_invariant_rules {
     };
 }
 
+/// Creates a boolean expression representing the logical AND of two or more expressions.
+///
+/// This macro is a convenience wrapper around [`cvlr_and`](crate::cvlr_and) that
+/// provides flexible syntax for combining boolean expressions. It supports both identifiers
+/// and expressions as arguments, and can combine 2 to 6 expressions.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_and!(a, b)                    // Two arguments
+/// cvlr_and!(a, b, c)                 // Three arguments
+/// cvlr_and!(a, b, c, d)              // Four arguments
+/// cvlr_and!(a, b, c, d, e)           // Five arguments
+/// cvlr_and!(a, b, c, d, e, f)        // Six arguments
+/// ```
+///
+/// # Arguments
+///
+/// The macro accepts identifiers or expressions that implement [`CvlrBoolExpr`](crate::CvlrBoolExpr)
+/// with the same context type. Arguments can be:
+/// - Identifiers (e.g., `XPositive`)
+/// - Expressions (e.g., `cvlr_predicate! { | c : Ctx | -> { c.x > 0 } }`)
+/// - Mixed (e.g., `cvlr_and!(XPositive, cvlr_predicate! { | c : Ctx | -> { c.y > 0 } })`)
+///
+/// # Returns
+///
+/// Returns a value implementing [`CvlrBoolExpr`](crate::CvlrBoolExpr) that evaluates to `true`
+/// only when all input expressions evaluate to `true`.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_spec::{cvlr_and, cvlr_predicate, CvlrBoolExpr};
+///
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Using identifiers
+/// cvlr_def_predicate! {
+///     pred IsPositive(c: Counter) {
+///         c.value > 0
+///     }
+/// }
+///
+/// cvlr_def_predicate! {
+///     pred IsEven(c: Counter) {
+///         c.value % 2 == 0
+///     }
+/// }
+///
+/// let ctx = Counter { value: 6 };
+/// let expr = cvlr_and!(IsPositive, IsEven);
+/// assert!(expr.eval(&ctx));
+///
+/// // Using expressions
+/// let expr2 = cvlr_and!(
+///     cvlr_predicate! { | c : Counter | -> { c.value > 0 } },
+///     cvlr_predicate! { | c : Counter | -> { c.value < 100 } }
+/// );
+/// assert!(expr2.eval(&ctx));
+///
+/// // Using multiple arguments
+/// let expr3 = cvlr_and!(
+///     IsPositive,
+///     IsEven,
+///     cvlr_predicate! { | c : Counter | -> { c.value < 100 } }
+/// );
+/// assert!(expr3.eval(&ctx));
+/// ```
 #[macro_export]
 macro_rules! cvlr_and {
     ($a:ident, $b:ident) => {
-        $crate::combinators::cvlr_and($a, $b)
+        $crate::cvlr_and($a, $b)
     };
     ($a:expr, $b:ident) => {
-        $crate::combinators::cvlr_and($a, $b)
+        $crate::cvlr_and($a, $b)
     };
     ($a:ident, $b:expr) => {
-        $crate::combinators::cvlr_and($a, $b)
+        $crate::cvlr_and($a, $b)
     };
     ($a:expr, $b:expr) => {
-        $crate::combinators::cvlr_and($a, $b)
+        $crate::cvlr_and($a, $b)
     };
 
     ($a:expr, $b:expr, $c:expr) => {
-        $crate::combinators::cvlr_and($a, $crate::combinators::cvlr_and($b, $c))
+        $crate::cvlr_and($a, $crate::cvlr_and($b, $c))
     };
     ($a:expr, $b:expr, $c:expr, $d:expr) => {
-        $crate::combinators::cvlr_and(
-            $a,
-            $crate::combinators::cvlr_and($b, $crate::combinators::cvlr_and($c, $d)),
-        )
+        $crate::cvlr_and($a, $crate::cvlr_and($b, $crate::cvlr_and($c, $d)))
     };
     ($a:expr, $b:expr, $c:expr, $d:expr, $e:expr) => {
-        $crate::combinators::cvlr_and(
+        $crate::cvlr_and(
             $a,
-            $crate::combinators::cvlr_and(
-                $b,
-                $crate::combinators::cvlr_and($c, $crate::combinators::cvlr_and($d, $e)),
-            ),
+            $crate::cvlr_and($b, $crate::cvlr_and($c, $crate::cvlr_and($d, $e))),
         )
     };
     ($a:expr, $b:expr, $c:expr, $d:expr, $e:expr, $f:expr) => {
-        $crate::combinators::cvlr_and(
+        $crate::cvlr_and(
             $a,
-            $crate::combinators::cvlr_and(
+            $crate::cvlr_and(
                 $b,
-                $crate::combinators::cvlr_and(
-                    $c,
-                    $crate::combinators::cvlr_and($d, $crate::combinators::cvlr_and($e, $f)),
-                ),
+                $crate::cvlr_and($c, $crate::cvlr_and($d, $crate::cvlr_and($e, $f))),
             ),
         )
     };
 }
 
+/// Creates a boolean expression representing logical implication (A → B).
+///
+/// This macro is a convenience wrapper around [`cvlr_implies`](crate::cvlr_implies) that
+/// provides flexible syntax for creating implications. It supports both identifiers and expressions
+/// as arguments.
+///
+/// An implication `A → B` evaluates to `true` when either:
+/// - The antecedent `A` is `false`, or
+/// - Both `A` and `B` are `true`
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_implies!(antecedent, consequent)
+/// ```
+///
+/// # Arguments
+///
+/// * `antecedent` - The left-hand side (A) of the implication, can be an identifier or expression
+/// * `consequent` - The right-hand side (B) of the implication, can be an identifier or expression
+///
+/// Both arguments must implement [`CvlrBoolExpr`](crate::CvlrBoolExpr) with the same context type.
+///
+/// # Returns
+///
+/// Returns a value implementing [`CvlrBoolExpr`](crate::CvlrBoolExpr) that represents the logical
+/// implication `antecedent → consequent`.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_spec::{cvlr_implies, cvlr_predicate, CvlrBoolExpr};
+///
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Using identifiers
+/// cvlr_def_predicate! {
+///     pred IsPositive(c: Counter) {
+///         c.value > 0
+///     }
+/// }
+///
+/// cvlr_def_predicate! {
+///     pred IsEven(c: Counter) {
+///         c.value % 2 == 0
+///     }
+/// }
+///
+/// let ctx1 = Counter { value: 6 };
+/// let expr = cvlr_implies!(IsPositive, IsEven);
+/// assert!(expr.eval(&ctx1)); // 6 > 0 → 6 % 2 == 0 (both true, so true)
+///
+/// let ctx2 = Counter { value: 5 };
+/// assert!(!expr.eval(&ctx2)); // 5 > 0 → 5 % 2 == 0 (antecedent true, consequent false, so false)
+///
+/// let ctx3 = Counter { value: -2 };
+/// assert!(expr.eval(&ctx3)); // -2 > 0 → ... (antecedent false, so true)
+///
+/// // Using expressions
+/// let expr2 = cvlr_implies!(
+///     cvlr_predicate! { | c : Counter | -> { c.value > 0 } },
+///     cvlr_predicate! { | c : Counter | -> { c.value < 100 } }
+/// );
+/// assert!(expr2.eval(&ctx1));
+///
+/// // Mixed identifiers and expressions
+/// let expr3 = cvlr_implies!(
+///     IsPositive,
+///     cvlr_predicate! { | c : Counter | -> { c.value < 100 } }
+/// );
+/// assert!(expr3.eval(&ctx1));
+/// ```
 #[macro_export]
 macro_rules! cvlr_implies {
     ($a:ident, $b:ident) => {
-        $crate::combinators::cvlr_implies($a, $b)
+        $crate::cvlr_implies($a, $b)
     };
     ($a:expr, $b:ident) => {
-        $crate::combinators::cvlr_implies($a, $b)
+        $crate::cvlr_implies($a, $b)
     };
     ($a:ident, $b:expr) => {
-        $crate::combinators::cvlr_implies($a, $b)
+        $crate::cvlr_implies($a, $b)
     };
     ($a:expr, $b:expr) => {
-        $crate::combinators::cvlr_implies($a, $b)
+        $crate::cvlr_implies($a, $b)
     };
 }
