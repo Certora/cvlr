@@ -15,10 +15,7 @@ impl Parse for RuleForSpecInput {
         // Parse struct-like syntax: name: "...", spec: expr, base: ident
         let name_ident: Ident = input.parse()?;
         if name_ident.to_string() != "name" {
-            return Err(syn::Error::new(
-                name_ident.span(),
-                "expected `name` field",
-            ));
+            return Err(syn::Error::new(name_ident.span(), "expected `name` field"));
         }
         input.parse::<Token![:]>()?;
         let name: LitStr = input.parse()?;
@@ -26,10 +23,7 @@ impl Parse for RuleForSpecInput {
 
         let spec_ident: Ident = input.parse()?;
         if spec_ident.to_string() != "spec" {
-            return Err(syn::Error::new(
-                spec_ident.span(),
-                "expected `spec` field",
-            ));
+            return Err(syn::Error::new(spec_ident.span(), "expected `spec` field"));
         }
         input.parse::<Token![:]>()?;
         let spec: Expr = input.parse()?;
@@ -37,10 +31,7 @@ impl Parse for RuleForSpecInput {
 
         let base_ident: Ident = input.parse()?;
         if base_ident.to_string() != "base" {
-            return Err(syn::Error::new(
-                base_ident.span(),
-                "expected `base` field",
-            ));
+            return Err(syn::Error::new(base_ident.span(), "expected `base` field"));
         }
         input.parse::<Token![:]>()?;
         let base: Ident = input.parse()?;
@@ -108,4 +99,3 @@ pub fn cvlr_rule_for_spec_impl(input: TokenStream) -> TokenStream {
 
     expanded.into()
 }
-
