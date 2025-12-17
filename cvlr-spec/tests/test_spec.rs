@@ -872,3 +872,122 @@ fn test_cvlr_lemma_requires_ensures_interaction() {
     assert!(lemma.requires().eval(&ctx2));
     assert!(lemma.ensures().eval(&ctx2));
 }
+
+#[test]
+fn test_to_two_state() {
+    // Test converting a boolean expression over TestCtx to one over StatePair
+    let pre = TestCtx {
+        x: 1,
+        y: 2,
+        flag: false,
+    };
+    let post = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let pair = StatePair::new(&post, &pre);
+
+    // Test with XPositive - should only check post.x > 0
+    let x_positive = XPositive;
+    let x_positive_state_pair = x_positive.to_two_state();
+    assert!(x_positive_state_pair.eval(&pair)); // post.x = 5 > 0
+
+    // Test with YPositive - should only check post.y > 0
+    let y_positive = YPositive;
+    let y_positive_state_pair = y_positive.to_two_state();
+    assert!(y_positive_state_pair.eval(&pair)); // post.y = 10 > 0
+
+    // Test that it ignores pre-state - even if pre.x is negative, it should pass
+    let pre2 = TestCtx {
+        x: -10,
+        y: -5,
+        flag: false,
+    };
+    let post2 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let pair2 = StatePair::new(&post2, &pre2);
+    assert!(x_positive_state_pair.eval(&pair2)); // post.x = 5 > 0, ignores pre.x = -10
+    assert!(y_positive_state_pair.eval(&pair2)); // post.y = 10 > 0, ignores pre.y = -5
+
+    // Test with negative post-state - should fail even if pre-state is positive
+    let pre3 = TestCtx {
+        x: 10,
+        y: 20,
+        flag: true,
+    };
+    let post3 = TestCtx {
+        x: -5,
+        y: -10,
+        flag: false,
+    };
+    let pair3 = StatePair::new(&post3, &pre3);
+    assert!(!x_positive_state_pair.eval(&pair3)); // post.x = -5 <= 0
+    assert!(!y_positive_state_pair.eval(&pair3)); // post.y = -10 <= 0
+}
+
+#[test]
+fn test_to_two_state_with_cvlr_true() {
+    // Test that CvlrTrue works with to_two_state
+    let pre = TestCtx {
+        x: 1,
+        y: 2,
+        flag: false,
+    };
+    let post = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let pair = StatePair::new(&post, &pre);
+
+    let true_expr = CvlrTrue;
+    let true_state_pair = true_expr.to_two_state();
+    assert!(true_state_pair.eval(&pair)); // CvlrTrue always evaluates to true
+}
+
+#[test]
+fn test_to_two_state_with_composed_expressions() {
+    // Test converting composed expressions
+    let pre = TestCtx {
+        x: 1,
+        y: 2,
+        flag: false,
+    };
+    let post = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let pair = StatePair::new(&post, &pre);
+
+    // Test with AND expression
+    let and_expr = cvlr_and(XPositive, YPositive);
+    let and_state_pair = and_expr.to_two_state();
+    assert!(and_state_pair.eval(&pair)); // Both post.x > 0 and post.y > 0
+
+    // Test with negative case
+    let post2 = TestCtx {
+        x: -5,
+        y: 10,
+        flag: false,
+    };
+    let pair2 = StatePair::new(&post2, &pre);
+    assert!(!and_state_pair.eval(&pair2)); // post.x = -5 <= 0
+
+    // Test with implication
+    let impl_expr = cvlr_impl(XPositive, YPositive);
+    let impl_state_pair = impl_expr.to_two_state();
+    assert!(impl_state_pair.eval(&pair)); // post.x > 0 -> post.y > 0 (both true)
+
+    let post3 = TestCtx {
+        x: 5,
+        y: -10,
+        flag: false,
+    };
+    let pair3 = StatePair::new(&post3, &pre);
+    assert!(!impl_state_pair.eval(&pair3)); // post.x > 0 -> post.y > 0 (antecedent true, consequent false)
+}
