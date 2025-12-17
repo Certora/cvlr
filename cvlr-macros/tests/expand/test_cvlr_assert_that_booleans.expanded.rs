@@ -32,13 +32,13 @@ pub fn test() {
         ::cvlr_asserts::cvlr_assert_checked(c_);
     };
     {
-        let lhs = x + y;
-        let rhs = 0;
+        let __cvlr_lhs = x + y;
+        let __cvlr_rhs = 0;
         ::cvlr_log::cvlr_log("_", &("assert x + y > 0"));
-        ::cvlr_log::cvlr_log("x + y", &(lhs));
-        ::cvlr_log::cvlr_log("0", &(rhs));
+        ::cvlr_log::cvlr_log("x + y", &(__cvlr_lhs));
+        ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
         {
-            let c_ = lhs > rhs;
+            let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };

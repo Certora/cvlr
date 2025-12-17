@@ -20,13 +20,13 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for XGtZero {
     fn assert(&self, ctx: &Ctx) {
         let c = ctx;
         {
-            let lhs = c.x;
-            let rhs = 0;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = 0;
             ::cvlr_log::cvlr_log("_", &("assert c.x > 0"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("0", &(rhs));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
             {
-                let c_ = lhs > rhs;
+                let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
@@ -35,12 +35,12 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for XGtZero {
     fn assume(&self, ctx: &Ctx) {
         let c = ctx;
         {
-            let lhs = c.x;
-            let rhs = 0;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = 0;
             ::cvlr_log::cvlr_log("_", &("assume c.x > 0"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("0", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs > rhs);
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
         };
     }
 }
@@ -60,13 +60,13 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for YLtHundred {
     fn assert(&self, ctx: &Ctx) {
         let c = ctx;
         {
-            let lhs = c.y;
-            let rhs = 100;
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = 100;
             ::cvlr_log::cvlr_log("_", &("assert c.y < 100"));
-            ::cvlr_log::cvlr_log("c.y", &(lhs));
-            ::cvlr_log::cvlr_log("100", &(rhs));
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("100", &(__cvlr_rhs));
             {
-                let c_ = lhs < rhs;
+                let c_ = __cvlr_lhs < __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
@@ -75,12 +75,12 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for YLtHundred {
     fn assume(&self, ctx: &Ctx) {
         let c = ctx;
         {
-            let lhs = c.y;
-            let rhs = 100;
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = 100;
             ::cvlr_log::cvlr_log("_", &("assume c.y < 100"));
-            ::cvlr_log::cvlr_log("c.y", &(lhs));
-            ::cvlr_log::cvlr_log("100", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs < rhs);
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("100", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs < __cvlr_rhs);
         };
     }
 }
@@ -102,25 +102,25 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for MultipleConditions {
     fn assert(&self, ctx: &Ctx) {
         let c = ctx;
         {
-            let lhs = c.x;
-            let rhs = 0;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = 0;
             ::cvlr_log::cvlr_log("_", &("assert c.x > 0"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("0", &(rhs));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
             {
-                let c_ = lhs > rhs;
+                let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
         };
         {
-            let lhs = c.y;
-            let rhs = 100;
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = 100;
             ::cvlr_log::cvlr_log("_", &("assert c.y < 100"));
-            ::cvlr_log::cvlr_log("c.y", &(lhs));
-            ::cvlr_log::cvlr_log("100", &(rhs));
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("100", &(__cvlr_rhs));
             {
-                let c_ = lhs < rhs;
+                let c_ = __cvlr_lhs < __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
@@ -129,20 +129,20 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for MultipleConditions {
     fn assume(&self, ctx: &Ctx) {
         let c = ctx;
         {
-            let lhs = c.x;
-            let rhs = 0;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = 0;
             ::cvlr_log::cvlr_log("_", &("assume c.x > 0"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("0", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs > rhs);
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
         };
         {
-            let lhs = c.y;
-            let rhs = 100;
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = 100;
             ::cvlr_log::cvlr_log("_", &("assume c.y < 100"));
-            ::cvlr_log::cvlr_log("c.y", &(lhs));
-            ::cvlr_log::cvlr_log("100", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs < rhs);
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("100", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs < __cvlr_rhs);
         };
     }
 }
@@ -165,13 +165,13 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for WithLetStatement {
         let c = ctx;
         let threshold = 0;
         {
-            let lhs = c.x;
-            let rhs = threshold;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = threshold;
             ::cvlr_log::cvlr_log("_", &("assert c.x > threshold"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("threshold", &(rhs));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("threshold", &(__cvlr_rhs));
             {
-                let c_ = lhs > rhs;
+                let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
@@ -181,12 +181,12 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for WithLetStatement {
         let c = ctx;
         let threshold = 0;
         {
-            let lhs = c.x;
-            let rhs = threshold;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = threshold;
             ::cvlr_log::cvlr_log("_", &("assume c.x > threshold"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("threshold", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs > rhs);
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("threshold", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
         };
     }
 }
@@ -214,25 +214,25 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for WithMultipleLets {
         let min_x = 0;
         let max_y = 100;
         {
-            let lhs = c.x;
-            let rhs = min_x;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = min_x;
             ::cvlr_log::cvlr_log("_", &("assert c.x > min_x"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("min_x", &(rhs));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("min_x", &(__cvlr_rhs));
             {
-                let c_ = lhs > rhs;
+                let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
         };
         {
-            let lhs = c.y;
-            let rhs = max_y;
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = max_y;
             ::cvlr_log::cvlr_log("_", &("assert c.y < max_y"));
-            ::cvlr_log::cvlr_log("c.y", &(lhs));
-            ::cvlr_log::cvlr_log("max_y", &(rhs));
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("max_y", &(__cvlr_rhs));
             {
-                let c_ = lhs < rhs;
+                let c_ = __cvlr_lhs < __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
@@ -243,20 +243,20 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for WithMultipleLets {
         let min_x = 0;
         let max_y = 100;
         {
-            let lhs = c.x;
-            let rhs = min_x;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = min_x;
             ::cvlr_log::cvlr_log("_", &("assume c.x > min_x"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("min_x", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs > rhs);
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("min_x", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
         };
         {
-            let lhs = c.y;
-            let rhs = max_y;
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = max_y;
             ::cvlr_log::cvlr_log("_", &("assume c.y < max_y"));
-            ::cvlr_log::cvlr_log("c.y", &(lhs));
-            ::cvlr_log::cvlr_log("max_y", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs < rhs);
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("max_y", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs < __cvlr_rhs);
         };
     }
 }
@@ -286,37 +286,37 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for LetBeforeExpressions {
         let threshold = 5;
         let limit = 100;
         {
-            let lhs = c.x;
-            let rhs = threshold;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = threshold;
             ::cvlr_log::cvlr_log("_", &("assert c.x > threshold"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("threshold", &(rhs));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("threshold", &(__cvlr_rhs));
             {
-                let c_ = lhs > rhs;
+                let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
         };
         {
-            let lhs = c.y;
-            let rhs = limit;
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = limit;
             ::cvlr_log::cvlr_log("_", &("assert c.y < limit"));
-            ::cvlr_log::cvlr_log("c.y", &(lhs));
-            ::cvlr_log::cvlr_log("limit", &(rhs));
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("limit", &(__cvlr_rhs));
             {
-                let c_ = lhs < rhs;
+                let c_ = __cvlr_lhs < __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
         };
         {
-            let lhs = c.x + c.y;
-            let rhs = threshold;
+            let __cvlr_lhs = c.x + c.y;
+            let __cvlr_rhs = threshold;
             ::cvlr_log::cvlr_log("_", &("assert c.x + c.y > threshold"));
-            ::cvlr_log::cvlr_log("c.x + c.y", &(lhs));
-            ::cvlr_log::cvlr_log("threshold", &(rhs));
+            ::cvlr_log::cvlr_log("c.x + c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("threshold", &(__cvlr_rhs));
             {
-                let c_ = lhs > rhs;
+                let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
                 ::cvlr_asserts::cvlr_assert_checked(c_);
             };
@@ -327,28 +327,28 @@ impl ::cvlr_spec::CvlrBoolExpr<Ctx> for LetBeforeExpressions {
         let threshold = 5;
         let limit = 100;
         {
-            let lhs = c.x;
-            let rhs = threshold;
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = threshold;
             ::cvlr_log::cvlr_log("_", &("assume c.x > threshold"));
-            ::cvlr_log::cvlr_log("c.x", &(lhs));
-            ::cvlr_log::cvlr_log("threshold", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs > rhs);
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("threshold", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
         };
         {
-            let lhs = c.y;
-            let rhs = limit;
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = limit;
             ::cvlr_log::cvlr_log("_", &("assume c.y < limit"));
-            ::cvlr_log::cvlr_log("c.y", &(lhs));
-            ::cvlr_log::cvlr_log("limit", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs < rhs);
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("limit", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs < __cvlr_rhs);
         };
         {
-            let lhs = c.x + c.y;
-            let rhs = threshold;
+            let __cvlr_lhs = c.x + c.y;
+            let __cvlr_rhs = threshold;
             ::cvlr_log::cvlr_log("_", &("assume c.x + c.y > threshold"));
-            ::cvlr_log::cvlr_log("c.x + c.y", &(lhs));
-            ::cvlr_log::cvlr_log("threshold", &(rhs));
-            ::cvlr_asserts::cvlr_assume_checked(lhs > rhs);
+            ::cvlr_log::cvlr_log("c.x + c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("threshold", &(__cvlr_rhs));
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
         };
     }
 }
