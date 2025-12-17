@@ -70,5 +70,5 @@ pub use combinators::{
     cvlr_and, cvlr_and_pair, cvlr_impl, cvlr_impl_pair, CvlrAnd, CvlrAndStatePair, CvlrImpl,
     CvlrImplStatePair,
 };
-pub use spec::{cvlr_invar_spec, cvlr_spec, CvlrInvarSpec, CvlrPropImpl, CvlrSpec};
+pub use spec::{cvlr_invar_spec, cvlr_spec, CvlrInvarSpec, CvlrPropImpl, CvlrSpec, ToTwoState};
 pub use state_pair::StatePair;

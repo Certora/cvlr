@@ -296,3 +296,39 @@ where
         self.ensures().assert(ctx);
     }
 }
+
+struct IntoStatePairPrededicate<Ctx, T: CvlrBoolExpr<Ctx>>(T, core::marker::PhantomData<Ctx>);
+impl<'a, Ctx, T> CvlrBoolExpr<StatePair<'a, Ctx>> for IntoStatePairPrededicate<Ctx, T>
+where
+    T: CvlrBoolExpr<Ctx>,
+{
+    fn eval(&self, ctx: &StatePair<'a, Ctx>) -> bool {
+        self.0.eval(ctx.ctx())
+    }
+    fn assert(&self, ctx: &StatePair<'a, Ctx>) {
+        self.0.assert(ctx.ctx());
+    }
+    fn assume(&self, ctx: &StatePair<'a, Ctx>) {
+        self.0.assume(ctx.ctx());
+    }
+}
+
+pub fn cvlr_into_2_state<Ctx, P>(pred: P) -> impl for<'a> CvlrBoolExpr<StatePair<'a, Ctx>>
+where
+    P: CvlrBoolExpr<Ctx>,
+{
+    IntoStatePairPrededicate(pred, core::marker::PhantomData)
+}
+
+pub trait ToTwoState<Ctx> {
+    fn to_two_state(self) -> impl for<'a> CvlrBoolExpr<StatePair<'a, Ctx>>;
+}
+
+impl<Ctx, T> ToTwoState<Ctx> for T
+where
+    T: CvlrBoolExpr<Ctx>,
+{
+    fn to_two_state(self) -> impl for<'a> CvlrBoolExpr<StatePair<'a, Ctx>> {
+        cvlr_into_2_state(self)
+    }
+}
