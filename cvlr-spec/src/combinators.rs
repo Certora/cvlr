@@ -72,9 +72,9 @@ where
 /// or when both `A` and `B` are `true`. When asserting or assuming, the consequent
 /// `B` is only processed if the antecedent `A` evaluates to `true`.
 #[derive(Copy, Clone)]
-pub struct CvlrImpl<A, B>(A, B);
+pub struct CvlrImplies<A, B>(A, B);
 
-impl<A, B> CvlrBoolExpr for CvlrImpl<A, B>
+impl<A, B> CvlrBoolExpr for CvlrImplies<A, B>
 where
     A: CvlrBoolExpr,
     B: CvlrBoolExpr<Context = A::Context>,
@@ -133,16 +133,16 @@ where
 /// # Examples
 ///
 /// ```
-/// use cvlr_spec::{cvlr_impl, cvlr_true, CvlrBoolExpr};
+/// use cvlr_spec::{cvlr_implies, cvlr_true, CvlrBoolExpr};
 ///
 /// // true → true evaluates to true
-/// let expr = cvlr_impl(cvlr_true::<()>(), cvlr_true::<()>());
+/// let expr = cvlr_implies(cvlr_true::<()>(), cvlr_true::<()>());
 /// assert!(expr.eval(&()));
 /// ```
-pub fn cvlr_impl<A, B>(a: A, b: B) -> CvlrImpl<A, B>
+pub fn cvlr_implies<A, B>(a: A, b: B) -> CvlrImplies<A, B>
 where
     A: CvlrBoolExpr,
     B: CvlrBoolExpr<Context = A::Context>,
 {
-    CvlrImpl(a, b)
+    CvlrImplies(a, b)
 }

@@ -110,14 +110,14 @@ fn test_cvlr_and_chained() {
 }
 
 #[test]
-fn test_cvlr_impl() {
+fn test_cvlr_implies() {
     let ctx = TestCtx {
         x: 5,
         y: 10,
         flag: true,
     };
     // x > 0 -> y > 0 (both true, so true)
-    let impl_expr = cvlr_impl(XPositive, YPositive);
+    let impl_expr = cvlr_implies(XPositive, YPositive);
     assert!(impl_expr.eval(&ctx));
 
     // x > 0 -> y > 0 (antecedent true, consequent false, so false)
@@ -347,9 +347,9 @@ fn test_cvlr_spec_with_implication() {
     }
 
     // Create a spec: requires x > 0, ensures if x > 0 then y > 0
-    // Test that cvlr_impl preserves HRTB bounds
+    // Test that cvlr_implies preserves HRTB bounds
     let requires = XPositive;
-    let ensures = cvlr_impl(PostXPositive, PostYPositive);
+    let ensures = cvlr_implies(PostXPositive, PostYPositive);
 
     let spec = cvlr_spec(requires, ensures);
 
@@ -498,8 +498,8 @@ fn test_nested_expressions() {
 
     // (x > 0 -> y > 0) && (y > 0 -> x > 0)
     let expr2 = cvlr_and(
-        cvlr_impl(XPositive, YPositive),
-        cvlr_impl(YPositive, XPositive),
+        cvlr_implies(XPositive, YPositive),
+        cvlr_implies(YPositive, XPositive),
     );
     assert!(expr2.eval(&ctx));
 }
@@ -964,7 +964,7 @@ fn test_eval_with_states_with_composed_expressions() {
     assert!(!and_expr.eval_with_states(&post2, &pre)); // post.x = -5 <= 0
 
     // Test with implication
-    let impl_expr = cvlr_impl(XPositive, YPositive);
+    let impl_expr = cvlr_implies(XPositive, YPositive);
     assert!(impl_expr.eval_with_states(&post, &pre)); // post.x > 0 -> post.y > 0 (both true)
 
     let post3 = TestCtx {
