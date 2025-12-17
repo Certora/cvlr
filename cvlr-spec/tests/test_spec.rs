@@ -974,3 +974,202 @@ fn test_eval_with_states_with_composed_expressions() {
     };
     assert!(!impl_expr.eval_with_states(&post3, &pre)); // post.x > 0 -> post.y > 0 (antecedent true, consequent false)
 }
+
+#[test]
+fn test_cvlr_spec_macro() {
+    // Test cvlr_spec! macro creates a spec correctly
+    let spec = cvlr_spec! {
+        requires: XPositive,
+        ensures: YPositive
+    };
+
+    let pre = TestCtx {
+        x: 5,
+        y: 0,
+        flag: false,
+    };
+    let post = TestCtx {
+        x: 5,
+        y: 10,
+        flag: false,
+    };
+
+    // Test assume_requires
+    spec.assume_requires(&pre); // Should assume XPositive holds for pre
+
+    // Test check_ensures
+    spec.check_ensures(&post, &pre); // Should assert YPositive holds for post
+}
+
+#[test]
+fn test_cvlr_spec_macro_with_predicates() {
+    // Test cvlr_spec! macro with cvlr_predicate!
+    let spec = cvlr_spec! {
+        requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        ensures: cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+    };
+
+    let pre = TestCtx {
+        x: 5,
+        y: 0,
+        flag: false,
+    };
+    let post = TestCtx {
+        x: 5,
+        y: 10,
+        flag: false,
+    };
+
+    spec.assume_requires(&pre);
+    spec.check_ensures(&post, &pre);
+}
+
+#[test]
+fn test_cvlr_invar_spec_macro() {
+    // Test cvlr_invar_spec! macro creates an invariant spec correctly
+    let spec = cvlr_invar_spec! {
+        assumption: XPositive,
+        invariant: YPositive
+    };
+
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: false,
+    };
+
+    // Test assume_requires - should assume both assumption and invariant
+    spec.assume_requires(&ctx);
+
+    // Test check_ensures - should assert invariant holds
+    spec.check_ensures(&ctx, &ctx);
+}
+
+#[test]
+fn test_cvlr_invar_spec_macro_with_predicates() {
+    // Test cvlr_invar_spec! macro with cvlr_predicate!
+    let spec = cvlr_invar_spec! {
+        assumption: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        invariant: cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+    };
+
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: false,
+    };
+
+    spec.assume_requires(&ctx);
+    spec.check_ensures(&ctx, &ctx);
+}
+
+// Mock macro for testing cvlr_rules! and cvlr_invariant_rules!
+// In real usage, this would be provided by the user
+macro_rules! cvlr_impl_rule {
+    {$rule_name:ident, $spec:expr, $base:ident} => {
+        // Just verify the macro expands correctly
+        {
+            let _rule_name = stringify!($rule_name);
+            let _spec = $spec;
+            let _base = stringify!($base);
+        }
+    };
+}
+
+#[test]
+fn test_cvlr_rules_macro() {
+    // Test cvlr_rules! macro expands correctly
+    // Define rules for multiple functions
+    cvlr_rules! {
+        name: "solvency",
+        spec: cvlr_spec! {
+            requires: XPositive,
+            ensures: YPositive
+        },
+        bases: [
+            base_update_counter,
+            base_reset_counter,
+            base_increment_counter,
+        ]
+    }
+
+    // The macro should expand to three calls to cvlr_rule_for_spec!
+    // We can't directly test the expansion, but we can verify it compiles
+}
+
+#[test]
+fn test_cvlr_rules_macro_without_base_prefix() {
+    // Test cvlr_rules! with functions that don't have base_ prefix
+    cvlr_rules! {
+        name: "liquidity",
+        spec: cvlr_spec! {
+            requires: XPositive,
+            ensures: YPositive
+        },
+        bases: [
+            update_function,
+            reset_function,
+        ]
+    }
+}
+
+#[test]
+fn test_cvlr_rules_macro_single_base() {
+    // Test cvlr_rules! with a single base function
+    cvlr_rules! {
+        name: "test_rule",
+        spec: cvlr_spec! {
+            requires: XPositive,
+            ensures: YPositive
+        },
+        bases: [
+            base_single_function,
+        ]
+    }
+}
+
+#[test]
+fn test_cvlr_invariant_rules_macro() {
+    // Test cvlr_invariant_rules! macro expands correctly
+    // Define invariant rules for multiple functions
+    cvlr_invariant_rules! {
+        name: "non_negative",
+        assumption: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        invariant: cvlr_predicate! { | c : TestCtx | -> { c.y >= 0 } },
+        bases: [
+            base_update_counter,
+            base_reset_counter,
+            base_increment_counter,
+        ]
+    }
+
+    // The macro should expand to three calls to cvlr_rule_for_spec!
+    // with an invariant spec created from assumption and invariant
+}
+
+#[test]
+fn test_cvlr_invariant_rules_macro_with_simple_expressions() {
+    // Test cvlr_invariant_rules! with simple boolean expressions
+    cvlr_invariant_rules! {
+        name: "positive",
+        assumption: XPositive,
+        invariant: YPositive,
+        bases: [
+            base_function1,
+            base_function2,
+        ]
+    }
+}
+
+#[test]
+fn test_cvlr_invariant_rules_macro_single_base() {
+    // Test cvlr_invariant_rules! with a single base function
+    cvlr_invariant_rules! {
+        name: "test_invariant",
+        assumption: XPositive,
+        invariant: YPositive,
+        bases: [
+            base_single_function,
+        ]
+    }
+}
