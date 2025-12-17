@@ -722,3 +722,66 @@ macro_rules! cvlr_invariant_rules {
         )*
     };
 }
+
+#[macro_export]
+macro_rules! cvlr_and {
+    ($a:ident, $b:ident) => {
+        $crate::combinators::cvlr_and($a, $b)
+    };
+    ($a:expr, $b:ident) => {
+        $crate::combinators::cvlr_and($a, $b)
+    };
+    ($a:ident, $b:expr) => {
+        $crate::combinators::cvlr_and($a, $b)
+    };
+    ($a:expr, $b:expr) => {
+        $crate::combinators::cvlr_and($a, $b)
+    };
+
+    ($a:expr, $b:expr, $c:expr) => {
+        $crate::combinators::cvlr_and($a, $crate::combinators::cvlr_and($b, $c))
+    };
+    ($a:expr, $b:expr, $c:expr, $d:expr) => {
+        $crate::combinators::cvlr_and(
+            $a,
+            $crate::combinators::cvlr_and($b, $crate::combinators::cvlr_and($c, $d)),
+        )
+    };
+    ($a:expr, $b:expr, $c:expr, $d:expr, $e:expr) => {
+        $crate::combinators::cvlr_and(
+            $a,
+            $crate::combinators::cvlr_and(
+                $b,
+                $crate::combinators::cvlr_and($c, $crate::combinators::cvlr_and($d, $e)),
+            ),
+        )
+    };
+    ($a:expr, $b:expr, $c:expr, $d:expr, $e:expr, $f:expr) => {
+        $crate::combinators::cvlr_and(
+            $a,
+            $crate::combinators::cvlr_and(
+                $b,
+                $crate::combinators::cvlr_and(
+                    $c,
+                    $crate::combinators::cvlr_and($d, $crate::combinators::cvlr_and($e, $f)),
+                ),
+            ),
+        )
+    };
+}
+
+#[macro_export]
+macro_rules! cvlr_implies {
+    ($a:ident, $b:ident) => {
+        $crate::combinators::cvlr_implies($a, $b)
+    };
+    ($a:expr, $b:ident) => {
+        $crate::combinators::cvlr_implies($a, $b)
+    };
+    ($a:ident, $b:expr) => {
+        $crate::combinators::cvlr_implies($a, $b)
+    };
+    ($a:expr, $b:expr) => {
+        $crate::combinators::cvlr_implies($a, $b)
+    };
+}
