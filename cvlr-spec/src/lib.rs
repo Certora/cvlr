@@ -16,7 +16,7 @@
 //!
 //! Boolean expressions can be composed using:
 //! - [`cvlr_and`] - Logical AND
-//! - [`cvlr_implies`] - Logical implication (A → B)
+//! - [`cvlr_impl`] - Logical implication (A → B)
 //! - [`cvlr_true`] - Constant true expression
 //!
 //! ## State Pairs
