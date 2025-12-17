@@ -155,8 +155,11 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
 
         #vis struct #struct_name;
 
-        impl ::cvlr::spec::CvlrBoolExpr<#ctx_type> for #struct_name {
-            fn eval(&self, ctx: &#ctx_type) -> bool {
+        impl ::cvlr::spec::CvlrBoolExpr for #struct_name {
+
+            type Context = #ctx_type;
+
+            fn eval(&self, ctx: &Self::Context) -> bool {
                 let #param_name = ctx;
                 {
                     #(#let_statements)*
@@ -164,13 +167,13 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
                 }
             }
 
-            fn assert(&self, ctx: &#ctx_type) {
+            fn assert(&self, ctx: &Self::Context) {
                 let #param_name = ctx;
                 #(#let_statements)*
                 #(#assert_statements)*
             }
 
-            fn assume(&self, ctx: &#ctx_type) {
+            fn assume(&self, ctx: &Self::Context) {
                 let #param_name = ctx;
                 #(#let_statements)*
                 #(#assume_statements)*
