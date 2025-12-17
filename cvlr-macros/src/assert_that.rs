@@ -69,7 +69,7 @@ fn unwrap_groups(expr: &Expr) -> &Expr {
     }
 }
 
-fn analyze_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
+pub fn analyze_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
     // Unwrap any groups first
     let condition = unwrap_groups(condition);
     // Check if condition is a binary comparison
@@ -181,7 +181,7 @@ pub fn assert_all_impl(input: TokenStream) -> TokenStream {
     .into()
 }
 
-fn analyze_assume_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
+pub fn analyze_assume_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
     // Unwrap any groups first
     let condition = unwrap_groups(condition);
 
@@ -278,7 +278,7 @@ pub fn assume_all_impl(input: TokenStream) -> TokenStream {
     .into()
 }
 
-fn analyze_eval_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
+pub fn analyze_eval_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
     if let Some(guard_expr) = guard {
         // Guarded expression: if guard { condition } else { true }
         Ok(quote! {
