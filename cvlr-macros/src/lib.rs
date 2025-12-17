@@ -4,6 +4,7 @@ use syn::{parse_macro_input, parse_quote, ItemFn};
 
 mod assert_that;
 mod mock;
+mod predicate;
 /// Mark a method as a CVT rule
 ///
 /// # Example
@@ -36,6 +37,80 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
     mock::mock_fn_impl(attr, item)
+}
+
+/// Converts a function into a CVLR predicate.
+///
+/// This attribute macro transforms a function into a struct that implements
+/// [`CvlrBoolExpr`](cvlr_spec::CvlrBoolExpr) for the specified context type.
+/// The function body is parsed and used to generate `eval`, `assert`, and `assume`
+/// methods using the same helpers as [`cvlr_def_predicate!`](cvlr_spec::cvlr_def_predicate).
+///
+/// # Syntax
+///
+/// ```ignore
+/// #[cvlr_predicate]
+/// pub fn predicate_name(c: &Ctx) {
+///     c.x > 0;
+///     c.y < 100;
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * The function must have exactly one parameter of type `&Ctx` or `&mut Ctx`
+/// * The function body can contain one or more expressions (statements ending with `;`)
+/// * The function name will be converted from snake_case to PascalCase for the struct name
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_macros::cvlr_predicate;
+/// use cvlr_spec::CvlrBoolExpr;
+///
+/// struct Ctx {
+///     x: i32,
+///     y: i32,
+/// }
+///
+/// #[cvlr_predicate]
+/// pub fn x_gt_zero(c: &Ctx) {
+///     c.x > 0;
+/// }
+///
+/// // This generates:
+/// // pub struct XGtZero;
+/// // impl CvlrBoolExpr<Ctx> for XGtZero { ... }
+///
+/// let ctx = Ctx { x: 5, y: 10 };
+/// let pred = XGtZero;
+/// assert!(pred.eval(&ctx));
+/// ```
+///
+/// # Generated Code
+///
+/// The macro generates a struct and implementation similar to [`cvlr_def_predicate!`](cvlr_spec::cvlr_def_predicate):
+///
+/// ```ignore
+/// pub struct XGtZero;
+/// impl CvlrBoolExpr<Ctx> for XGtZero {
+///     fn eval(&self, ctx: &Ctx) -> bool {
+///         let c = ctx;
+///         cvlr_eval_all!(c.x > 0)
+///     }
+///     fn assert(&self, ctx: &Ctx) {
+///         let c = ctx;
+///         cvlr_assert_all!(c.x > 0);
+///     }
+///     fn assume(&self, ctx: &Ctx) {
+///         let c = ctx;
+///         cvlr_assume_all!(c.x > 0);
+///     }
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn cvlr_predicate(attr: TokenStream, item: TokenStream) -> TokenStream {
+    predicate::cvlr_predicate_impl(attr, item)
 }
 
 /// Assert a condition using a DSL syntax
