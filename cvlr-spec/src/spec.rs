@@ -320,10 +320,62 @@ where
     IntoStatePairPrededicate(pred, core::marker::PhantomData)
 }
 
+/// A trait for converting a boolean expression over a context type into a boolean expression over [`StatePair`].
+///
+/// This trait provides a convenient way to convert a boolean expression that operates on a single
+/// context type `Ctx` into a boolean expression that operates on a [`StatePair`]. When converted,
+/// the expression will evaluate using only the post-state (current state) from the `StatePair`,
+/// effectively ignoring the pre-state.
+///
+/// This is particularly useful when you have a precondition that you want to reuse as a
+/// postcondition, or when you want to express a postcondition that only depends on the
+/// final state and not on the relationship between pre and post states.
+///
+/// # Type Parameters
+///
+/// * `Ctx` - The context type that the original boolean expression operates on
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_spec::{ToTwoState, CvlrTrue, StatePair};
+///
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Convert a boolean expression over Counter to one over StatePair
+/// let expr = CvlrTrue;
+/// let state_pair_expr = expr.to_two_state();
+///
+/// // Now you can use it with StatePair
+/// let pre = Counter { value: 5 };
+/// let post = Counter { value: 10 };
+/// let pair = StatePair::new(&post, &pre);
+/// assert!(state_pair_expr.eval(&pair));
+/// ```
+///
+/// # Implementation
+///
+/// The trait is automatically implemented for any type `T` that implements `CvlrBoolExpr<Ctx>`.
+/// The conversion is done by wrapping the expression in [`IntoStatePairPrededicate`], which
+/// evaluates the original expression using only the post-state from the `StatePair`.
 pub trait ToTwoState<Ctx> {
+    /// Converts this boolean expression into one that operates on [`StatePair`].
+    ///
+    /// The resulting expression will evaluate the original expression using only the
+    /// post-state (current state) from the `StatePair`, ignoring the pre-state.
+    ///
+    /// # Returns
+    ///
+    /// A boolean expression that implements `CvlrBoolExpr<StatePair<'a, Ctx>>` for any lifetime `'a`.
     fn to_two_state(self) -> impl for<'a> CvlrBoolExpr<StatePair<'a, Ctx>>;
 }
 
+/// Blanket implementation of [`ToTwoState`] for any type that implements [`CvlrBoolExpr<Ctx>`].
+///
+/// This allows any boolean expression over a context type to be automatically converted
+/// to a boolean expression over `StatePair` using the [`to_two_state`](ToTwoState::to_two_state) method.
 impl<Ctx, T> ToTwoState<Ctx> for T
 where
     T: CvlrBoolExpr<Ctx>,
