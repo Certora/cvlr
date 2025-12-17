@@ -9,8 +9,9 @@ pub fn x_gt_zero(c: &Ctx) {
     c.x > 0;
 }
 pub struct XGtZero;
-impl ::cvlr::spec::CvlrBoolExpr<Ctx> for XGtZero {
-    fn eval(&self, ctx: &Ctx) -> bool {
+impl ::cvlr::spec::CvlrBoolExpr for XGtZero {
+    type Context = Ctx;
+    fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
             let __cvlr_eval_all_res = true;
@@ -18,7 +19,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for XGtZero {
             __cvlr_eval_all_res
         }
     }
-    fn assert(&self, ctx: &Ctx) {
+    fn assert(&self, ctx: &Self::Context) {
         let c = ctx;
         {
             let __cvlr_lhs = c.x;
@@ -33,7 +34,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for XGtZero {
             };
         };
     }
-    fn assume(&self, ctx: &Ctx) {
+    fn assume(&self, ctx: &Self::Context) {
         let c = ctx;
         {
             let __cvlr_lhs = c.x;
@@ -50,8 +51,9 @@ fn y_lt_hundred(c: &Ctx) {
     c.y < 100;
 }
 struct YLtHundred;
-impl ::cvlr::spec::CvlrBoolExpr<Ctx> for YLtHundred {
-    fn eval(&self, ctx: &Ctx) -> bool {
+impl ::cvlr::spec::CvlrBoolExpr for YLtHundred {
+    type Context = Ctx;
+    fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
             let __cvlr_eval_all_res = true;
@@ -59,7 +61,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for YLtHundred {
             __cvlr_eval_all_res
         }
     }
-    fn assert(&self, ctx: &Ctx) {
+    fn assert(&self, ctx: &Self::Context) {
         let c = ctx;
         {
             let __cvlr_lhs = c.y;
@@ -74,7 +76,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for YLtHundred {
             };
         };
     }
-    fn assume(&self, ctx: &Ctx) {
+    fn assume(&self, ctx: &Self::Context) {
         let c = ctx;
         {
             let __cvlr_lhs = c.y;
@@ -92,8 +94,9 @@ fn multiple_conditions(c: &Ctx) {
     c.y < 100;
 }
 struct MultipleConditions;
-impl ::cvlr::spec::CvlrBoolExpr<Ctx> for MultipleConditions {
-    fn eval(&self, ctx: &Ctx) -> bool {
+impl ::cvlr::spec::CvlrBoolExpr for MultipleConditions {
+    type Context = Ctx;
+    fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
             let __cvlr_eval_all_res = true;
@@ -102,7 +105,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for MultipleConditions {
             __cvlr_eval_all_res
         }
     }
-    fn assert(&self, ctx: &Ctx) {
+    fn assert(&self, ctx: &Self::Context) {
         let c = ctx;
         {
             let __cvlr_lhs = c.x;
@@ -129,7 +132,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for MultipleConditions {
             };
         };
     }
-    fn assume(&self, ctx: &Ctx) {
+    fn assume(&self, ctx: &Self::Context) {
         let c = ctx;
         {
             let __cvlr_lhs = c.x;
@@ -155,8 +158,9 @@ fn with_let_statement(c: &Ctx) {
     c.x > threshold;
 }
 struct WithLetStatement;
-impl ::cvlr::spec::CvlrBoolExpr<Ctx> for WithLetStatement {
-    fn eval(&self, ctx: &Ctx) -> bool {
+impl ::cvlr::spec::CvlrBoolExpr for WithLetStatement {
+    type Context = Ctx;
+    fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
             let threshold = 0;
@@ -165,7 +169,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for WithLetStatement {
             __cvlr_eval_all_res
         }
     }
-    fn assert(&self, ctx: &Ctx) {
+    fn assert(&self, ctx: &Self::Context) {
         let c = ctx;
         let threshold = 0;
         {
@@ -181,7 +185,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for WithLetStatement {
             };
         };
     }
-    fn assume(&self, ctx: &Ctx) {
+    fn assume(&self, ctx: &Self::Context) {
         let c = ctx;
         let threshold = 0;
         {
@@ -202,8 +206,9 @@ fn with_multiple_lets(c: &Ctx) {
     c.y < max_y;
 }
 struct WithMultipleLets;
-impl ::cvlr::spec::CvlrBoolExpr<Ctx> for WithMultipleLets {
-    fn eval(&self, ctx: &Ctx) -> bool {
+impl ::cvlr::spec::CvlrBoolExpr for WithMultipleLets {
+    type Context = Ctx;
+    fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
             let min_x = 0;
@@ -214,7 +219,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for WithMultipleLets {
             __cvlr_eval_all_res
         }
     }
-    fn assert(&self, ctx: &Ctx) {
+    fn assert(&self, ctx: &Self::Context) {
         let c = ctx;
         let min_x = 0;
         let max_y = 100;
@@ -243,7 +248,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for WithMultipleLets {
             };
         };
     }
-    fn assume(&self, ctx: &Ctx) {
+    fn assume(&self, ctx: &Self::Context) {
         let c = ctx;
         let min_x = 0;
         let max_y = 100;
@@ -274,8 +279,9 @@ fn let_before_expressions(c: &Ctx) {
     c.x + c.y > threshold;
 }
 struct LetBeforeExpressions;
-impl ::cvlr::spec::CvlrBoolExpr<Ctx> for LetBeforeExpressions {
-    fn eval(&self, ctx: &Ctx) -> bool {
+impl ::cvlr::spec::CvlrBoolExpr for LetBeforeExpressions {
+    type Context = Ctx;
+    fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
             let threshold = 5;
@@ -287,7 +293,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for LetBeforeExpressions {
             __cvlr_eval_all_res
         }
     }
-    fn assert(&self, ctx: &Ctx) {
+    fn assert(&self, ctx: &Self::Context) {
         let c = ctx;
         let threshold = 5;
         let limit = 100;
@@ -328,7 +334,7 @@ impl ::cvlr::spec::CvlrBoolExpr<Ctx> for LetBeforeExpressions {
             };
         };
     }
-    fn assume(&self, ctx: &Ctx) {
+    fn assume(&self, ctx: &Self::Context) {
         let c = ctx;
         let threshold = 5;
         let limit = 100;
