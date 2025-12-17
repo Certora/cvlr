@@ -155,8 +155,9 @@ where
         self.0.assume(pre_state);
         self.1.assume(pre_state);
     }
-    fn check_ensures(&self, post_state: &Self::Context, pre_state: &Self::Context) {
-        self.1.assert_with_states(post_state, pre_state);
+    fn check_ensures(&self, post_state: &Self::Context, _: &Self::Context) {
+        // -- invaraint is only over one-state so that it can be assumed in pre
+        self.1.assert(post_state);
     }
 }
 
