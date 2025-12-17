@@ -14,7 +14,7 @@ impl Parse for RuleForSpecInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         // Parse struct-like syntax: name: "...", spec: expr, base: ident
         let name_ident: Ident = input.parse()?;
-        if name_ident.to_string() != "name" {
+        if name_ident != "name" {
             return Err(syn::Error::new(name_ident.span(), "expected `name` field"));
         }
         input.parse::<Token![:]>()?;
@@ -22,7 +22,7 @@ impl Parse for RuleForSpecInput {
         input.parse::<Token![,]>()?;
 
         let spec_ident: Ident = input.parse()?;
-        if spec_ident.to_string() != "spec" {
+        if spec_ident != "spec" {
             return Err(syn::Error::new(spec_ident.span(), "expected `spec` field"));
         }
         input.parse::<Token![:]>()?;
@@ -30,7 +30,7 @@ impl Parse for RuleForSpecInput {
         input.parse::<Token![,]>()?;
 
         let base_ident: Ident = input.parse()?;
-        if base_ident.to_string() != "base" {
+        if base_ident != "base" {
             return Err(syn::Error::new(base_ident.span(), "expected `base` field"));
         }
         input.parse::<Token![:]>()?;
