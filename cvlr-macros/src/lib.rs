@@ -5,6 +5,7 @@ use syn::{parse_macro_input, parse_quote, ItemFn};
 mod assert_that;
 mod mock;
 mod predicate;
+mod rule_for_spec;
 /// Mark a method as a CVT rule
 ///
 /// # Example
@@ -505,4 +506,44 @@ pub fn cvlr_eval_that(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn cvlr_eval_all(input: TokenStream) -> TokenStream {
     assert_that::eval_all_impl(input)
+}
+
+/// Generate a rule name and call `cvlr_impl_rule!` macro
+///
+/// This macro takes a name, spec expression, and base function identifier,
+/// and generates a call to `cvlr_impl_rule!` with a combined rule name.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_rule_for_spec! {
+///     name: "rule_name",
+///     spec: expr,
+///     base: base_function_name,
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * `name`: A string literal that will be converted to snake_case
+/// * `spec`: An expression (the spec to use)
+/// * `base`: An identifier of a function (if it starts with `base_`, that prefix is stripped)
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_macros::cvlr_rule_for_spec;
+///
+/// cvlr_rule_for_spec! {
+///     name: "solvency",
+///     spec: expr,
+///     base: base_update_exchange_price_no_interest_free_new,
+/// }
+///
+/// // Expands to:
+/// // cvlr_impl_rule!(solvency_update_exchange_price_no_interest_free_new, expr, base_update_exchange_price_no_interest_free_new,)
+/// ```
+#[proc_macro]
+pub fn cvlr_rule_for_spec(input: TokenStream) -> TokenStream {
+    rule_for_spec::cvlr_rule_for_spec_impl(input)
 }
