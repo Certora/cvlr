@@ -17,12 +17,13 @@
 //! Boolean expressions can be composed using:
 //! - [`cvlr_and`] - Logical AND
 //! - [`cvlr_impl`] - Logical implication (A → B)
-//! - [`CvlrTrue`] - Constant true expression
+//! - [`cvlr_true`] - Constant true expression
 //!
 //! ## State Pairs
 //!
-//! [`StatePair`] represents a pair of contexts (pre-state and post-state) that
-//! allows expressing postconditions that compare states before and after operations.
+//! Postconditions use tuples `(Context, Context)` to represent pairs of contexts
+//! (pre-state and post-state), allowing you to express postconditions that compare
+//! states before and after operations.
 //!
 //! ## Specifications
 //!
@@ -43,14 +44,16 @@
 //! # Examples
 //!
 //! ```ignore
-//! use cvlr_spec::{cvlr_spec, CvlrTrue};
+//! use cvlr_spec::{cvlr_spec, cvlr_true, ToTwoState};
 //!
 //! struct Counter {
 //!     value: i32,
 //! }
 //!
-//! // Define a simple spec - CvlrTrue works for both requires and ensures
-//! let spec = cvlr_spec(CvlrTrue, CvlrTrue);
+//! // Define a simple spec - use to_two_state() to convert requires to ensures format
+//! let requires = cvlr_true::<Counter>();
+//! let ensures = requires.to_two_state();
+//! let spec = cvlr_spec(requires, ensures);
 //! ```
 
 mod bool_expr;

@@ -4,15 +4,15 @@ use cvlr_asserts::{cvlr_assert, cvlr_assume};
 
 /// A Boolean expression that can be evaluated, assumed, or asserted.
 ///
-/// This trait represents a boolean expression parameterized by a context type `Ctx`.
+/// This trait represents a boolean expression with an associated context type.
 /// Expressions implementing this trait can be:
 /// - Evaluated to a boolean value via [`eval`](CvlrBoolExpr::eval)
 /// - Asserted (checked) via [`assert`](CvlrBoolExpr::assert)
 /// - Assumed (taken as a precondition) via [`assume`](CvlrBoolExpr::assume)
 ///
-/// # Type Parameters
+/// # Associated Types
 ///
-/// * `Ctx` - The context type used to evaluate the expression. This typically
+/// * [`Context`](CvlrBoolExpr::Context) - The context type used to evaluate the expression. This typically
 ///   represents the state or environment in which the expression is evaluated.
 ///
 /// # Examples
@@ -26,8 +26,9 @@ use cvlr_asserts::{cvlr_assert, cvlr_assume};
 ///
 /// struct IsPositive;
 ///
-/// impl CvlrBoolExpr<MyContext> for IsPositive {
-///     fn eval(&self, ctx: &MyContext) -> bool {
+/// impl CvlrBoolExpr for IsPositive {
+///     type Context = MyContext;
+///     fn eval(&self, ctx: &Self::Context) -> bool {
 ///         ctx.value > 0
 ///     }
 /// }

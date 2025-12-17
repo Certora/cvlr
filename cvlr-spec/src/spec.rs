@@ -9,22 +9,22 @@ use crate::bool_expr::CvlrBoolExpr;
 /// - Assume preconditions hold before an operation (via [`assume_requires`](CvlrSpec::assume_requires))
 /// - Check that postconditions hold after an operation (via [`check_ensures`](CvlrSpec::check_ensures))
 ///
-/// # Type Parameters
+/// # Associated Types
 ///
-/// * `Ctx` - The context type representing the state
+/// * [`Context`](CvlrSpec::Context) - The context type representing the state
 ///
 /// # Examples
 ///
 /// ```ignore
-/// use cvlr_spec::{CvlrSpec, CvlrTrue, cvlr_spec};
+/// use cvlr_spec::{CvlrSpec, cvlr_true, cvlr_spec};
 ///
 /// struct MyContext {
 ///     value: i32,
 /// }
 ///
 /// // Create a simple spec with requires and ensures
-/// // CvlrTrue implements CvlrBoolExpr<Ctx> for any Ctx, including StatePair
-/// let spec = cvlr_spec(CvlrTrue, CvlrTrue);
+/// // cvlr_true works for any context type, including (Context, Context) tuples
+/// let spec = cvlr_spec(cvlr_true::<MyContext>(), cvlr_true::<MyContext>());
 ///
 /// let ctx = MyContext { value: 5 };
 /// spec.assume_requires(&ctx);
@@ -55,7 +55,7 @@ pub trait CvlrSpec {
 /// An implementation of [`CvlrSpec`] that combines a precondition and postcondition.
 ///
 /// This type stores a boolean expression for the precondition (requires) and
-/// a boolean expression over [`StatePair`] for the postcondition (ensures).
+/// a boolean expression over `(Context, Context)` tuples for the postcondition (ensures).
 #[derive(Copy, Clone)]
 pub struct CvlrPropImpl<Pre, Post>(Pre, Post);
 
@@ -82,23 +82,30 @@ where
 /// # Arguments
 ///
 /// * `requires` - A boolean expression over the context type representing the precondition
-/// * `ensures` - A boolean expression over [`StatePair`] representing the postcondition
+/// * `ensures` - A boolean expression over `(Context, Context)` tuples representing the postcondition
 ///
 /// # Examples
 ///
 /// ```ignore
-/// use cvlr_spec::{cvlr_spec, StatePair, CvlrBoolExpr, CvlrTrue};
+/// use cvlr_spec::{cvlr_spec, cvlr_predicate, cvlr_def_state_pair_predicate};
 ///
 /// struct Counter {
 ///     value: i32,
 /// }
 ///
+/// // Define a predicate for the ensures clause
+/// cvlr_def_state_pair_predicate! {
+///     pred ValueIncreases([c, o]: Counter) {
+///         c.value > o.value
+///     }
+/// }
+///
 /// // Define a spec: requires value >= 0, ensures value increases
 /// let spec = cvlr_spec(
-///     // requires
-///     |c: &Counter| c.value >= 0,
-///     // ensures
-///     |pair: &StatePair<'_, Counter>| pair.ctx().value > pair.old().value,
+///     // requires - a predicate over Counter
+///     cvlr_predicate! { |c: Counter| -> { c.value >= 0 } },
+///     // ensures - a predicate over (Counter, Counter)
+///     ValueIncreases,
 /// );
 /// ```
 pub fn cvlr_spec<Requires, Ensures>(
@@ -191,9 +198,9 @@ where
 /// then the postconditions must also hold. This trait provides a way to define
 /// such lemmas and verify them using the CVLR verification framework.
 ///
-/// # Type Parameters
+/// # Associated Types
 ///
-/// * `Ctx` - The context type representing the state. Must implement [`Nondet`](cvlr_nondet::Nondet)
+/// * [`Context`](CvlrLemma::Context) - The context type representing the state. Must implement [`Nondet`](cvlr_nondet::Nondet)
 ///   and [`CvlrLog`](cvlr_log::CvlrLog) to support verification.
 ///
 /// # Methods
@@ -317,63 +324,63 @@ impl<T: CvlrBoolExpr> CvlrBoolExpr for WrappedAsTwoStatePredicate<T> {
     }
 }
 
-/// A trait for converting a boolean expression over a context type into a boolean expression over [`StatePair`].
+/// A trait for converting a boolean expression over a context type into a boolean expression over `(Context, Context)` tuples.
 ///
 /// This trait provides a convenient way to convert a boolean expression that operates on a single
-/// context type `Ctx` into a boolean expression that operates on a [`StatePair`]. When converted,
-/// the expression will evaluate using only the post-state (current state) from the `StatePair`,
+/// context type `Ctx` into a boolean expression that operates on `(Ctx, Ctx)` tuples. When converted,
+/// the expression will evaluate using only the post-state (first element of the tuple),
 /// effectively ignoring the pre-state.
 ///
 /// This is particularly useful when you have a precondition that you want to reuse as a
 /// postcondition, or when you want to express a postcondition that only depends on the
 /// final state and not on the relationship between pre and post states.
 ///
-/// # Type Parameters
+/// # Associated Types
 ///
-/// * `Ctx` - The context type that the original boolean expression operates on
+/// * [`Context`](ToTwoState::Context) - The context type that the original boolean expression operates on
 ///
 /// # Examples
 ///
 /// ```ignore
-/// use cvlr_spec::{ToTwoState, CvlrTrue, StatePair};
+/// use cvlr_spec::{ToTwoState, cvlr_true};
 ///
 /// struct Counter {
 ///     value: i32,
 /// }
 ///
-/// // Convert a boolean expression over Counter to one over StatePair
-/// let expr = CvlrTrue;
+/// // Convert a boolean expression over Counter to one over (Counter, Counter)
+/// let expr = cvlr_true::<Counter>();
 /// let state_pair_expr = expr.to_two_state();
 ///
-/// // Now you can use it with StatePair
+/// // Now you can use it with tuples
 /// let pre = Counter { value: 5 };
 /// let post = Counter { value: 10 };
-/// let pair = StatePair::new(&post, &pre);
+/// let pair = (post, pre);
 /// assert!(state_pair_expr.eval(&pair));
 /// ```
 ///
 /// # Implementation
 ///
-/// The trait is automatically implemented for any type `T` that implements `CvlrBoolExpr<Ctx>`.
-/// The conversion is done by wrapping the expression in [`IntoStatePairPrededicate`], which
-/// evaluates the original expression using only the post-state from the `StatePair`.
+/// The trait is automatically implemented for any type `T` that implements [`CvlrBoolExpr`].
+/// The conversion is done by wrapping the expression in [`WrappedAsTwoStatePredicate`], which
+/// evaluates the original expression using only the post-state from the tuple.
 pub trait ToTwoState {
     type Context;
-    /// Converts this boolean expression into one that operates on [`StatePair`].
+    /// Converts this boolean expression into one that operates on `(Context, Context)` tuples.
     ///
     /// The resulting expression will evaluate the original expression using only the
-    /// post-state (current state) from the `StatePair`, ignoring the pre-state.
+    /// post-state (first element of the tuple), ignoring the pre-state.
     ///
     /// # Returns
     ///
-    /// A boolean expression that implements `CvlrBoolExpr<StatePair<'a, Ctx>>` for any lifetime `'a`.
+    /// A boolean expression that implements `CvlrBoolExpr<Context = (Self::Context, Self::Context)>`.
     fn to_two_state(self) -> impl CvlrBoolExpr<Context = (Self::Context, Self::Context)>;
 }
 
-/// Blanket implementation of [`ToTwoState`] for any type that implements [`CvlrBoolExpr<Ctx>`].
+/// Blanket implementation of [`ToTwoState`] for any type that implements [`CvlrBoolExpr`].
 ///
 /// This allows any boolean expression over a context type to be automatically converted
-/// to a boolean expression over `StatePair` using the [`to_two_state`](ToTwoState::to_two_state) method.
+/// to a boolean expression over `(Context, Context)` tuples using the [`to_two_state`](ToTwoState::to_two_state) method.
 impl<T: CvlrBoolExpr> ToTwoState for T {
     type Context = T::Context;
 

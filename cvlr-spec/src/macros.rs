@@ -75,10 +75,10 @@ macro_rules! cvlr_def_predicate {
     };
 }
 
-/// Defines a predicate over a [`StatePair`] context.
+/// Defines a predicate over a `(Context, Context)` tuple.
 ///
-/// This macro creates a new type implementing [`CvlrBoolExpr`] for `StatePair<Ctx>`.
-/// The predicate body has access to both the current context (`c`) and the old context (`o`),
+/// This macro creates a new type implementing [`CvlrBoolExpr`] for `(Ctx, Ctx)` tuples.
+/// The predicate body has access to both the current context (`c`, the first element) and the old context (`o`, the second element),
 /// allowing you to express postconditions that compare pre-state and post-state.
 ///
 /// # Syntax
@@ -195,7 +195,7 @@ macro_rules! cvlr_def_predicates {
 /// Defines multiple state pair predicates in a single macro invocation.
 ///
 /// This is a convenience macro that allows you to define multiple predicates
-/// over [`StatePair`] at once using the same syntax as [`cvlr_def_state_pair_predicate!`].
+/// over `(Context, Context)` tuples at once using the same syntax as [`cvlr_def_state_pair_predicate!`].
 ///
 /// # Syntax
 ///
@@ -262,7 +262,7 @@ macro_rules! cvlr_def_state_pair_predicates {
 ///
 /// # Returns
 ///
-/// Returns a value implementing [`CvlrBoolExpr<Ctx>`](crate::CvlrBoolExpr) that can be evaluated,
+/// Returns a value implementing [`CvlrBoolExpr`](crate::CvlrBoolExpr) with `Context = Ctx` that can be evaluated,
 /// asserted, or assumed.
 ///
 /// # Examples
@@ -338,7 +338,7 @@ macro_rules! cvlr_predicate {
 ///
 /// # Returns
 ///
-/// Creates a struct with the given name that implements [`CvlrLemma<Ctx>`](spec::CvlrLemma).
+/// Creates a struct with the given name that implements [`CvlrLemma`](spec::CvlrLemma) with `Context = Ctx`.
 ///
 /// # Examples
 ///
