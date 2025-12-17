@@ -16,7 +16,7 @@
 //!
 //! Boolean expressions can be composed using:
 //! - [`cvlr_and`] - Logical AND
-//! - [`cvlr_impl`] - Logical implication (A → B)
+//! - [`cvlr_implies`] - Logical implication (A → B)
 //! - [`cvlr_true`] - Constant true expression
 //!
 //! ## State Pairs
@@ -67,5 +67,5 @@ pub mod __macro_support {
 
 // Re-export core types and traits
 pub use bool_expr::{cvlr_true, CvlrBoolExpr};
-pub use combinators::{cvlr_and, cvlr_impl, CvlrAnd, CvlrImpl};
+pub use combinators::{cvlr_and, cvlr_implies, CvlrAnd, CvlrImplies};
 pub use spec::{cvlr_invar_spec, cvlr_spec, CvlrInvarSpec, CvlrPropImpl, CvlrSpec};
