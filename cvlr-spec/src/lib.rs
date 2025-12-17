@@ -21,9 +21,9 @@
 //!
 //! ## State Pairs
 //!
-//! Postconditions use tuples `(Context, Context)` to represent pairs of contexts
-//! (pre-state and post-state), allowing you to express postconditions that compare
-//! states before and after operations.
+//! Postconditions use [`eval_with_states`](CvlrBoolExpr::eval_with_states) to evaluate
+//! over both pre-state and post-state contexts, allowing you to express postconditions
+//! that compare states before and after operations.
 //!
 //! ## Specifications
 //!
@@ -44,16 +44,14 @@
 //! # Examples
 //!
 //! ```ignore
-//! use cvlr_spec::{cvlr_spec, cvlr_true, ToTwoState};
+//! use cvlr_spec::{cvlr_spec, cvlr_true};
 //!
 //! struct Counter {
 //!     value: i32,
 //! }
 //!
-//! // Define a simple spec - use to_two_state() to convert requires to ensures format
-//! let requires = cvlr_true::<Counter>();
-//! let ensures = requires.to_two_state();
-//! let spec = cvlr_spec(requires, ensures);
+//! // Define a simple spec - cvlr_true uses eval_with_states for ensures
+//! let spec = cvlr_spec(cvlr_true::<Counter>(), cvlr_true::<Counter>());
 //! ```
 
 mod bool_expr;
@@ -64,9 +62,10 @@ pub mod spec;
 #[doc(hidden)]
 pub mod __macro_support {
     pub use cvlr_macros::*;
+    pub use cvlr_asserts::*;
 }
 
 // Re-export core types and traits
 pub use bool_expr::{CvlrBoolExpr, cvlr_true};
 pub use combinators::{cvlr_and, cvlr_impl, CvlrAnd, CvlrImpl};
-pub use spec::{cvlr_invar_spec, cvlr_spec, CvlrInvarSpec, CvlrPropImpl, CvlrSpec, ToTwoState};
+pub use spec::{cvlr_invar_spec, cvlr_spec, CvlrInvarSpec, CvlrPropImpl, CvlrSpec};

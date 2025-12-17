@@ -40,9 +40,9 @@ impl CvlrBoolExpr for YPositive {
 }
 
 impl CvlrBoolExpr for PostYPositive {
-    type Context = (TestCtx, TestCtx);
-    fn eval(&self, pair: &Self::Context) -> bool {
-        pair.0.y > 0
+    type Context = TestCtx;
+    fn eval(&self, ctx: &Self::Context) -> bool {
+        ctx.y > 0
     }
 }
 
@@ -251,7 +251,7 @@ fn test_cvlr_def_predicate_multiple_conditions() {
     assert!(!pred.eval(&ctx3));
 }
 
-cvlr_def_state_pair_predicate! {
+cvlr_def_states_predicate! {
     pred XIncreased([ c, o ] : TestCtx) {
         c.x > o.x
     }
@@ -269,16 +269,14 @@ fn test_cvlr_def_two_predicate() {
         y: 0,
         flag: false,
     };
-    let pair = (post, pre);
 
     let pred = XIncreased;
-    assert!(pred.eval(&pair));
+    assert!(pred.eval_with_states(&post, &pre));
 
-    let pair2 = (pre, post);
-    assert!(!pred.eval(&pair2));
+    assert!(!pred.eval_with_states(&pre, &post));
 }
 
-cvlr_def_state_pair_predicate! {
+cvlr_def_states_predicate! {
     pred XAndYIncreased([ c, o ] : TestCtx) {
         c.x > o.x;
         c.y > o.y
@@ -297,18 +295,16 @@ fn test_cvlr_def_two_predicate_multiple_conditions() {
         y: 10,
         flag: false,
     };
-    let pair = (post, pre);
 
     let pred = XAndYIncreased;
-    assert!(pred.eval(&pair));
+    assert!(pred.eval_with_states(&post, &pre));
 
     let post2 = TestCtx {
         x: 5,
         y: 1,
         flag: false,
     };
-    let pair2 = (post2, pre);
-    assert!(!pred.eval(&pair2));
+    assert!(!pred.eval_with_states(&post2, &pre));
 }
 
 #[test]
@@ -333,11 +329,10 @@ fn test_cvlr_spec() {
         y: 10,
         flag: false,
     };
-    let pair = (post, pre);
-    spec.check_ensures(&pair);
+    spec.check_ensures(&post, &pre);
 }
 // Define predicates for the ensures condition
-cvlr_def_state_pair_predicate! {
+cvlr_def_states_predicate! {
     pred PostXPositive([ c, o ] : TestCtx) {
         c.x > 0
     }
@@ -345,7 +340,7 @@ cvlr_def_state_pair_predicate! {
 
 #[test]
 fn test_cvlr_spec_with_implication() {
-    cvlr_def_state_pair_predicate! {
+    cvlr_def_states_predicate! {
         pred PostYPositive([ c, o ] : TestCtx) {
             c.y > 0
         }
@@ -372,8 +367,7 @@ fn test_cvlr_spec_with_implication() {
         y: 0,
         flag: false,
     };
-    let pair = (post, pre);
-    spec.check_ensures(&pair);
+    spec.check_ensures(&post, &pre);
 }
 
 #[test]
@@ -396,8 +390,7 @@ fn test_cvlr_spec_with_and() {
         y: 10,
         flag: false,
     };
-    let pair = (post, pre);
-    spec.check_ensures(&pair);
+    spec.check_ensures(&post, &pre);
 }
 
 #[test]
@@ -422,8 +415,7 @@ fn test_cvlr_invar_spec() {
         y: 10,
         flag: false,
     };
-    let pair = (post, pre);
-    spec.check_ensures(&pair);
+    spec.check_ensures(&post, &pre);
 }
 
 #[test]
@@ -570,8 +562,8 @@ fn test_cvlr_def_predicates() {
 }
 
 #[test]
-fn test_cvlr_def_state_pair_predicates() {
-    cvlr_def_state_pair_predicates! {
+fn test_cvlr_def_states_predicates() {
+    cvlr_def_states_predicates! {
         pred XIncreased([ c, o ] : TestCtx) {
             c.x > o.x
         }
@@ -594,21 +586,19 @@ fn test_cvlr_def_state_pair_predicates() {
         y: 10,
         flag: false,
     };
-    let pair = (post, pre);
 
-    assert!(XIncreased.eval(&pair));
-    assert!(YIncreased.eval(&pair));
-    assert!(BothIncreased.eval(&pair));
+    assert!(XIncreased.eval_with_states(&post, &pre));
+    assert!(YIncreased.eval_with_states(&post, &pre));
+    assert!(BothIncreased.eval_with_states(&post, &pre));
 
     let post2 = TestCtx {
         x: 5,
         y: 1,
         flag: false,
     };
-    let pair2 = (post2, pre);
-    assert!(XIncreased.eval(&pair2));
-    assert!(!YIncreased.eval(&pair2));
-    assert!(!BothIncreased.eval(&pair2));
+    assert!(XIncreased.eval_with_states(&post2, &pre));
+    assert!(!YIncreased.eval_with_states(&post2, &pre));
+    assert!(!BothIncreased.eval_with_states(&post2, &pre));
 }
 
 #[test]
@@ -879,8 +869,8 @@ fn test_cvlr_lemma_requires_ensures_interaction() {
 }
 
 #[test]
-fn test_to_two_state() {
-    // Test converting a boolean expression over TestCtx to one over (TestCtx, TestCtx) tuple
+fn test_eval_with_states() {
+    // Test that eval_with_states works for single-state predicates
     let pre = TestCtx {
         x: 1,
         y: 2,
@@ -891,17 +881,14 @@ fn test_to_two_state() {
         y: 10,
         flag: true,
     };
-    let pair = (post, pre);
 
     // Test with XPositive - should only check post.x > 0
     let x_positive = XPositive;
-    let x_positive_state_pair = x_positive.to_two_state();
-    assert!(x_positive_state_pair.eval(&pair)); // post.x = 5 > 0
+    assert!(x_positive.eval_with_states(&post, &pre)); // post.x = 5 > 0
 
     // Test with YPositive - should only check post.y > 0
     let y_positive = YPositive;
-    let y_positive_state_pair = y_positive.to_two_state();
-    assert!(y_positive_state_pair.eval(&pair)); // post.y = 10 > 0
+    assert!(y_positive.eval_with_states(&post, &pre)); // post.y = 10 > 0
 
     // Test that it ignores pre-state - even if pre.x is negative, it should pass
     let pre2 = TestCtx {
@@ -914,9 +901,8 @@ fn test_to_two_state() {
         y: 10,
         flag: true,
     };
-    let pair2 = (post2, pre2);
-    assert!(x_positive_state_pair.eval(&pair2)); // post.x = 5 > 0, ignores pre.x = -10
-    assert!(y_positive_state_pair.eval(&pair2)); // post.y = 10 > 0, ignores pre.y = -5
+    assert!(x_positive.eval_with_states(&post2, &pre2)); // post.x = 5 > 0, ignores pre.x = -10
+    assert!(y_positive.eval_with_states(&post2, &pre2)); // post.y = 10 > 0, ignores pre.y = -5
 
     // Test with negative post-state - should fail even if pre-state is positive
     let pre3 = TestCtx {
@@ -929,14 +915,13 @@ fn test_to_two_state() {
         y: -10,
         flag: false,
     };
-    let pair3 = (post3, pre3);
-    assert!(!x_positive_state_pair.eval(&pair3)); // post.x = -5 <= 0
-    assert!(!y_positive_state_pair.eval(&pair3)); // post.y = -10 <= 0
+    assert!(!x_positive.eval_with_states(&post3, &pre3)); // post.x = -5 <= 0
+    assert!(!y_positive.eval_with_states(&post3, &pre3)); // post.y = -10 <= 0
 }
 
 #[test]
-fn test_to_two_state_with_cvlr_true() {
-    // Test that CvlrTrue works with to_two_state
+fn test_eval_with_states_with_cvlr_true() {
+    // Test that cvlr_true works with eval_with_states
     let pre = TestCtx {
         x: 1,
         y: 2,
@@ -947,16 +932,14 @@ fn test_to_two_state_with_cvlr_true() {
         y: 10,
         flag: true,
     };
-    let pair = (post, pre);
 
     let true_expr = cvlr_true::<TestCtx>();
-    let true_state_pair = true_expr.to_two_state();
-    assert!(true_state_pair.eval(&pair)); // CvlrTrue always evaluates to true
+    assert!(true_expr.eval_with_states(&post, &pre)); // cvlr_true always evaluates to true
 }
 
 #[test]
-fn test_to_two_state_with_composed_expressions() {
-    // Test converting composed expressions
+fn test_eval_with_states_with_composed_expressions() {
+    // Test eval_with_states with composed expressions
     let pre = TestCtx {
         x: 1,
         y: 2,
@@ -967,12 +950,10 @@ fn test_to_two_state_with_composed_expressions() {
         y: 10,
         flag: true,
     };
-    let pair = (post, pre);
 
     // Test with AND expression
     let and_expr = cvlr_and(XPositive, YPositive);
-    let and_state_pair = and_expr.to_two_state();
-    assert!(and_state_pair.eval(&pair)); // Both post.x > 0 and post.y > 0
+    assert!(and_expr.eval_with_states(&post, &pre)); // Both post.x > 0 and post.y > 0
 
     // Test with negative case
     let post2 = TestCtx {
@@ -980,19 +961,16 @@ fn test_to_two_state_with_composed_expressions() {
         y: 10,
         flag: false,
     };
-    let pair2 = (post2, pre);
-    assert!(!and_state_pair.eval(&pair2)); // post.x = -5 <= 0
+    assert!(!and_expr.eval_with_states(&post2, &pre)); // post.x = -5 <= 0
 
     // Test with implication
     let impl_expr = cvlr_impl(XPositive, YPositive);
-    let impl_state_pair = impl_expr.to_two_state();
-    assert!(impl_state_pair.eval(&pair)); // post.x > 0 -> post.y > 0 (both true)
+    assert!(impl_expr.eval_with_states(&post, &pre)); // post.x > 0 -> post.y > 0 (both true)
 
     let post3 = TestCtx {
         x: 5,
         y: -10,
         flag: false,
     };
-    let pair3 = (post3, pre);
-    assert!(!impl_state_pair.eval(&pair3)); // post.x > 0 -> post.y > 0 (antecedent true, consequent false)
+    assert!(!impl_expr.eval_with_states(&post3, &pre)); // post.x > 0 -> post.y > 0 (antecedent true, consequent false)
 }

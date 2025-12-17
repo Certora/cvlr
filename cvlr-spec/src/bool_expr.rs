@@ -6,9 +6,10 @@ use cvlr_asserts::{cvlr_assert, cvlr_assume};
 ///
 /// This trait represents a boolean expression with an associated context type.
 /// Expressions implementing this trait can be:
-/// - Evaluated to a boolean value via [`eval`](CvlrBoolExpr::eval)
-/// - Asserted (checked) via [`assert`](CvlrBoolExpr::assert)
-/// - Assumed (taken as a precondition) via [`assume`](CvlrBoolExpr::assume)
+/// - Evaluated to a boolean value via [`eval`](CvlrBoolExpr::eval) (single state)
+/// - Evaluated over two states via [`eval_with_states`](CvlrBoolExpr::eval_with_states) (pre-state and post-state)
+/// - Asserted (checked) via [`assert`](CvlrBoolExpr::assert) or [`assert_with_states`](CvlrBoolExpr::assert_with_states)
+/// - Assumed (taken as a precondition) via [`assume`](CvlrBoolExpr::assume) or [`assume_with_states`](CvlrBoolExpr::assume_with_states)
 ///
 /// # Associated Types
 ///
@@ -55,6 +56,17 @@ pub trait CvlrBoolExpr {
     /// The default implementation uses [`cvlr_assume!`] to assume the result of [`eval`](CvlrBoolExpr::eval).
     fn assume(&self, ctx: &Self::Context) {
         cvlr_assume!(self.eval(ctx));
+    }
+
+    fn eval_with_states(&self, ctx0: &Self::Context, _: &Self::Context) -> bool {
+        self.eval(&ctx0)
+    }
+    fn assert_with_states(&self, ctx0: &Self::Context, _: &Self::Context) {
+        self.assert(&ctx0);
+    }
+
+    fn assume_with_states(&self, ctx0: &Self::Context, _: &Self::Context) {
+        self.assume(&ctx0);
     }
 }
 
