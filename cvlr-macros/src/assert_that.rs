@@ -181,7 +181,10 @@ pub fn assert_all_impl(input: TokenStream) -> TokenStream {
     .into()
 }
 
-pub fn analyze_assume_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
+pub fn analyze_assume_condition(
+    condition: &Expr,
+    guard: Option<&Expr>,
+) -> syn::Result<TokenStream2> {
     // Unwrap any groups first
     let condition = unwrap_groups(condition);
 
