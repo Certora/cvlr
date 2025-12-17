@@ -26,6 +26,18 @@ where
         self.0.assume(ctx);
         self.1.assume(ctx);
     }
+
+    fn eval_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) -> bool {
+        self.0.eval_with_states(ctx0, ctx1) && self.1.eval_with_states(ctx0, ctx1)
+    }
+    fn assert_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        self.0.assert_with_states(ctx0, ctx1);
+        self.1.assert_with_states(ctx0, ctx1);
+    }
+    fn assume_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        self.0.assume_with_states(ctx0, ctx1);
+        self.1.assume_with_states(ctx0, ctx1);
+    }
 }
 
 /// Combines two boolean expressions with logical AND.
@@ -86,8 +98,27 @@ where
             self.1.assume(ctx);
         }
     }
-}
 
+    fn eval_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) -> bool {
+        if self.0.eval_with_states(ctx0, ctx1) {
+            self.1.eval_with_states(ctx0, ctx1)
+        } else {
+            true
+        }
+    }
+
+    fn assert_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        if self.0.eval_with_states(ctx0, ctx1) {
+            self.1.assert_with_states(ctx0, ctx1)
+        }
+    }
+
+    fn assume_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        if self.0.eval_with_states(ctx0, ctx1) {
+            self.1.assume_with_states(ctx0, ctx1)
+        }
+    }
+}
 
 /// Creates a boolean expression representing logical implication (A → B).
 ///

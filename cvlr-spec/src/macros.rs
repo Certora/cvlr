@@ -75,16 +75,17 @@ macro_rules! cvlr_def_predicate {
     };
 }
 
-/// Defines a predicate over a `(Context, Context)` tuple.
+/// Defines a predicate that evaluates over two states.
 ///
-/// This macro creates a new type implementing [`CvlrBoolExpr`] for `(Ctx, Ctx)` tuples.
-/// The predicate body has access to both the current context (`c`, the first element) and the old context (`o`, the second element),
+/// This macro creates a new type implementing [`CvlrBoolExpr`] with `Context = Ctx`.
+/// The predicate uses [`eval_with_states`](crate::CvlrBoolExpr::eval_with_states) to evaluate
+/// over both the current/post-state (`c`) and the old/pre-state (`o`),
 /// allowing you to express postconditions that compare pre-state and post-state.
 ///
 /// # Syntax
 ///
 /// ```ignore
-/// cvlr_def_state_pair_predicate! {
+/// cvlr_def_states_predicate! {
 ///     pred <name> ( [ <current_var>, <old_var> ] : <context_type> ) {
 ///         <expression1>;
 ///         <expression2>;
@@ -104,45 +105,63 @@ macro_rules! cvlr_def_predicate {
 /// # Examples
 ///
 /// ```ignore
-/// use cvlr_spec::cvlr_def_state_pair_predicate;
+/// use cvlr_spec::cvlr_def_states_predicate;
 ///
 /// struct Counter {
 ///     value: i32,
 /// }
 ///
-/// cvlr_def_state_pair_predicate! {
+/// cvlr_def_states_predicate! {
 ///     pred CounterIncreases ( [ c, o ] : Counter ) {
 ///         c.value > o.value;
 ///     }
 /// }
+///
+/// // Use the predicate with eval_with_states
+/// let pre = Counter { value: 5 };
+/// let post = Counter { value: 10 };
+/// let pred = CounterIncreases;
+/// assert!(pred.eval_with_states(&post, &pre));
 /// ```
 #[macro_export]
-macro_rules! cvlr_def_state_pair_predicate {
+macro_rules! cvlr_def_states_predicate {
     (pred $name: ident ( [ $c:ident, $o: ident ] : $ctx: ident ) {  $( $e: expr );* $(;)? }) => {
         struct $name;
         impl $crate::CvlrBoolExpr for $name {
-            type Context = ($ctx, $ctx);
-            fn eval(&self, ctx: &Self::Context) -> bool {
-                let $c = ctx.0;
-                let $o = ctx.1;
+            type Context = $ctx;
+            fn eval_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) -> bool {
+                let $c = ctx0;
+                let $o = ctx1;
                 $crate::__macro_support::cvlr_eval_all!(
                     $($e),*
                 )
             }
-            fn assert(&self, ctx: &Self::Context) {
-                let $c = ctx.0;
-                let $o = ctx.1;
+            fn assert_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+                let $c = ctx0;
+                let $o = ctx1;
                 $crate::__macro_support::cvlr_assert_all!(
                     $($e),*
                 );
             }
-
-            fn assume(&self, ctx: &Self::Context) {
-                let $c = ctx.0;
-                let $o = ctx.1;
+            fn assume_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+                let $c = ctx0;
+                let $o = ctx1;
                 $crate::__macro_support::cvlr_assume_all!(
                     $($e),*
                 );
+            }
+
+            fn eval(&self, ctx: &Self::Context) -> bool {
+                $crate::__macro_support::cvlr_assert!(false);
+                panic!("eval should never be called for a state pair predicate; use eval_with_states instead");
+            }
+            fn assert(&self, ctx: &Self::Context) {
+                $crate::__macro_support::cvlr_assert!(false);
+                panic!("assert should never be called for a state pair predicate; use assert_with_states instead");
+            }
+            fn assume(&self, ctx: &Self::Context) {
+                $crate::__macro_support::cvlr_assert!(false);
+                panic!("assume should never be called for a state pair predicate; use assume_with_states instead");
             }
         }
     };
@@ -192,15 +211,15 @@ macro_rules! cvlr_def_predicates {
     };
 }
 
-/// Defines multiple state pair predicates in a single macro invocation.
+/// Defines multiple state predicates in a single macro invocation.
 ///
 /// This is a convenience macro that allows you to define multiple predicates
-/// over `(Context, Context)` tuples at once using the same syntax as [`cvlr_def_state_pair_predicate!`].
+/// that evaluate over two states at once using the same syntax as [`cvlr_def_states_predicate!`].
 ///
 /// # Syntax
 ///
 /// ```ignore
-/// cvlr_def_state_pair_predicates! {
+/// cvlr_def_states_predicates! {
 ///     pred <name1> ( [ <c1>, <o1> ] : <ctx> ) { ... }
 ///     pred <name2> ( [ <c2>, <o2> ] : <ctx> ) { ... }
 ///     ...
@@ -210,13 +229,13 @@ macro_rules! cvlr_def_predicates {
 /// # Examples
 ///
 /// ```ignore
-/// use cvlr_spec::cvlr_def_state_pair_predicates;
+/// use cvlr_spec::cvlr_def_states_predicates;
 ///
 /// struct Counter {
 ///     value: i32,
 /// }
 ///
-/// cvlr_def_state_pair_predicates! {
+/// cvlr_def_states_predicates! {
 ///     pred Increases ( [ c, o ] : Counter ) {
 ///         c.value > o.value;
 ///     }
@@ -226,10 +245,10 @@ macro_rules! cvlr_def_predicates {
 /// }
 /// ```
 #[macro_export]
-macro_rules! cvlr_def_state_pair_predicates {
+macro_rules! cvlr_def_states_predicates {
     ($(pred $name: ident ( [ $c:ident, $o: ident ] : $ctx: ident ) {  $( $e: expr );* $(;)? })*) => {
         $(
-            $crate::cvlr_def_state_pair_predicate! {
+            $crate::cvlr_def_states_predicate! {
                 pred $name ( [ $c, $o ] : $ctx ) { $( $e );* }
             }
         )*
