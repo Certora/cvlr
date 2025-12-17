@@ -438,3 +438,44 @@ macro_rules! cvlr_lemma {
             }
         };
 }
+
+// cvlr_rules! {
+//     name: "solvency",
+//     spec: MySpec,
+//     bases: [
+//         function1,
+//         function2,
+//         function3,
+//     ]
+// }
+#[macro_export]
+macro_rules! cvlr_rules {
+    (name: $name:literal, spec: $spec:expr, bases: [ $( $base:ident ),* $(,)? ] ) => {
+        $(
+            $crate::__macro_support::cvlr_rule_for_spec!{name: $name, spec: $spec, base: $base}
+        )*
+    };
+}
+
+#[macro_export]
+macro_rules! cvlr_spec {
+    (requires: $r:expr, ensures: $e:expr) => {
+        $crate::spec::cvlr_spec($r, $e)
+    };
+}
+
+#[macro_export]
+macro_rules! cvlr_invar_spec {
+    (assumption: $a:expr, invariant: $i:expr) => {
+        $crate::spec::cvlr_invar_spec($a, $i)
+    };
+}
+
+#[macro_export]
+macro_rules! cvlr_invariant_rules {
+    (name: $name:literal, assumption: $a:expr, invariant: $i:expr, bases: [ $( $base:ident ),* $(,)? ] ) => {
+        $(
+            $crate::__macro_support::cvlr_rule_for_spec!{name: $name, spec: $crate::spec::cvlr_invar_spec($a, $i), base: $base}
+        )*
+    };
+}
