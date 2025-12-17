@@ -59,14 +59,14 @@ pub trait CvlrBoolExpr {
     }
 
     fn eval_with_states(&self, ctx0: &Self::Context, _: &Self::Context) -> bool {
-        self.eval(&ctx0)
+        self.eval(ctx0)
     }
     fn assert_with_states(&self, ctx0: &Self::Context, _: &Self::Context) {
-        self.assert(&ctx0);
+        self.assert(ctx0);
     }
 
     fn assume_with_states(&self, ctx0: &Self::Context, _: &Self::Context) {
-        self.assume(&ctx0);
+        self.assume(ctx0);
     }
 }
 

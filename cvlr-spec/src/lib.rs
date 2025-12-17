@@ -61,11 +61,11 @@ pub mod spec;
 
 #[doc(hidden)]
 pub mod __macro_support {
-    pub use cvlr_macros::*;
     pub use cvlr_asserts::*;
+    pub use cvlr_macros::*;
 }
 
 // Re-export core types and traits
-pub use bool_expr::{CvlrBoolExpr, cvlr_true};
+pub use bool_expr::{cvlr_true, CvlrBoolExpr};
 pub use combinators::{cvlr_and, cvlr_impl, CvlrAnd, CvlrImpl};
 pub use spec::{cvlr_invar_spec, cvlr_spec, CvlrInvarSpec, CvlrPropImpl, CvlrSpec};
