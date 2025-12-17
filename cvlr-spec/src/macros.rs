@@ -439,15 +439,81 @@ macro_rules! cvlr_lemma {
         };
 }
 
-// cvlr_rules! {
-//     name: "solvency",
-//     spec: MySpec,
-//     bases: [
-//         function1,
-//         function2,
-//         function3,
-//     ]
-// }
+/// Defines multiple rules for a specification across multiple base functions.
+///
+/// This macro is a convenience macro that generates multiple rule definitions
+/// by calling [`cvlr_rule_for_spec!`](crate::__macro_support::cvlr_rule_for_spec) for each
+/// base function in the list. Each rule will have the same name and specification,
+/// but will be applied to different base functions.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_rules! {
+///     name: "rule_name",
+///     spec: spec_expression,
+///     bases: [
+///         base_function1,
+///         base_function2,
+///         base_function3,
+///     ]
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * `name` - A string literal that will be converted to snake_case and combined with each base function name
+/// * `spec` - An expression representing the specification (must implement [`CvlrSpec`](crate::spec::CvlrSpec))
+/// * `bases` - A list of function identifiers (if they start with `base_`, that prefix is stripped)
+///
+/// # Expansion
+///
+/// This macro expands to multiple calls to `cvlr_rule_for_spec!`, one for each base function:
+///
+/// ```text
+/// // Input:
+/// cvlr_rules! {
+///     name: "solvency",
+///     spec: my_spec,
+///     bases: [base_function1, base_function2]
+/// }
+///
+/// // Expands to:
+/// cvlr_rule_for_spec!{name: "solvency", spec: my_spec, base: base_function1}
+/// cvlr_rule_for_spec!{name: "solvency", spec: my_spec, base: base_function2}
+/// ```
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_spec::{cvlr_rules, cvlr_spec, cvlr_predicate};
+///
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Create a spec
+/// let my_spec = cvlr_spec! {
+///     requires: cvlr_predicate! { | c : Counter | -> { c.value > 0 } },
+///     ensures: cvlr_predicate! { | c : Counter | -> { c.value >= 0 } }
+/// };
+///
+/// // Define rules for multiple functions
+/// cvlr_rules! {
+///     name: "solvency",
+///     spec: my_spec,
+///     bases: [
+///         base_update_counter,
+///         base_reset_counter,
+///         base_increment_counter,
+///     ]
+/// }
+/// ```
+///
+/// This will create three rules:
+/// - `solvency_update_counter`
+/// - `solvency_reset_counter`
+/// - `solvency_increment_counter`
 #[macro_export]
 macro_rules! cvlr_rules {
     (name: $name:literal, spec: $spec:expr, bases: [ $( $base:ident ),* $(,)? ] ) => {
@@ -457,6 +523,58 @@ macro_rules! cvlr_rules {
     };
 }
 
+/// Creates a specification from preconditions (requires) and postconditions (ensures).
+///
+/// This macro is a convenience wrapper around [`cvlr_spec`](crate::spec::cvlr_spec) that
+/// provides a more readable syntax for creating specifications.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_spec! {
+///     requires: requires_expression,
+///     ensures: ensures_expression,
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * `requires` - A boolean expression over the context type representing the precondition
+/// * `ensures` - A boolean expression over the context type that uses [`eval_with_states`](crate::CvlrBoolExpr::eval_with_states)
+///   to evaluate over both pre-state and post-state
+///
+/// # Returns
+///
+/// Returns a value implementing [`CvlrSpec`](crate::spec::CvlrSpec) with the same context type as the requires expression.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_spec::{cvlr_spec, cvlr_predicate, cvlr_def_states_predicate};
+///
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Define a predicate for the ensures clause that compares pre and post states
+/// cvlr_def_states_predicate! {
+///     pred CounterIncreases ( [ c, o ] : Counter ) {
+///         c.value > o.value;
+///     }
+/// }
+///
+/// // Create a spec using the macro
+/// let spec = cvlr_spec! {
+///     requires: cvlr_predicate! { | c : Counter | -> { c.value >= 0 } },
+///     ensures: CounterIncreases,
+/// };
+///
+/// // Use the spec
+/// let pre = Counter { value: 5 };
+/// let post = Counter { value: 10 };
+/// spec.assume_requires(&pre);
+/// spec.check_ensures(&post, &pre);
+/// ```
 #[macro_export]
 macro_rules! cvlr_spec {
     (requires: $r:expr, ensures: $e:expr) => {
@@ -464,6 +582,53 @@ macro_rules! cvlr_spec {
     };
 }
 
+/// Creates an invariant specification from an assumption and an invariant.
+///
+/// This macro is a convenience wrapper around [`cvlr_invar_spec`](crate::spec::cvlr_invar_spec) that
+/// provides a more readable syntax for creating invariant specifications.
+///
+/// An invariant specification represents a contract where:
+/// - An assumption (additional precondition) is assumed before the operation
+/// - An invariant must hold both before and after the operation
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_invar_spec! {
+///     assumption: assumption_expression,
+///     invariant: invariant_expression,
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * `assumption` - A boolean expression representing an additional precondition
+/// * `invariant` - A boolean expression representing an invariant that must hold before and after
+///
+/// # Returns
+///
+/// Returns a value implementing [`CvlrSpec`](crate::spec::CvlrSpec) with the same context type as the assumption expression.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_spec::{cvlr_invar_spec, cvlr_predicate};
+///
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Create an invariant spec
+/// let spec = cvlr_invar_spec! {
+///     assumption: cvlr_predicate! { | c : Counter | -> { c.value % 2 == 0 } },
+///     invariant: cvlr_predicate! { | c : Counter | -> { c.value >= 0 } },
+/// };
+///
+/// // Use the spec
+/// let ctx = Counter { value: 4 };
+/// spec.assume_requires(&ctx);  // Assumes both assumption and invariant
+/// spec.check_ensures(&ctx, &ctx);  // Asserts invariant holds
+/// ```
 #[macro_export]
 macro_rules! cvlr_invar_spec {
     (assumption: $a:expr, invariant: $i:expr) => {
@@ -471,6 +636,84 @@ macro_rules! cvlr_invar_spec {
     };
 }
 
+/// Defines multiple rules for an invariant specification across multiple base functions.
+///
+/// This macro is a convenience macro that combines [`cvlr_invar_spec!`] and [`cvlr_rules!`]
+/// to create multiple rules with an invariant specification. It generates multiple rule definitions
+/// by creating an invariant spec from the assumption and invariant, then applying it to each
+/// base function in the list.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_invariant_rules! {
+///     name: "rule_name",
+///     assumption: assumption_expression,
+///     invariant: invariant_expression,
+///     bases: [
+///         base_function1,
+///         base_function2,
+///         base_function3,
+///     ]
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * `name` - A string literal that will be converted to snake_case and combined with each base function name
+/// * `assumption` - A boolean expression representing an additional precondition
+/// * `invariant` - A boolean expression representing an invariant that must hold before and after
+/// * `bases` - A list of function identifiers (if they start with `base_`, that prefix is stripped)
+///
+/// # Expansion
+///
+/// This macro expands to multiple calls to `cvlr_rule_for_spec!`, one for each base function,
+/// with an invariant spec created from the assumption and invariant:
+///
+/// ```text
+/// // Input:
+/// cvlr_invariant_rules! {
+///     name: "non_negative",
+///     assumption: assumption_expr,
+///     invariant: invariant_expr,
+///     bases: [base_function1, base_function2]
+/// }
+///
+/// // Expands to:
+/// cvlr_rule_for_spec!{name: "non_negative", spec: cvlr_invar_spec(assumption_expr, invariant_expr), base: base_function1}
+/// cvlr_rule_for_spec!{name: "non_negative", spec: cvlr_invar_spec(assumption_expr, invariant_expr), base: base_function2}
+/// ```
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_spec::{cvlr_invariant_rules, cvlr_predicate};
+///
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Define invariant rules for multiple functions
+/// cvlr_invariant_rules! {
+///     name: "non_negative",
+///     assumption: cvlr_predicate! { | c : Counter | -> { c.value % 2 == 0 } },
+///     invariant: cvlr_predicate! { | c : Counter | -> { c.value >= 0 } },
+///     bases: [
+///         base_update_counter,
+///         base_reset_counter,
+///         base_increment_counter,
+///     ]
+/// }
+/// ```
+///
+/// This will create three rules:
+/// - `non_negative_update_counter`
+/// - `non_negative_reset_counter`
+/// - `non_negative_increment_counter`
+///
+/// Each rule uses an invariant specification that:
+/// - Assumes both the assumption and invariant in the pre-state
+/// - Asserts the invariant in the post-state
 #[macro_export]
 macro_rules! cvlr_invariant_rules {
     (name: $name:literal, assumption: $a:expr, invariant: $i:expr, bases: [ $( $base:ident ),* $(,)? ] ) => {
