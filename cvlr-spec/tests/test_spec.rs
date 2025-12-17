@@ -1173,3 +1173,419 @@ fn test_cvlr_invariant_rules_macro_single_base() {
         ]
     }
 }
+
+// Tests for cvlr_and! macro
+#[test]
+fn test_cvlr_and_macro_with_identifiers() {
+    // Test cvlr_and! macro with identifier arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr = cvlr_and!(XPositive, YPositive);
+    assert!(expr.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!expr.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_and_macro_with_expressions() {
+    // Test cvlr_and! macro with expression arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr = cvlr_and!(
+        cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+    );
+    assert!(expr.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!expr.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_and_macro_mixed_ident_expr() {
+    // Test cvlr_and! macro with mixed identifier and expression arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr1 = cvlr_and!(
+        XPositive,
+        cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+    );
+    assert!(expr1.eval(&ctx));
+
+    let expr2 = cvlr_and!(
+        cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        YPositive
+    );
+    assert!(expr2.eval(&ctx));
+}
+
+#[test]
+fn test_cvlr_and_macro_three_args() {
+    // Test cvlr_and! macro with three arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let true_expr = cvlr_true::<TestCtx>();
+    let expr = cvlr_and!(XPositive, YPositive, true_expr);
+    assert!(expr.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!expr.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_and_macro_four_args() {
+    // Test cvlr_and! macro with four arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let true_expr = cvlr_true::<TestCtx>();
+    let expr = cvlr_and!(
+        XPositive,
+        YPositive,
+        true_expr,
+        cvlr_predicate! { | c : TestCtx | -> { c.flag } }
+    );
+    assert!(expr.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: false,
+    };
+    assert!(!expr.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_and_macro_five_args() {
+    // Test cvlr_and! macro with five arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let true_expr = cvlr_true::<TestCtx>();
+    let expr = cvlr_and!(
+        XPositive,
+        YPositive,
+        true_expr,
+        cvlr_predicate! { | c : TestCtx | -> { c.flag } },
+        cvlr_predicate! { | c : TestCtx | -> { c.x + c.y > 0 } }
+    );
+    assert!(expr.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: -5,
+        y: -10,
+        flag: true,
+    };
+    assert!(!expr.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_and_macro_six_args() {
+    // Test cvlr_and! macro with six arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let true_expr = cvlr_true::<TestCtx>();
+    let expr = cvlr_and!(
+        XPositive,
+        YPositive,
+        true_expr,
+        cvlr_predicate! { | c : TestCtx | -> { c.flag } },
+        cvlr_predicate! { | c : TestCtx | -> { c.x + c.y > 0 } },
+        cvlr_predicate! { | c : TestCtx | -> { c.x * c.y > 0 } }
+    );
+    assert!(expr.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: 0,
+        y: 10,
+        flag: true,
+    };
+    assert!(!expr.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_and_macro_with_assert() {
+    // Test that cvlr_and! macro works with assert
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr = cvlr_and!(XPositive, YPositive);
+    expr.assert(&ctx); // Should not panic
+}
+
+#[test]
+fn test_cvlr_and_macro_with_assume() {
+    // Test that cvlr_and! macro works with assume
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr = cvlr_and!(XPositive, YPositive);
+    expr.assume(&ctx); // Should not panic
+}
+
+#[test]
+fn test_cvlr_and_macro_with_eval_with_states() {
+    // Test that cvlr_and! macro works with eval_with_states
+    let pre = TestCtx {
+        x: 1,
+        y: 2,
+        flag: false,
+    };
+    let post = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr = cvlr_and!(XPositive, YPositive);
+    assert!(expr.eval_with_states(&post, &pre));
+
+    let post2 = TestCtx {
+        x: -5,
+        y: 10,
+        flag: false,
+    };
+    assert!(!expr.eval_with_states(&post2, &pre));
+}
+
+// Tests for cvlr_implies! macro
+#[test]
+fn test_cvlr_implies_macro_with_identifiers() {
+    // Test cvlr_implies! macro with identifier arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    // x > 0 -> y > 0 (both true, so true)
+    let expr = cvlr_implies!(XPositive, YPositive);
+    assert!(expr.eval(&ctx));
+
+    // x > 0 -> y > 0 (antecedent true, consequent false, so false)
+    let ctx2 = TestCtx {
+        x: 5,
+        y: -1,
+        flag: true,
+    };
+    assert!(!expr.eval(&ctx2));
+
+    // x > 0 -> y > 0 (antecedent false, so true regardless of consequent)
+    let ctx3 = TestCtx {
+        x: -1,
+        y: -1,
+        flag: true,
+    };
+    assert!(expr.eval(&ctx3));
+
+    // x > 0 -> y > 0 (antecedent false, consequent true, so true)
+    let ctx4 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(expr.eval(&ctx4));
+}
+
+#[test]
+fn test_cvlr_implies_macro_with_expressions() {
+    // Test cvlr_implies! macro with expression arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr = cvlr_implies!(
+        cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+    );
+    assert!(expr.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: 5,
+        y: -1,
+        flag: true,
+    };
+    assert!(!expr.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_implies_macro_mixed_ident_expr() {
+    // Test cvlr_implies! macro with mixed identifier and expression arguments
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    // Identifier as antecedent, expression as consequent
+    let expr1 = cvlr_implies!(
+        XPositive,
+        cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+    );
+    assert!(expr1.eval(&ctx));
+
+    // Expression as antecedent, identifier as consequent
+    let expr2 = cvlr_implies!(
+        cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        YPositive
+    );
+    assert!(expr2.eval(&ctx));
+
+    // Test false case
+    let ctx2 = TestCtx {
+        x: 5,
+        y: -1,
+        flag: true,
+    };
+    assert!(!expr1.eval(&ctx2));
+    assert!(!expr2.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_implies_macro_with_assert() {
+    // Test that cvlr_implies! macro works with assert
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr = cvlr_implies!(XPositive, YPositive);
+    expr.assert(&ctx); // Should not panic (antecedent true, consequent true)
+
+    // When antecedent is false, assert should not panic (consequent not checked)
+    let ctx2 = TestCtx {
+        x: -1,
+        y: -1,
+        flag: true,
+    };
+    expr.assert(&ctx2); // Should not panic (antecedent false, consequent not checked)
+}
+
+#[test]
+fn test_cvlr_implies_macro_with_assume() {
+    // Test that cvlr_implies! macro works with assume
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr = cvlr_implies!(XPositive, YPositive);
+    expr.assume(&ctx); // Should not panic
+
+    // When antecedent is false, assume should not panic (consequent not checked)
+    let ctx2 = TestCtx {
+        x: -1,
+        y: -1,
+        flag: true,
+    };
+    expr.assume(&ctx2); // Should not panic
+}
+
+#[test]
+fn test_cvlr_implies_macro_with_eval_with_states() {
+    // Test that cvlr_implies! macro works with eval_with_states
+    let pre = TestCtx {
+        x: 1,
+        y: 2,
+        flag: false,
+    };
+    let post = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let expr = cvlr_implies!(XPositive, YPositive);
+    assert!(expr.eval_with_states(&post, &pre)); // post.x > 0 -> post.y > 0 (both true)
+
+    let post2 = TestCtx {
+        x: 5,
+        y: -10,
+        flag: false,
+    };
+    assert!(!expr.eval_with_states(&post2, &pre)); // post.x > 0 -> post.y > 0 (antecedent true, consequent false)
+
+    let post3 = TestCtx {
+        x: -5,
+        y: -10,
+        flag: false,
+    };
+    assert!(expr.eval_with_states(&post3, &pre)); // post.x > 0 -> ... (antecedent false, so true)
+}
+
+#[test]
+fn test_cvlr_and_and_implies_macro_composition() {
+    // Test composing cvlr_and! and cvlr_implies! macros
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    // (x > 0 -> y > 0) && (y > 0 -> x > 0)
+    let expr = cvlr_and!(
+        cvlr_implies!(XPositive, YPositive),
+        cvlr_implies!(YPositive, XPositive)
+    );
+    assert!(expr.eval(&ctx));
+
+    // Test with one implication false
+    let ctx2 = TestCtx {
+        x: 5,
+        y: -1,
+        flag: true,
+    };
+    assert!(!expr.eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_and_macro_nested() {
+    // Test nested cvlr_and! macro calls
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    let inner = cvlr_and!(XPositive, YPositive);
+    let outer = cvlr_and!(inner, cvlr_predicate! { | c : TestCtx | -> { c.flag } });
+    assert!(outer.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: false,
+    };
+    assert!(!outer.eval(&ctx2));
+}
