@@ -6,9 +6,11 @@ macro_rules! impl_bin_assert {
         ($lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
             let __cvlr_lhs = $lhs;
             let __cvlr_rhs = $rhs;
-            cvlr::clog!(stringify!(assert $lhs $pred $rhs) => "_");
+            cvlr::log::log_scope_start("assert");
+            cvlr::clog!(stringify!($lhs $pred $rhs) => "_");
             cvlr::clog!(__cvlr_lhs => stringify!($lhs));
             cvlr::clog!(__cvlr_rhs => stringify!($rhs));
+            cvlr::log::log_scope_start("assert");
             $crate::cvlr_assert!(__cvlr_lhs $pred __cvlr_rhs);
         }};
     }
@@ -31,9 +33,11 @@ macro_rules! impl_bin_assume {
         ($lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
             let __cvlr_lhs = $lhs;
             let __cvlr_rhs = $rhs;
-            cvlr::clog!(stringify!(assume $lhs $pred $rhs) => "_");
+            cvlr::log::log_scope_start("assume");
+            cvlr::clog!(stringify!($lhs $pred $rhs) => "_");
             cvlr::clog!(__cvlr_lhs => stringify!($lhs));
             cvlr::clog!(__cvlr_rhs => stringify!($rhs));
+            cvlr::log::log_scope_end("assume");
             $crate::cvlr_assume!(__cvlr_lhs $pred __cvlr_rhs);
         }};
     }
