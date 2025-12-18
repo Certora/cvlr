@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use quote::ToTokens;
-use syn::{parse_macro_input, parse_quote, ItemFn};
+use quote::{quote, ToTokens};
+use syn::{parse_macro_input, parse_quote, Ident, ItemFn};
 
 mod assert_that;
 mod mock;
@@ -546,4 +546,38 @@ pub fn cvlr_eval_all(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn cvlr_rule_for_spec(input: TokenStream) -> TokenStream {
     rule_for_spec::cvlr_rule_for_spec_impl(input)
+}
+
+/// Convert a snake_case identifier to PascalCase
+///
+/// This macro takes an identifier in snake_case and converts it to PascalCase,
+/// outputting a new identifier.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_pif!(identifier_name)
+/// ```
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use cvlr_macros::cvlr_pif;
+///
+/// // Convert snake_case to PascalCase
+/// let MyStruct = cvlr_pif!(my_struct);  // expands to MyStruct
+/// let XGtZero = cvlr_pif!(x_gt_zero);  // expands to XGtZero
+/// let SomeLongName = cvlr_pif!(some_long_name);  // expands to SomeLongName
+/// ```
+#[proc_macro]
+pub fn cvlr_pif(input: TokenStream) -> TokenStream {
+    let ident = parse_macro_input!(input as Ident);
+
+    // Convert snake_case to PascalCase
+    let pascal_case = predicate::to_pascal_case(&ident.to_string());
+
+    // Create new identifier with the same span as the input
+    let new_ident = Ident::new(&pascal_case, ident.span());
+
+    quote! { #new_ident }.into()
 }

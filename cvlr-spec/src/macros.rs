@@ -578,7 +578,7 @@ macro_rules! cvlr_rules {
 #[macro_export]
 macro_rules! cvlr_spec {
     (requires: $r:expr, ensures: $e:expr) => {
-        $crate::spec::cvlr_spec($r, $e)
+        $crate::cvlr_spec($r, $e)
     };
 }
 
@@ -632,7 +632,7 @@ macro_rules! cvlr_spec {
 #[macro_export]
 macro_rules! cvlr_invar_spec {
     (assumption: $a:expr, invariant: $i:expr) => {
-        $crate::spec::cvlr_invar_spec($a, $i)
+        $crate::cvlr_invar_spec($a, $i)
     };
 }
 
@@ -718,7 +718,11 @@ macro_rules! cvlr_invar_spec {
 macro_rules! cvlr_invariant_rules {
     (name: $name:literal, assumption: $a:expr, invariant: $i:expr, bases: [ $( $base:ident ),* $(,)? ] ) => {
         $(
-            $crate::__macro_support::cvlr_rule_for_spec!{name: $name, spec: $crate::spec::cvlr_invar_spec($a, $i), base: $base}
+            $crate::__macro_support::cvlr_rule_for_spec!{
+                name: $name,
+                spec: $crate::spec::cvlr_invar_spec($a, $i),
+                base: $base
+            }
         )*
     };
 }
@@ -795,15 +799,6 @@ macro_rules! cvlr_invariant_rules {
 /// ```
 #[macro_export]
 macro_rules! cvlr_and {
-    ($a:ident, $b:ident) => {
-        $crate::cvlr_and($a, $b)
-    };
-    ($a:expr, $b:ident) => {
-        $crate::cvlr_and($a, $b)
-    };
-    ($a:ident, $b:expr) => {
-        $crate::cvlr_and($a, $b)
-    };
     ($a:expr, $b:expr) => {
         $crate::cvlr_and($a, $b)
     };
@@ -907,15 +902,6 @@ macro_rules! cvlr_and {
 /// ```
 #[macro_export]
 macro_rules! cvlr_implies {
-    ($a:ident, $b:ident) => {
-        $crate::cvlr_implies($a, $b)
-    };
-    ($a:expr, $b:ident) => {
-        $crate::cvlr_implies($a, $b)
-    };
-    ($a:ident, $b:expr) => {
-        $crate::cvlr_implies($a, $b)
-    };
     ($a:expr, $b:expr) => {
         $crate::cvlr_implies($a, $b)
     };
