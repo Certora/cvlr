@@ -1,6 +1,6 @@
 //! Combinators for composing boolean expressions.
 
-use crate::bool_expr::CvlrBoolExpr;
+use crate::bool_expr::CvlrFormula;
 
 /// A boolean expression representing the logical AND of two expressions.
 ///
@@ -9,10 +9,10 @@ use crate::bool_expr::CvlrBoolExpr;
 #[derive(Copy, Clone)]
 pub struct CvlrAnd<A, B>(A, B);
 
-impl<A, B> CvlrBoolExpr for CvlrAnd<A, B>
+impl<A, B> CvlrFormula for CvlrAnd<A, B>
 where
-    A: CvlrBoolExpr,
-    B: CvlrBoolExpr<Context = A::Context>,
+    A: CvlrFormula,
+    B: CvlrFormula<Context = A::Context>,
 {
     type Context = A::Context;
     fn eval(&self, ctx: &Self::Context) -> bool {
@@ -53,15 +53,15 @@ where
 /// # Examples
 ///
 /// ```
-/// use cvlr_spec::{cvlr_and, cvlr_true, CvlrBoolExpr};
+/// use cvlr_spec::{cvlr_and, cvlr_true, CvlrFormula};
 ///
 /// let expr = cvlr_and(cvlr_true::<()>(), cvlr_true::<()>());
 /// assert!(expr.eval(&()));
 /// ```
 pub fn cvlr_and<A, B>(a: A, b: B) -> CvlrAnd<A, B>
 where
-    A: CvlrBoolExpr,
-    B: CvlrBoolExpr<Context = A::Context>,
+    A: CvlrFormula,
+    B: CvlrFormula<Context = A::Context>,
 {
     CvlrAnd(a, b)
 }
@@ -74,10 +74,10 @@ where
 #[derive(Copy, Clone)]
 pub struct CvlrImplies<A, B>(A, B);
 
-impl<A, B> CvlrBoolExpr for CvlrImplies<A, B>
+impl<A, B> CvlrFormula for CvlrImplies<A, B>
 where
-    A: CvlrBoolExpr,
-    B: CvlrBoolExpr<Context = A::Context>,
+    A: CvlrFormula,
+    B: CvlrFormula<Context = A::Context>,
 {
     type Context = A::Context;
     fn eval(&self, ctx: &Self::Context) -> bool {
@@ -133,7 +133,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use cvlr_spec::{cvlr_implies, cvlr_true, CvlrBoolExpr};
+/// use cvlr_spec::{cvlr_implies, cvlr_true, CvlrFormula};
 ///
 /// // true → true evaluates to true
 /// let expr = cvlr_implies(cvlr_true::<()>(), cvlr_true::<()>());
@@ -141,8 +141,8 @@ where
 /// ```
 pub fn cvlr_implies<A, B>(a: A, b: B) -> CvlrImplies<A, B>
 where
-    A: CvlrBoolExpr,
-    B: CvlrBoolExpr<Context = A::Context>,
+    A: CvlrFormula,
+    B: CvlrFormula<Context = A::Context>,
 {
     CvlrImplies(a, b)
 }

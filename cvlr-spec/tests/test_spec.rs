@@ -25,21 +25,21 @@ struct YPositive;
 #[derive(Copy, Clone)]
 struct PostYPositive;
 
-impl CvlrBoolExpr for XPositive {
+impl CvlrFormula for XPositive {
     type Context = TestCtx;
     fn eval(&self, ctx: &Self::Context) -> bool {
         ctx.x > 0
     }
 }
 
-impl CvlrBoolExpr for YPositive {
+impl CvlrFormula for YPositive {
     type Context = TestCtx;
     fn eval(&self, ctx: &Self::Context) -> bool {
         ctx.y > 0
     }
 }
 
-impl CvlrBoolExpr for PostYPositive {
+impl CvlrFormula for PostYPositive {
     type Context = TestCtx;
     fn eval(&self, ctx: &Self::Context) -> bool {
         ctx.y > 0
@@ -794,13 +794,13 @@ struct ManualLemma;
 
 impl cvlr_spec::spec::CvlrLemma for ManualLemma {
     type Context = TestCtx;
-    fn requires(&self) -> impl CvlrBoolExpr<Context = Self::Context> {
+    fn requires(&self) -> impl CvlrFormula<Context = Self::Context> {
         cvlr_predicate! { | c : TestCtx | -> {
             c.x > 0
         } }
     }
 
-    fn ensures(&self) -> impl CvlrBoolExpr<Context = Self::Context> {
+    fn ensures(&self) -> impl CvlrFormula<Context = Self::Context> {
         cvlr_predicate! { | c : TestCtx | -> {
             c.x > 0;
             c.y > 0

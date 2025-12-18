@@ -1,6 +1,6 @@
 //! Specification types and traits.
 
-use crate::bool_expr::CvlrBoolExpr;
+use crate::bool_expr::CvlrFormula;
 
 /// A specification that defines preconditions (requires) and postconditions (ensures).
 ///
@@ -57,15 +57,15 @@ pub trait CvlrSpec {
 ///
 /// This type stores a boolean expression for the precondition (requires) and
 /// a boolean expression for the postcondition (ensures). The ensures expression
-/// uses [`eval_with_states`](crate::CvlrBoolExpr::eval_with_states) to evaluate
+/// uses [`eval_with_states`](crate::CvlrFormula::eval_with_states) to evaluate
 /// over both pre-state and post-state.
 #[derive(Copy, Clone)]
 pub struct CvlrPropImpl<Pre, Post>(Pre, Post);
 
 impl<Pre, Post> CvlrSpec for CvlrPropImpl<Pre, Post>
 where
-    Pre: CvlrBoolExpr,
-    Post: CvlrBoolExpr<Context = Pre::Context>,
+    Pre: CvlrFormula,
+    Post: CvlrFormula<Context = Pre::Context>,
 {
     type Context = Pre::Context;
 
@@ -85,7 +85,7 @@ where
 /// # Arguments
 ///
 /// * `requires` - A boolean expression over the context type representing the precondition
-/// * `ensures` - A boolean expression over the context type that uses [`eval_with_states`](crate::CvlrBoolExpr::eval_with_states)
+/// * `ensures` - A boolean expression over the context type that uses [`eval_with_states`](crate::CvlrFormula::eval_with_states)
 ///   to evaluate over both pre-state and post-state
 ///
 /// # Examples
@@ -117,8 +117,8 @@ pub fn cvlr_spec<Requires, Ensures>(
     ensures: Ensures,
 ) -> impl CvlrSpec<Context = Requires::Context>
 where
-    Requires: CvlrBoolExpr,
-    Ensures: CvlrBoolExpr<Context = Requires::Context>,
+    Requires: CvlrFormula,
+    Ensures: CvlrFormula<Context = Requires::Context>,
 {
     CvlrPropImpl(requires, ensures)
 }
@@ -147,8 +147,8 @@ impl<A, B> CvlrInvarSpec<A, B> {
 
 impl<A, B> CvlrSpec for CvlrInvarSpec<A, B>
 where
-    A: CvlrBoolExpr,
-    B: CvlrBoolExpr<Context = A::Context>,
+    A: CvlrFormula,
+    B: CvlrFormula<Context = A::Context>,
 {
     type Context = A::Context;
     fn assume_requires(&self, pre_state: &Self::Context) {
@@ -175,7 +175,7 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// use cvlr_spec::{cvlr_invar_spec, CvlrBoolExpr};
+/// use cvlr_spec::{cvlr_invar_spec, CvlrFormula};
 ///
 /// struct Counter {
 ///     value: i32,
@@ -191,8 +191,8 @@ where
 /// ```
 pub fn cvlr_invar_spec<A, B>(assumption: A, invariant: B) -> CvlrInvarSpec<A, B>
 where
-    A: CvlrBoolExpr,
-    B: CvlrBoolExpr<Context = A::Context>,
+    A: CvlrFormula,
+    B: CvlrFormula<Context = A::Context>,
 {
     CvlrInvarSpec(assumption, invariant)
 }
@@ -263,12 +263,12 @@ pub trait CvlrLemma {
     /// Returns a boolean expression representing the preconditions (requires) of the lemma.
     ///
     /// This expression will be assumed to hold during verification.
-    fn requires(&self) -> impl CvlrBoolExpr<Context = Self::Context>;
+    fn requires(&self) -> impl CvlrFormula<Context = Self::Context>;
 
     /// Returns a boolean expression representing the postconditions (ensures) of the lemma.
     ///
     /// This expression will be asserted to hold during verification.
-    fn ensures(&self) -> impl CvlrBoolExpr<Context = Self::Context>;
+    fn ensures(&self) -> impl CvlrFormula<Context = Self::Context>;
 
     /// Verifies the lemma with a non-deterministic context.
     ///

@@ -2,7 +2,7 @@
 
 /// Defines a predicate (boolean expression) over a context type.
 ///
-/// This macro creates a new type implementing [`CvlrBoolExpr`] for the specified context.
+/// This macro creates a new type implementing [`CvlrFormula`] for the specified context.
 /// The predicate body consists of one or more expressions that are evaluated, asserted,
 /// or assumed together.
 ///
@@ -50,7 +50,7 @@
 macro_rules! cvlr_def_predicate {
     (pred $name: ident ( $c:ident : $ctx: ident ) {  $( $e: expr );* $(;)? }) => {
         struct $name;
-        impl $crate::CvlrBoolExpr for $name {
+        impl $crate::CvlrFormula for $name {
             type Context = $ctx;
             fn eval(&self, ctx: &Self::Context) -> bool {
                 let $c = ctx;
@@ -77,8 +77,8 @@ macro_rules! cvlr_def_predicate {
 
 /// Defines a predicate that evaluates over two states.
 ///
-/// This macro creates a new type implementing [`CvlrBoolExpr`] with `Context = Ctx`.
-/// The predicate uses [`eval_with_states`](crate::CvlrBoolExpr::eval_with_states) to evaluate
+/// This macro creates a new type implementing [`CvlrFormula`] with `Context = Ctx`.
+/// The predicate uses [`eval_with_states`](crate::CvlrFormula::eval_with_states) to evaluate
 /// over both the current/post-state (`c`) and the old/pre-state (`o`),
 /// allowing you to express postconditions that compare pre-state and post-state.
 ///
@@ -127,7 +127,7 @@ macro_rules! cvlr_def_predicate {
 macro_rules! cvlr_def_states_predicate {
     (pred $name: ident ( [ $c:ident, $o: ident ] : $ctx: ident ) {  $( $e: expr );* $(;)? }) => {
         struct $name;
-        impl $crate::CvlrBoolExpr for $name {
+        impl $crate::CvlrFormula for $name {
             type Context = $ctx;
             fn eval_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) -> bool {
                 let $c = ctx0;
@@ -257,7 +257,7 @@ macro_rules! cvlr_def_states_predicates {
 
 /// Creates an anonymous predicate (boolean expression) over a context type.
 ///
-/// This macro creates an anonymous predicate that implements [`CvlrBoolExpr`](crate::CvlrBoolExpr) for the
+/// This macro creates an anonymous predicate that implements [`CvlrFormula`](crate::CvlrFormula) for the
 /// specified context type. Unlike [`cvlr_def_predicate!`], this macro creates an
 /// unnamed predicate that can be used inline without defining a separate type.
 ///
@@ -281,7 +281,7 @@ macro_rules! cvlr_def_states_predicates {
 ///
 /// # Returns
 ///
-/// Returns a value implementing [`CvlrBoolExpr`](crate::CvlrBoolExpr) with `Context = Ctx` that can be evaluated,
+/// Returns a value implementing [`CvlrFormula`](crate::CvlrFormula) with `Context = Ctx` that can be evaluated,
 /// asserted, or assumed.
 ///
 /// # Examples
@@ -429,10 +429,10 @@ macro_rules! cvlr_lemma {
             struct $name;
             impl $crate::spec::CvlrLemma for $name {
                 type Context = $ctx;
-                fn requires(&self) -> impl $crate::CvlrBoolExpr<Context = Self::Context> {
+                fn requires(&self) -> impl $crate::CvlrFormula<Context = Self::Context> {
                     $crate::cvlr_predicate! { | $c : $ctx | -> { $( $requires );* } }
                 }
-                fn ensures(&self) -> impl $crate::CvlrBoolExpr<Context = Self::Context> {
+                fn ensures(&self) -> impl $crate::CvlrFormula<Context = Self::Context> {
                     $crate::cvlr_predicate! { | $c : $ctx | -> { $( $ensures );* } }
                 }
             }
@@ -540,7 +540,7 @@ macro_rules! cvlr_rules {
 /// # Parameters
 ///
 /// * `requires` - A boolean expression over the context type representing the precondition
-/// * `ensures` - A boolean expression over the context type that uses [`eval_with_states`](crate::CvlrBoolExpr::eval_with_states)
+/// * `ensures` - A boolean expression over the context type that uses [`eval_with_states`](crate::CvlrFormula::eval_with_states)
 ///   to evaluate over both pre-state and post-state
 ///
 /// # Returns
@@ -745,7 +745,7 @@ macro_rules! cvlr_invariant_rules {
 ///
 /// # Arguments
 ///
-/// The macro accepts identifiers or expressions that implement [`CvlrBoolExpr`](crate::CvlrBoolExpr)
+/// The macro accepts identifiers or expressions that implement [`CvlrFormula`](crate::CvlrFormula)
 /// with the same context type. Arguments can be:
 /// - Identifiers (e.g., `XPositive`)
 /// - Expressions (e.g., `cvlr_predicate! { | c : Ctx | -> { c.x > 0 } }`)
@@ -753,13 +753,13 @@ macro_rules! cvlr_invariant_rules {
 ///
 /// # Returns
 ///
-/// Returns a value implementing [`CvlrBoolExpr`](crate::CvlrBoolExpr) that evaluates to `true`
+/// Returns a value implementing [`CvlrFormula`](crate::CvlrFormula) that evaluates to `true`
 /// only when all input expressions evaluate to `true`.
 ///
 /// # Examples
 ///
 /// ```ignore
-/// use cvlr_spec::{cvlr_and, cvlr_predicate, CvlrBoolExpr};
+/// use cvlr_spec::{cvlr_and, cvlr_predicate, CvlrFormula};
 ///
 /// struct Counter {
 ///     value: i32,
@@ -847,17 +847,17 @@ macro_rules! cvlr_and {
 /// * `antecedent` - The left-hand side (A) of the implication, can be an identifier or expression
 /// * `consequent` - The right-hand side (B) of the implication, can be an identifier or expression
 ///
-/// Both arguments must implement [`CvlrBoolExpr`](crate::CvlrBoolExpr) with the same context type.
+/// Both arguments must implement [`CvlrFormula`](crate::CvlrFormula) with the same context type.
 ///
 /// # Returns
 ///
-/// Returns a value implementing [`CvlrBoolExpr`](crate::CvlrBoolExpr) that represents the logical
+/// Returns a value implementing [`CvlrFormula`](crate::CvlrFormula) that represents the logical
 /// implication `antecedent → consequent`.
 ///
 /// # Examples
 ///
 /// ```ignore
-/// use cvlr_spec::{cvlr_implies, cvlr_predicate, CvlrBoolExpr};
+/// use cvlr_spec::{cvlr_implies, cvlr_predicate, CvlrFormula};
 ///
 /// struct Counter {
 ///     value: i32,

@@ -6,20 +6,20 @@ use cvlr_asserts::{cvlr_assert, cvlr_assume};
 ///
 /// This trait represents a boolean expression with an associated context type.
 /// Expressions implementing this trait can be:
-/// - Evaluated to a boolean value via [`eval`](CvlrBoolExpr::eval) (single state)
-/// - Evaluated over two states via [`eval_with_states`](CvlrBoolExpr::eval_with_states) (pre-state and post-state)
-/// - Asserted (checked) via [`assert`](CvlrBoolExpr::assert) or [`assert_with_states`](CvlrBoolExpr::assert_with_states)
-/// - Assumed (taken as a precondition) via [`assume`](CvlrBoolExpr::assume) or [`assume_with_states`](CvlrBoolExpr::assume_with_states)
+/// - Evaluated to a boolean value via [`eval`](CvlrFormula::eval) (single state)
+/// - Evaluated over two states via [`eval_with_states`](CvlrFormula::eval_with_states) (pre-state and post-state)
+/// - Asserted (checked) via [`assert`](CvlrFormula::assert) or [`assert_with_states`](CvlrFormula::assert_with_states)
+/// - Assumed (taken as a precondition) via [`assume`](CvlrFormula::assume) or [`assume_with_states`](CvlrFormula::assume_with_states)
 ///
 /// # Associated Types
 ///
-/// * [`Context`](CvlrBoolExpr::Context) - The context type used to evaluate the expression. This typically
+/// * [`Context`](CvlrFormula::Context) - The context type used to evaluate the expression. This typically
 ///   represents the state or environment in which the expression is evaluated.
 ///
 /// # Examples
 ///
 /// ```
-/// use cvlr_spec::CvlrBoolExpr;
+/// use cvlr_spec::CvlrFormula;
 ///
 /// struct MyContext {
 ///     value: i32,
@@ -27,14 +27,14 @@ use cvlr_asserts::{cvlr_assert, cvlr_assume};
 ///
 /// struct IsPositive;
 ///
-/// impl CvlrBoolExpr for IsPositive {
+/// impl CvlrFormula for IsPositive {
 ///     type Context = MyContext;
 ///     fn eval(&self, ctx: &Self::Context) -> bool {
 ///         ctx.value > 0
 ///     }
 /// }
 /// ```
-pub trait CvlrBoolExpr {
+pub trait CvlrFormula {
     type Context;
 
     /// Evaluates the expression in the given context.
@@ -45,7 +45,7 @@ pub trait CvlrBoolExpr {
     /// Asserts that the expression holds in the given context.
     ///
     /// This will cause a verification failure if the expression evaluates to `false`.
-    /// The default implementation uses [`cvlr_assert!`] to check the result of [`eval`](CvlrBoolExpr::eval).
+    /// The default implementation uses [`cvlr_assert!`] to check the result of [`eval`](CvlrFormula::eval).
     fn assert(&self, ctx: &Self::Context) {
         cvlr_assert!(self.eval(ctx));
     }
@@ -53,7 +53,7 @@ pub trait CvlrBoolExpr {
     /// Assumes that the expression holds in the given context.
     ///
     /// This adds the expression as a precondition that the verifier will assume to be true.
-    /// The default implementation uses [`cvlr_assume!`] to assume the result of [`eval`](CvlrBoolExpr::eval).
+    /// The default implementation uses [`cvlr_assume!`] to assume the result of [`eval`](CvlrFormula::eval).
     fn assume(&self, ctx: &Self::Context) {
         cvlr_assume!(self.eval(ctx));
     }
@@ -128,7 +128,7 @@ pub trait CvlrBoolExpr {
 #[derive(Copy, Clone)]
 pub struct CvlrTrue<Ctx>(core::marker::PhantomData<Ctx>);
 
-impl<Ctx> CvlrBoolExpr for CvlrTrue<Ctx> {
+impl<Ctx> CvlrFormula for CvlrTrue<Ctx> {
     type Context = Ctx;
     fn eval(&self, _ctx: &Self::Context) -> bool {
         true
@@ -137,6 +137,6 @@ impl<Ctx> CvlrBoolExpr for CvlrTrue<Ctx> {
     fn assume(&self, _ctx: &Self::Context) {}
 }
 
-pub fn cvlr_true<Ctx>() -> impl CvlrBoolExpr<Context = Ctx> {
+pub fn cvlr_true<Ctx>() -> impl CvlrFormula<Context = Ctx> {
     CvlrTrue(core::marker::PhantomData)
 }
