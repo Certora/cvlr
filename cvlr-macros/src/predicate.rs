@@ -112,7 +112,7 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
     // Generate assert statements using analyze_condition
     let mut assert_statements = Vec::new();
     for expr in &expressions {
-        match analyze_condition(expr, None) {
+        match analyze_condition(expr) {
             Ok(assertion) => assert_statements.push(assertion),
             Err(e) => return e.to_compile_error().into(),
         }
@@ -121,7 +121,7 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
     // Generate assume statements using analyze_assume_condition
     let mut assume_statements = Vec::new();
     for expr in &expressions {
-        match analyze_assume_condition(expr, None) {
+        match analyze_assume_condition(expr) {
             Ok(assumption) => assume_statements.push(assumption),
             Err(e) => return e.to_compile_error().into(),
         }
@@ -130,7 +130,7 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
     // Generate eval expressions using analyze_eval_condition and combine with &&
     let mut eval_expressions = Vec::new();
     for expr in &expressions {
-        match analyze_eval_condition(expr, None) {
+        match analyze_eval_condition(expr) {
             Ok(eval_expr) => eval_expressions.push(eval_expr),
             Err(e) => return e.to_compile_error().into(),
         }

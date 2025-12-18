@@ -20,16 +20,16 @@ pub fn test_eval_that() {
     let _result8 = cvlr_eval_that!(x > 0 && y < 10);
 
     // Guarded comparisons
-    let _result9 = cvlr_eval_that!(if flag { a < b });
-    let _result10 = cvlr_eval_that!(if x > 0 { y <= 10 });
+    let _result9 = cvlr_eval_that!(if flag { a < b } else { true });
+    let _result10 = cvlr_eval_that!(if x > 0 { y <= 10 } else { true });
 
     // Guarded boolean expressions
-    let _result11 = cvlr_eval_that!(if flag { x > 0 });
-    let _result12 = cvlr_eval_that!(if x > 0 { y > 0 && y < 10 });
+    let _result11 = cvlr_eval_that!(if flag { x > 0 } else { true });
+    let _result12 = cvlr_eval_that!(if x > 0 { y > 0 && y < 10 } else { true });
 
     // Complex expressions
     let _result13 = cvlr_eval_that!(x + 1 < y * 2);
-    let _result14 = cvlr_eval_that!(if a > 0 { b < 10 });
+    let _result14 = cvlr_eval_that!(if a > 0 { b < 10 } else { true });
 }
 
 pub fn main() {

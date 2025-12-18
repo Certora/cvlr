@@ -44,13 +44,13 @@ pub fn test_assume_guarded_comparisons() {
     let y = 10;
 
     // Guarded comparisons
-    cvlr_assume_that!(if flag { a < b });
-    cvlr_assume_that!(if x > 0 { y <= 20 });
+    cvlr_assume_that!(if flag { a < b } else { true });
+    cvlr_assume_that!(if x > 0 { y <= 20 } else { true });
 
     // Guarded comparisons with groups
-    cvlr_assume_that!(if flag { (a < b) });
-    cvlr_assume_that!(if x > 0 { (y <= 20) });
-    cvlr_assume_that!(if flag { ((a < b)) });
+    cvlr_assume_that!(if flag { a < b } else { true });
+    cvlr_assume_that!(if x > 0 { y <= 20 } else { true });
+    cvlr_assume_that!(if flag { a < b } else { true });
 }
 
 pub fn test_assume_booleans() {
@@ -63,8 +63,8 @@ pub fn test_assume_booleans() {
     cvlr_assume_that!(x > 0 && y < 10);
 
     // Guarded boolean expressions
-    cvlr_assume_that!(if flag { x > 0 });
-    cvlr_assume_that!(if x > 0 { y > 0 && y < 10 });
+    cvlr_assume_that!(if flag { x > 0 } else { true });
+    cvlr_assume_that!(if x > 0 { y > 0 && y < 10 } else { true });
 }
 
 pub fn main() {}
