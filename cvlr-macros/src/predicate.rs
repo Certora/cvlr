@@ -6,7 +6,7 @@ use syn::{parse_macro_input, Expr, FnArg, ItemFn, Pat, PatType, Stmt, Type, Type
 use crate::assert_that::{analyze_assume_condition, analyze_condition, analyze_eval_condition};
 
 /// Converts a snake_case identifier to PascalCase
-fn to_pascal_case(s: &str) -> String {
+pub fn to_pascal_case(s: &str) -> String {
     s.split('_')
         .map(|word| {
             let mut chars = word.chars();

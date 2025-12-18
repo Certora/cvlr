@@ -69,4 +69,5 @@ pub mod prelude {
 pub use prelude::*;
 
 pub use crate::mathint::{is_u128, is_u16, is_u32, is_u64, is_u8};
-pub use __macro_support::cvlr_predicate as predicate;
+pub use macros::cvlr_pif as pif;
+pub use macros::cvlr_predicate as predicate;
