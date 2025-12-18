@@ -144,56 +144,11 @@ pub fn test_assume_guarded_comparisons() {
     let b = 2;
     let x = 5;
     let y = 10;
-    if flag {
-        {
-            let __cvlr_lhs = a;
-            let __cvlr_rhs = b;
-            ::cvlr_log::cvlr_log("_", &("assume a < b"));
-            ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
-            ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs < __cvlr_rhs);
-        };
-    }
-    if x > 0 {
-        {
-            let __cvlr_lhs = y;
-            let __cvlr_rhs = 20;
-            ::cvlr_log::cvlr_log("_", &("assume y <= 20"));
-            ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
-            ::cvlr_log::cvlr_log("20", &(__cvlr_rhs));
-            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs <= __cvlr_rhs);
-        };
-    }
-    if flag {
-        {
-            let __cvlr_lhs = a;
-            let __cvlr_rhs = b;
-            ::cvlr_log::cvlr_log("_", &("assume a < b"));
-            ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
-            ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs < __cvlr_rhs);
-        };
-    }
-    if x > 0 {
-        {
-            let __cvlr_lhs = y;
-            let __cvlr_rhs = 20;
-            ::cvlr_log::cvlr_log("_", &("assume y <= 20"));
-            ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
-            ::cvlr_log::cvlr_log("20", &(__cvlr_rhs));
-            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs <= __cvlr_rhs);
-        };
-    }
-    if flag {
-        {
-            let __cvlr_lhs = a;
-            let __cvlr_rhs = b;
-            ::cvlr_log::cvlr_log("_", &("assume a < b"));
-            ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
-            ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs < __cvlr_rhs);
-        };
-    }
+    ::cvlr_asserts::cvlr_assume_checked(if flag { a < b } else { true });
+    ::cvlr_asserts::cvlr_assume_checked(if x > 0 { y <= 20 } else { true });
+    ::cvlr_asserts::cvlr_assume_checked(if flag { a < b } else { true });
+    ::cvlr_asserts::cvlr_assume_checked(if x > 0 { y <= 20 } else { true });
+    ::cvlr_asserts::cvlr_assume_checked(if flag { a < b } else { true });
 }
 pub fn test_assume_booleans() {
     let flag = true;
@@ -201,18 +156,7 @@ pub fn test_assume_booleans() {
     let y = 3;
     ::cvlr_asserts::cvlr_assume_checked(flag);
     ::cvlr_asserts::cvlr_assume_checked(x > 0 && y < 10);
-    if flag {
-        {
-            let __cvlr_lhs = x;
-            let __cvlr_rhs = 0;
-            ::cvlr_log::cvlr_log("_", &("assume x > 0"));
-            ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
-            ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
-        };
-    }
-    if x > 0 {
-        ::cvlr_asserts::cvlr_assume_checked(y > 0 && y < 10);
-    }
+    ::cvlr_asserts::cvlr_assume_checked(if flag { x > 0 } else { true });
+    ::cvlr_asserts::cvlr_assume_checked(if x > 0 { y > 0 && y < 10 } else { true });
 }
 pub fn main() {}
