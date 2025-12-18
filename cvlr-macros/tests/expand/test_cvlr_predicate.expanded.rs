@@ -14,9 +14,10 @@ impl ::cvlr::spec::CvlrBoolExpr for XGtZero {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            let __cvlr_eval_all_res = true;
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.x > 0 };
-            __cvlr_eval_all_res
+            if !(c.x > 0) {
+                return false;
+            }
+            true
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -56,9 +57,10 @@ impl ::cvlr::spec::CvlrBoolExpr for YLtHundred {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            let __cvlr_eval_all_res = true;
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.y < 100 };
-            __cvlr_eval_all_res
+            if !(c.y < 100) {
+                return false;
+            }
+            true
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -99,10 +101,13 @@ impl ::cvlr::spec::CvlrBoolExpr for MultipleConditions {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            let __cvlr_eval_all_res = true;
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.x > 0 };
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.y < 100 };
-            __cvlr_eval_all_res
+            if !(c.x > 0) {
+                return false;
+            }
+            if !(c.y < 100) {
+                return false;
+            }
+            true
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -164,9 +169,10 @@ impl ::cvlr::spec::CvlrBoolExpr for WithLetStatement {
         let c = ctx;
         {
             let threshold = 0;
-            let __cvlr_eval_all_res = true;
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.x > threshold };
-            __cvlr_eval_all_res
+            if !(c.x > threshold) {
+                return false;
+            }
+            true
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -213,10 +219,13 @@ impl ::cvlr::spec::CvlrBoolExpr for WithMultipleLets {
         {
             let min_x = 0;
             let max_y = 100;
-            let __cvlr_eval_all_res = true;
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.x > min_x };
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.y < max_y };
-            __cvlr_eval_all_res
+            if !(c.x > min_x) {
+                return false;
+            }
+            if !(c.y < max_y) {
+                return false;
+            }
+            true
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -286,11 +295,16 @@ impl ::cvlr::spec::CvlrBoolExpr for LetBeforeExpressions {
         {
             let threshold = 5;
             let limit = 100;
-            let __cvlr_eval_all_res = true;
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.x > threshold };
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.y < limit };
-            let __cvlr_eval_all_res = __cvlr_eval_all_res && { c.x + c.y > threshold };
-            __cvlr_eval_all_res
+            if !(c.x > threshold) {
+                return false;
+            }
+            if !(c.y < limit) {
+                return false;
+            }
+            if !(c.x + c.y > threshold) {
+                return false;
+            }
+            true
         }
     }
     fn assert(&self, ctx: &Self::Context) {

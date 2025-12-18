@@ -3,7 +3,7 @@ use proc_macro2::Span;
 use quote::quote;
 use syn::{parse_macro_input, Expr, FnArg, ItemFn, Pat, PatType, Stmt, Type, TypeReference};
 
-use crate::assert_that::{analyze_assume_condition, analyze_condition, analyze_eval_condition};
+use crate::assert_that::{analyze_assume_condition, analyze_condition};
 
 /// Converts a snake_case identifier to PascalCase
 pub fn to_pascal_case(s: &str) -> String {
@@ -127,24 +127,20 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
         }
     }
 
-    // Generate eval expressions using analyze_eval_condition and combine with &&
-    let mut eval_expressions = Vec::new();
+    // Build the eval block with eager evaluation using early returns
+    let mut eval_statements = Vec::new();
     for expr in &expressions {
-        match analyze_eval_condition(expr) {
-            Ok(eval_expr) => eval_expressions.push(eval_expr),
-            Err(e) => return e.to_compile_error().into(),
-        }
-    }
-
-    // Build the eval block that accumulates results using shadowing (like eval_all_impl)
-    let res_var = syn::Ident::new("__cvlr_eval_all_res", Span::call_site());
-    let mut eval_statements = vec![quote! { let #res_var = true; }];
-    for eval_expr in &eval_expressions {
+        // For each expression, generate: if !(expr) { return false; }
+        // Wrap expr in parentheses to ensure negation applies correctly
         eval_statements.push(quote! {
-            let #res_var = #res_var && #eval_expr;
+            if !(#expr) {
+                return false;
+            }
         });
     }
-    eval_statements.push(quote! { #res_var });
+
+    // If we get to the end, return true
+    eval_statements.push(quote! { true });
 
     // Generate the struct and impl, keeping the original function for IDE error checking
     let expanded = quote! {
