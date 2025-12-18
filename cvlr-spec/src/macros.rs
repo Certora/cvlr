@@ -72,6 +72,7 @@ macro_rules! cvlr_def_predicate {
                 );
             }
         }
+        impl $crate::CvlrPredicate for $name { }
     };
 }
 
@@ -164,6 +165,7 @@ macro_rules! cvlr_def_states_predicate {
                 panic!("assume should never be called for a state pair predicate; use assume_with_states instead");
             }
         }
+        impl $crate::CvlrPredicate for $name { }
     };
 }
 

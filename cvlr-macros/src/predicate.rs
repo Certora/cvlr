@@ -175,6 +175,8 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
                 #(#assume_statements)*
             }
         }
+
+        impl ::cvlr::spec::CvlrPredicate for #struct_name { }
     };
 
     expanded.into()
