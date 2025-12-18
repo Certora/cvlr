@@ -11,8 +11,10 @@ fn test_cvlr_assert_that_compiles() {
     t.pass("tests/expand/test_cvlr_assert_that_comparisons.rs");
     t.pass("tests/expand/test_cvlr_assert_that_guarded_comparisons.rs");
     t.pass("tests/expand/test_cvlr_assert_that_booleans.rs");
+    t.pass("tests/expand/test_cvlr_assert_that_true_and_if.rs");
     t.pass("tests/expand/test_cvlr_assert_all.rs");
     t.pass("tests/expand/test_cvlr_assume_that.rs");
+    t.pass("tests/expand/test_cvlr_assume_that_true_and_if.rs");
     t.pass("tests/expand/test_cvlr_assume_all.rs");
     t.pass("tests/expand/test_cvlr_eval_that.rs");
     t.pass("tests/expand/test_cvlr_eval_all.rs");

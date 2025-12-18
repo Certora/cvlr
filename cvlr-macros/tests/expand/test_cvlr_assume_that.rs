@@ -58,6 +58,9 @@ pub fn test_assume_booleans() {
     let x = 5;
     let y = 3;
 
+    // Literal true should expand to unit ()
+    cvlr_assume_that!(true);
+
     // Unguarded boolean expressions
     cvlr_assume_that!(flag);
     cvlr_assume_that!(x > 0 && y < 10);

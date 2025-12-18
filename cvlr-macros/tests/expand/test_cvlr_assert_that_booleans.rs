@@ -13,6 +13,9 @@ pub fn test() {
     let test = true;
     let c = true;
 
+    // Literal true should expand to unit ()
+    cvlr_assert_that!(true);
+
     // Unguarded boolean expressions
     cvlr_assert_that!(flag);
     cvlr_assert_that!(x > 0 && y < 10);

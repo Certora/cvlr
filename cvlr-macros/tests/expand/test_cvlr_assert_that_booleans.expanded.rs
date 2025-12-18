@@ -11,6 +11,7 @@ pub fn test() {
     let error = false;
     let test = true;
     let c = true;
+    ();
     {
         let c_ = flag;
         ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -58,25 +59,41 @@ pub fn test() {
         ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
         ::cvlr_asserts::cvlr_assert_checked(c_);
     };
-    {
-        let c_ = if guard { condition } else { true };
-        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
-        ::cvlr_asserts::cvlr_assert_checked(c_);
+    if guard {
+        {
+            let c_ = condition;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    } else {
+        ()
     };
-    {
-        let c_ = if x > 0 { y > 0 && z < 10 } else { true };
-        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
-        ::cvlr_asserts::cvlr_assert_checked(c_);
+    if x > 0 {
+        {
+            let c_ = y > 0 && z < 10;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    } else {
+        ()
     };
-    {
-        let c_ = if flag { !error } else { true };
-        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
-        ::cvlr_asserts::cvlr_assert_checked(c_);
+    if flag {
+        {
+            let c_ = !error;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    } else {
+        ()
     };
-    {
-        let c_ = if test { (a || b) && c } else { true };
-        ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
-        ::cvlr_asserts::cvlr_assert_checked(c_);
+    if test {
+        {
+            let c_ = (a || b) && c;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    } else {
+        ()
     };
 }
 fn main() {}
