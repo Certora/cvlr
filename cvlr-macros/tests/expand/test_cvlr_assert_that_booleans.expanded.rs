@@ -35,9 +35,11 @@ pub fn test() {
     {
         let __cvlr_lhs = x + y;
         let __cvlr_rhs = 0;
-        ::cvlr_log::cvlr_log("_", &("assert x + y > 0"));
+        cvlr::log::log_scope_start("assert");
+        ::cvlr_log::cvlr_log("_", &("x + y > 0"));
         ::cvlr_log::cvlr_log("x + y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
+        cvlr::log::log_scope_start("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
