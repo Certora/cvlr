@@ -43,7 +43,7 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// Converts a function into a CVLR predicate.
 ///
 /// This attribute macro transforms a function into a struct that implements
-/// [`CvlrBoolExpr`](cvlr_spec::CvlrBoolExpr) for the specified context type.
+/// [`CvlrFormula`](cvlr_spec::CvlrFormula) for the specified context type.
 /// The function body is parsed and used to generate `eval`, `assert`, and `assume`
 /// methods using the same helpers as [`cvlr_def_predicate!`](cvlr_spec::cvlr_def_predicate).
 ///
@@ -67,7 +67,7 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// ```ignore
 /// use cvlr_macros::cvlr_predicate;
-/// use cvlr_spec::CvlrBoolExpr;
+/// use cvlr_spec::CvlrFormula;
 ///
 /// struct Ctx {
 ///     x: i32,
@@ -81,7 +81,7 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// // This generates:
 /// // pub struct XGtZero;
-/// // impl CvlrBoolExpr<Ctx> for XGtZero { ... }
+/// // impl CvlrFormula<Ctx> for XGtZero { ... }
 ///
 /// let ctx = Ctx { x: 5, y: 10 };
 /// let pred = XGtZero;
@@ -94,7 +94,7 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// ```ignore
 /// pub struct XGtZero;
-/// impl CvlrBoolExpr<Ctx> for XGtZero {
+/// impl CvlrFormula<Ctx> for XGtZero {
 ///     fn eval(&self, ctx: &Ctx) -> bool {
 ///         let c = ctx;
 ///         cvlr_eval_all!(c.x > 0)

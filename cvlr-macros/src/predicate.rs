@@ -151,7 +151,7 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
 
         #vis struct #struct_name;
 
-        impl ::cvlr::spec::CvlrBoolExpr for #struct_name {
+        impl ::cvlr::spec::CvlrFormula for #struct_name {
 
             type Context = #ctx_type;
 
