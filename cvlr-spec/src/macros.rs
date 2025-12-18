@@ -577,7 +577,7 @@ macro_rules! cvlr_rules {
 /// ```
 #[macro_export]
 macro_rules! cvlr_spec {
-    (requires: $r:expr, ensures: $e:expr) => {
+    (requires: $r:expr, ensures: $e:expr $(,)?) => {
         $crate::cvlr_spec($r, $e)
     };
 }
@@ -631,7 +631,7 @@ macro_rules! cvlr_spec {
 /// ```
 #[macro_export]
 macro_rules! cvlr_invar_spec {
-    (assumption: $a:expr, invariant: $i:expr) => {
+    (assumption: $a:expr, invariant: $i:expr $(,)?) => {
         $crate::cvlr_invar_spec($a, $i)
     };
 }
