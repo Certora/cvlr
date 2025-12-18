@@ -1,5 +1,5 @@
 use cvlr_macros::cvlr_predicate;
-use cvlr_spec::CvlrBoolExpr;
+use cvlr_spec::CvlrFormula;
 
 struct Ctx {
     x: i32,
