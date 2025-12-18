@@ -1,42 +1,17 @@
 use cvlr_macros::cvlr_assert_that;
-pub fn test_guarded_comparisons() {
-    let flag = true;
-    let cond = false;
+pub fn test_true_literal() {
+    ();
+}
+pub fn test_if_else_expressions() {
     let guard = true;
-    let test = true;
-    let check = false;
+    let flag = false;
+    let x = 5;
+    let y = 10;
     let a = 1;
     let b = 2;
-    let c = 3;
-    let d = 4;
-    let p = 5;
-    let q = 6;
-    let x = 6;
-    let y = 7;
-    let z = 8;
-    let m = 9;
-    let n = 10;
-    if flag {
+    if guard {
         {
-            let c_ = a < b;
-            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
-            ::cvlr_asserts::cvlr_assert_checked(c_);
-        };
-    } else {
-        ()
-    };
-    if x > 0 {
-        {
-            let c_ = y <= z;
-            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
-            ::cvlr_asserts::cvlr_assert_checked(c_);
-        };
-    } else {
-        ()
-    };
-    if cond {
-        {
-            let c_ = p > q;
+            let c_ = flag;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };
@@ -45,48 +20,87 @@ pub fn test_guarded_comparisons() {
     };
     if guard {
         {
-            let c_ = m >= n;
+            let c_ = x > 0;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };
     } else {
-        ()
-    };
-    if test {
         {
-            let c_ = x == y;
+            let c_ = y > 0;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };
-    } else {
-        ()
     };
-    if check {
+    if guard {
         {
-            let c_ = a != b;
+            let c_ = a < b;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };
     } else {
-        ()
-    };
-    if a > c {
         {
-            let c_ = d < p;
+            let c_ = b > a;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };
+    };
+    if guard {
+        if flag {
+            {
+                let c_ = x > 0;
+                ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+                ::cvlr_asserts::cvlr_assert_checked(c_);
+            };
+        } else {
+            {
+                let c_ = y > 0;
+                ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+                ::cvlr_asserts::cvlr_assert_checked(c_);
+            };
+        }
     } else {
         ()
     };
-    if x + 1 > 0 {
+    if guard {
+        ()
+    } else {
         {
-            let c_ = y * 2 < z;
+            let c_ = flag;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    };
+    if guard {
+        {
+            let c_ = flag;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
             ::cvlr_asserts::cvlr_assert_checked(c_);
         };
     } else {
         ()
     };
+    if guard { () } else { () };
+}
+pub fn test_if_without_else() {
+    let guard = true;
+    let flag = false;
+    let x = 5;
+    if guard {
+        {
+            let c_ = flag;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    }
+    if guard {
+        {
+            let c_ = x > 0;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+    }
+    if guard {
+        ()
+    }
 }
 pub fn main() {}

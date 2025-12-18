@@ -144,19 +144,48 @@ pub fn test_assume_guarded_comparisons() {
     let b = 2;
     let x = 5;
     let y = 10;
-    ::cvlr_asserts::cvlr_assume_checked(if flag { a < b } else { true });
-    ::cvlr_asserts::cvlr_assume_checked(if x > 0 { y <= 20 } else { true });
-    ::cvlr_asserts::cvlr_assume_checked(if flag { a < b } else { true });
-    ::cvlr_asserts::cvlr_assume_checked(if x > 0 { y <= 20 } else { true });
-    ::cvlr_asserts::cvlr_assume_checked(if flag { a < b } else { true });
+    if flag {
+        ::cvlr_asserts::cvlr_assume_checked(a < b);
+    } else {
+        ()
+    };
+    if x > 0 {
+        ::cvlr_asserts::cvlr_assume_checked(y <= 20);
+    } else {
+        ()
+    };
+    if flag {
+        ::cvlr_asserts::cvlr_assume_checked(a < b);
+    } else {
+        ()
+    };
+    if x > 0 {
+        ::cvlr_asserts::cvlr_assume_checked(y <= 20);
+    } else {
+        ()
+    };
+    if flag {
+        ::cvlr_asserts::cvlr_assume_checked(a < b);
+    } else {
+        ()
+    };
 }
 pub fn test_assume_booleans() {
     let flag = true;
     let x = 5;
     let y = 3;
+    ();
     ::cvlr_asserts::cvlr_assume_checked(flag);
     ::cvlr_asserts::cvlr_assume_checked(x > 0 && y < 10);
-    ::cvlr_asserts::cvlr_assume_checked(if flag { x > 0 } else { true });
-    ::cvlr_asserts::cvlr_assume_checked(if x > 0 { y > 0 && y < 10 } else { true });
+    if flag {
+        ::cvlr_asserts::cvlr_assume_checked(x > 0);
+    } else {
+        ()
+    };
+    if x > 0 {
+        ::cvlr_asserts::cvlr_assume_checked(y > 0 && y < 10);
+    } else {
+        ()
+    };
 }
 pub fn main() {}
