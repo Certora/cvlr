@@ -66,6 +66,6 @@ pub mod __macro_support {
 }
 
 // Re-export core types and traits
-pub use bool_expr::{cvlr_true, CvlrFormula};
+pub use bool_expr::{cvlr_true, CvlrFormula, CvlrPredicate};
 pub use combinators::{cvlr_and, cvlr_implies, CvlrAnd, CvlrImplies};
 pub use spec::{cvlr_invar_spec, cvlr_spec, CvlrInvarSpec, CvlrPropImpl, CvlrSpec};

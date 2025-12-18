@@ -121,6 +121,8 @@ pub trait CvlrFormula {
     }
 }
 
+pub trait CvlrPredicate: CvlrFormula {}
+
 /// A boolean expression that always evaluates to `true`.
 ///
 /// This is a constant expression that can be used as a base case or placeholder

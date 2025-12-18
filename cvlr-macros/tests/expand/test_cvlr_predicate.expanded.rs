@@ -51,6 +51,7 @@ impl ::cvlr::spec::CvlrFormula for XGtZero {
         };
     }
 }
+impl ::cvlr::spec::CvlrPredicate for XGtZero {}
 #[allow(unused_must_use, dead_code)]
 fn y_lt_hundred(c: &Ctx) {
     c.y < 100;
@@ -98,6 +99,7 @@ impl ::cvlr::spec::CvlrFormula for YLtHundred {
         };
     }
 }
+impl ::cvlr::spec::CvlrPredicate for YLtHundred {}
 #[allow(unused_must_use, dead_code)]
 fn multiple_conditions(c: &Ctx) {
     c.x > 0;
@@ -173,6 +175,7 @@ impl ::cvlr::spec::CvlrFormula for MultipleConditions {
         };
     }
 }
+impl ::cvlr::spec::CvlrPredicate for MultipleConditions {}
 #[allow(unused_must_use, dead_code)]
 fn with_let_statement(c: &Ctx) {
     let threshold = 0;
@@ -224,6 +227,7 @@ impl ::cvlr::spec::CvlrFormula for WithLetStatement {
         };
     }
 }
+impl ::cvlr::spec::CvlrPredicate for WithLetStatement {}
 #[allow(unused_must_use, dead_code)]
 fn with_multiple_lets(c: &Ctx) {
     let min_x = 0;
@@ -307,6 +311,7 @@ impl ::cvlr::spec::CvlrFormula for WithMultipleLets {
         };
     }
 }
+impl ::cvlr::spec::CvlrPredicate for WithMultipleLets {}
 #[allow(unused_must_use, dead_code)]
 fn let_before_expressions(c: &Ctx) {
     let threshold = 5;
@@ -418,3 +423,4 @@ impl ::cvlr::spec::CvlrFormula for LetBeforeExpressions {
         };
     }
 }
+impl ::cvlr::spec::CvlrPredicate for LetBeforeExpressions {}
