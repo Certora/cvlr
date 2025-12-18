@@ -561,14 +561,11 @@ pub fn cvlr_rule_for_spec(input: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ```rust,no_run
-/// use cvlr_macros::cvlr_pif;
+/// The macro converts snake_case identifiers to PascalCase:
 ///
-/// // Convert snake_case to PascalCase
-/// let MyStruct = cvlr_pif!(my_struct);  // expands to MyStruct
-/// let XGtZero = cvlr_pif!(x_gt_zero);  // expands to XGtZero
-/// let SomeLongName = cvlr_pif!(some_long_name);  // expands to SomeLongName
-/// ```
+/// - `cvlr_pif!(my_struct)` expands to `MyStruct`
+/// - `cvlr_pif!(x_gt_zero)` expands to `XGtZero`
+/// - `cvlr_pif!(some_long_name)` expands to `SomeLongName`
 #[proc_macro]
 pub fn cvlr_pif(input: TokenStream) -> TokenStream {
     let ident = parse_macro_input!(input as Ident);
