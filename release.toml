@@ -2,61 +2,16 @@
 # This file configures the release process for all crates in the workspace
 # Documentation: https://github.com/crate-ci/cargo-release
 
-# Shared configuration for all packages in the workspace
-[workspace]
-# Update the CHANGELOG.md file
-changelog = "CHANGELOG.md"
-# Commit changes after release
-commit = true
+shared-version = true
 # Tag the release (format: v{version})
 tag = true
 # Push changes to remote
 push = true
 # Publish to crates.io
 publish = true
-# Allow dirty working directory (set to false to require clean working tree)
-allow-dirty = false
-# Sign the git tag
-sign-tag = false
-# Sign the commit
-sign-commit = false
-# Tag prefix (default is "v")
-tag-prefix = "v"
 # Tag message format
 tag-message = "Release {name} {version}"
 # Commit message format
-commit-message = "chore: release {name} {version}"
-
-# Pre-release replacements to update workspace dependency versions
-# This updates all "version = \"=X.Y.Z\"" entries in [workspace.dependencies]
-# to use the new release version
-# Reference: https://github.com/crate-ci/cargo-release/blob/master/docs/faq.md
-# This assumes that the only exact version dependency are our local ones
-# like this
-# cvlr = { path = "cvlr", version = "=0.4.1" }
-pre-release-replacements = [
-  {file = "Cargo.toml", search = "version = \"=[0-9]+\\.[0-9]+\\.[0-9]+\"", replace = "version = \"={{version}}\""},
-  {file="README.md", search="**Current release:** [a-z0-9\\.-]+", replace="Current release: {{version}}"} ,
-  {file="CHANGELOG.md", search="Unreleased", replace="{{version}}", min=1},
-  {file="CHANGELOG.md", search="\\.\\.\\.HEAD", replace="...{{tag_name}}", exactly=1},
-  {file="CHANGELOG.md", search="ReleaseDate", replace="{{date}}", min=1},
-  {file="CHANGELOG.md", search="<!-- next-header -->", replace="<!-- next-header -->\n## [Unreleased] - ReleaseDate\n", exactly=1},
-  {file="CHANGELOG.md", search="<!-- next-url -->", replace="<!-- next-url -->\n[Unreleased]: https://github.com/crate-ci/cargo-release/compare/{{tag_name}}...HEAD", exactly=1},
-]
-
-# Pre-release hooks (run before version bump)
-# Uncomment to run tests before release:
-# [workspace.pre-release-commit]
-# pre-release-command = "cargo test --workspace"
-
-# Post-release hooks (run after version bump, before commit)
-# Uncomment to build after version bump:
-# [workspace.post-release-commit]
-# post-release-command = "cargo build --workspace --release"
-
-# Individual package configurations (if needed)
-# You can override shared settings per package here
-# [package.cvlr]
-# [package.cvlr-asserts]
-# etc.
+pre-release-commit-message = "chore: release {name} {version}"
+consolidate-commits = true
 

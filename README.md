@@ -28,4 +28,4 @@ cargo install cargo-expand
 
 ## Release
 
-**Current release:** `0.4.1`
+**Current release:** `0.4.1` 
