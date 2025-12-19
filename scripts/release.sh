@@ -38,7 +38,7 @@ VERSION_TYPE (optional):
     <version> - Set specific version (e.g., 0.4.2)
 
 OPTIONS:
-    --dry-run         - Show what would be done without making changes
+    --execute         - Execute the release command
     --no-publish      - Skip publishing to crates.io
     --no-push         - Skip pushing to remote repository
     --no-tag          - Skip creating git tag
@@ -46,15 +46,15 @@ OPTIONS:
     --help            - Show this help message
 
 Examples:
-    $0 patch              # Release patch version
-    $0 minor              # Release minor version
-    $0 --dry-run patch    # Preview patch release
-    $0 0.5.0              # Release specific version
+    $0 --execute patch              # Release patch version
+    $0 --execute minor              # Release minor version
+    $0 patch                        # Preview patch release
+    $0 --execute 0.5.0              # Release specific version
 EOF
 }
 
 # Parse arguments
-DRY_RUN=false
+EXECUTE=false
 NO_PUBLISH=false
 NO_PUSH=false
 NO_TAG=false
@@ -63,8 +63,8 @@ VERSION_TYPE=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --dry-run)
-            DRY_RUN=true
+        --execute)
+            EXECUTE=true
             shift
             ;;
         --no-publish)
@@ -117,16 +117,15 @@ RELEASE_CMD="cargo release --workspace"
 if [[ "$VERSION_TYPE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     RELEASE_CMD="$RELEASE_CMD $VERSION_TYPE"
 else
-    RELEASE_CMD="$RELEASE_CMD --level $VERSION_TYPE"
+    RELEASE_CMD="$RELEASE_CMD $VERSION_TYPE"
 fi
 
 # Add options
-if [ "$DRY_RUN" = true ]; then
-    RELEASE_CMD="$RELEASE_CMD --dry-run"
-    echo -e "${YELLOW}Running in dry-run mode (no changes will be made)${NC}"
-else
+if [ "$EXECUTE" = true ]; then
     # Execute without confirmation prompt
     RELEASE_CMD="$RELEASE_CMD --execute"
+else
+    echo -e "${YELLOW}Running in dry-run mode (no changes will be made)${NC}"
 fi
 
 if [ "$NO_PUBLISH" = true ]; then
@@ -152,7 +151,7 @@ echo "Command: $RELEASE_CMD"
 echo ""
 
 # Check git status if not allowing dirty
-if [ "$ALLOW_DIRTY" = false ] && [ "$DRY_RUN" = false ]; then
+if [ "$ALLOW_DIRTY" = false ] && [ "$EXECUTE" = true ]; then
     if ! git diff-index --quiet HEAD --; then
         echo -e "${RED}Error: Working directory is not clean${NC}"
         echo "Commit or stash your changes first, or use --allow-dirty"
@@ -164,7 +163,7 @@ fi
 echo -e "${GREEN}Running cargo-release...${NC}"
 eval "$RELEASE_CMD"
 
-if [ "$DRY_RUN" = false ]; then
+if [ "$EXECUTE" = true ]; then
     echo -e "${GREEN}Release completed successfully!${NC}"
 else
     echo -e "${YELLOW}Dry-run completed. No changes were made.${NC}"
