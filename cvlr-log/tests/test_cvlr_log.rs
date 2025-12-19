@@ -1,16 +1,16 @@
+use cvlr::log::{cvlr_log, CvlrLogger};
+
 #[test]
 fn test_cvlr_log_macro_expansion() {
     macrotest::expand_args("tests/expand/*.rs", &["--features", "no-loc"]);
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_empty() {
     // Test empty macro call - should log location
     cvlr_log!();
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_single_value_with_tag() {
     // Test single value with explicit tag
@@ -21,7 +21,6 @@ fn test_cvlr_log_single_value_with_tag() {
     cvlr_log!("hello" => "greeting");
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_single_value_without_tag() {
     // Test single value without tag (auto-generated from expression)
@@ -32,7 +31,6 @@ fn test_cvlr_log_single_value_without_tag() {
     cvlr_log!("world");
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_with_logger() {
     // Test single value with explicit tag and logger
@@ -42,7 +40,6 @@ fn test_cvlr_log_with_logger() {
     cvlr_log!(true => "flag"; logger);
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_multiple_values() {
     // Test multiple values
@@ -54,7 +51,6 @@ fn test_cvlr_log_multiple_values() {
     cvlr_log!("first", "second", "third");
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_multiple_with_tags() {
     // Test multiple values with explicit tags
@@ -67,7 +63,6 @@ fn test_cvlr_log_multiple_with_tags() {
     cvlr_log!(a => "a", b => "b",); // with trailing comma
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_various_integer_types() {
     // Test various integer types
@@ -85,7 +80,6 @@ fn test_cvlr_log_various_integer_types() {
     cvlr_log!(-5i128 => "i128");
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_option() {
     // Test Option types
@@ -111,7 +105,6 @@ fn test_cvlr_log_result() {
     cvlr_log!(Err::<u64, &str>("failure"));
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_unit() {
     // Test unit type
@@ -120,7 +113,6 @@ fn test_cvlr_log_unit() {
     cvlr_log!(unit);
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_reference() {
     // Test references
@@ -130,7 +122,6 @@ fn test_cvlr_log_reference() {
     cvlr_log!(&100 => "literal_ref");
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_complex_expressions() {
     // Test complex expressions
@@ -143,7 +134,6 @@ fn test_cvlr_log_complex_expressions() {
     cvlr_log!((x + y) => "computed");
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_trailing_comma() {
     // Test trailing comma in multiple values
@@ -151,7 +141,6 @@ fn test_cvlr_log_trailing_comma() {
     cvlr_log!("a", "b", "c",);
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_mixed_types() {
     // Test logging multiple values of different types
@@ -162,7 +151,6 @@ fn test_cvlr_log_mixed_types() {
     cvlr_log!(num, text, flag);
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_nested_options() {
     // Test nested Option types
@@ -173,7 +161,6 @@ fn test_cvlr_log_nested_options() {
     cvlr_log!(nested_none => "nested_none");
 }
 
-#[cfg(feature = "rt")]
 #[test]
 fn test_cvlr_log_nested_results() {
     // Test nested Result types
