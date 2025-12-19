@@ -28,8 +28,8 @@
 //! ## Specifications
 //!
 //! The [`CvlrSpec`] trait represents a complete specification with:
-//! - Preconditions (requires) - conditions that must hold before an operation
-//! - Postconditions (ensures) - conditions that must hold after an operation
+//! - Preconditions (requires) - conditions that must hold before an operation (assumed by the verifier)
+//! - Postconditions (ensures) - conditions that hold after an operation (asserted by the verifier)
 //!
 //! Use [`cvlr_spec`] to create a specification from requires and ensures clauses,
 //! or [`cvlr_invar_spec`] for specifications with invariants.
