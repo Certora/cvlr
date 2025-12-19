@@ -19,16 +19,16 @@ pub fn test_guarded_comparisons() {
     let n = 10;
 
     // Guarded comparisons - all operators
-    cvlr_assert_that!(if flag { a < b });
-    cvlr_assert_that!(if x > 0 { y <= z });
-    cvlr_assert_that!(if cond { p > q });
-    cvlr_assert_that!(if guard { m >= n });
-    cvlr_assert_that!(if test { x == y });
-    cvlr_assert_that!(if check { a != b });
+    cvlr_assert_that!(if flag { a < b } else { true });
+    cvlr_assert_that!(if x > 0 { y <= z } else { true });
+    cvlr_assert_that!(if cond { p > q } else { true });
+    cvlr_assert_that!(if guard { m >= n } else { true });
+    cvlr_assert_that!(if test { x == y } else { true });
+    cvlr_assert_that!(if check { a != b } else { true });
 
     // Complex guards and conditions
-    cvlr_assert_that!(if a > c { d < p });
-    cvlr_assert_that!(if x + 1 > 0 { y * 2 < z });
+    cvlr_assert_that!(if a > c { d < p } else { true });
+    cvlr_assert_that!(if x + 1 > 0 { y * 2 < z } else { true });
 }
 
 pub fn main() {}

@@ -12,6 +12,7 @@ members = [
     "cvlr-fixed",
     "cvlr-derive",
     "cvlr-decimal",
+    "cvlr-spec",
 ]
 
 [workspace.package]
@@ -61,3 +62,4 @@ cvlr-hook = { path = "cvlr-hook", version = "=0.5.0" }
 cvlr-fixed = { path = "cvlr-fixed", version = "=0.5.0" }
 cvlr-decimal = { path = "cvlr-decimal", version = "=0.5.0" }
 cvlr-derive = { path = "cvlr-derive", version = "=0.5.0" }
+cvlr-spec = { path = "cvlr-spec", version = "=0.5.0" }

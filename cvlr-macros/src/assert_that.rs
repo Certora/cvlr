@@ -1,50 +1,18 @@
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::{parse::Parse, parse_macro_input, Expr, ExprIf, Token};
+use syn::{parse::Parse, parse_macro_input, Expr, Lit, Token};
 
 // Custom parser for the assert_that DSL
 struct AssertThatInput {
-    guard: Option<Expr>,
     condition: Expr,
 }
 
 impl Parse for AssertThatInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        // Try to parse as: if guard { condition }
-        if input.peek(Token![if]) {
-            let if_expr: ExprIf = input.parse()?;
-            // Extract guard and condition from if expression
-            let guard = *if_expr.cond;
-            // The condition should be a single expression in the block
-            if if_expr.then_branch.stmts.len() != 1 {
-                return Err(syn::Error::new(
-                    Span::call_site(),
-                    "expected exactly one statement in if block",
-                ));
-            }
-            // Extract the expression from the statement
-            let condition = match &if_expr.then_branch.stmts[0] {
-                syn::Stmt::Expr(expr, _) => expr.clone(),
-                _ => {
-                    return Err(syn::Error::new(
-                        Span::call_site(),
-                        "expected an expression, not a statement",
-                    ));
-                }
-            };
-            Ok(AssertThatInput {
-                guard: Some(guard),
-                condition,
-            })
-        } else {
-            // No guard, parse as unguarded condition
-            let condition: Expr = input.parse()?;
-            Ok(AssertThatInput {
-                guard: None,
-                condition,
-            })
-        }
+        // Parse as a condition expression
+        let condition: Expr = input.parse()?;
+        Ok(AssertThatInput { condition })
     }
 }
 
@@ -52,7 +20,7 @@ pub fn assert_that_impl(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as AssertThatInput);
 
     // Analyze the condition to detect comparison operators
-    let expanded = match analyze_condition(&input.condition, input.guard.as_ref()) {
+    let expanded = match analyze_condition(&input.condition) {
         Ok(ts) => ts,
         Err(e) => e.to_compile_error(),
     };
@@ -69,7 +37,7 @@ fn unwrap_groups(expr: &Expr) -> &Expr {
     }
 }
 
-fn analyze_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
+pub fn analyze_condition(condition: &Expr) -> syn::Result<TokenStream2> {
     // Unwrap any groups first
     let condition = unwrap_groups(condition);
     // Check if condition is a binary comparison
@@ -88,41 +56,120 @@ fn analyze_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<Toke
             syn::BinOp::Ne(_) => "cvlr_assert_ne",
             _ => {
                 // Not a comparison operator, treat as boolean expression
-                return handle_boolean_condition(condition, guard);
+                return handle_boolean_condition(condition);
             }
         };
 
-        // Generate the macro call
-        if let Some(guard_expr) = guard {
-            // Guarded assertion: cvlr_assert_<op>_if!(guard, lhs, rhs)
-            let macro_name_if = format!("{}_if", macro_name);
-            let macro_ident = syn::Ident::new(&macro_name_if, Span::call_site());
-            Ok(quote! {
-                ::cvlr::asserts::#macro_ident!(#guard_expr, #left, #right);
-            })
-        } else {
-            // Unguarded assertion: cvlr_assert_<op>!(lhs, rhs)
-            let macro_ident = syn::Ident::new(macro_name, Span::call_site());
-            Ok(quote! {
-                ::cvlr::asserts::#macro_ident!(#left, #right);
-            })
-        }
+        // Generate the macro call: cvlr_assert_<op>!(lhs, rhs)
+        let macro_ident = syn::Ident::new(macro_name, Span::call_site());
+        Ok(quote! {
+            ::cvlr::asserts::#macro_ident!(#left, #right);
+        })
     } else {
         // Not a binary comparison, treat as boolean expression
-        handle_boolean_condition(condition, guard)
+        handle_boolean_condition(condition)
     }
 }
 
-fn handle_boolean_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
-    if let Some(guard_expr) = guard {
-        // Guarded boolean: cvlr_assert_if!(guard, condition)
-        Ok(quote! {
-            ::cvlr::asserts::cvlr_assert_if!(#guard_expr, #condition);
-        })
+fn handle_boolean_condition(condition: &Expr) -> syn::Result<TokenStream2> {
+    handle_boolean_condition_with_macro(condition, "cvlr_assert")
+}
+
+fn handle_boolean_condition_with_macro(
+    condition: &Expr,
+    macro_name: &str,
+) -> syn::Result<TokenStream2> {
+    // Check if condition is literal `true`
+    if let Expr::Lit(lit) = condition {
+        if let Lit::Bool(lit_bool) = &lit.lit {
+            if lit_bool.value {
+                // If condition is `true`, output unit `()`
+                return Ok(quote! { () });
+            }
+        }
+    }
+
+    // Check if condition is an if expression
+    if let Expr::If(if_expr) = condition {
+        let guard = &if_expr.cond;
+
+        // Process the then branch
+        let then_branch = if if_expr.then_branch.stmts.len() == 1 {
+            // Extract expression from single statement
+            match &if_expr.then_branch.stmts[0] {
+                syn::Stmt::Expr(expr, _) => {
+                    // Recursively handle the condition in the then branch
+                    handle_boolean_condition_with_macro(expr, macro_name)?
+                }
+                _ => {
+                    return Err(syn::Error::new(
+                        Span::call_site(),
+                        "expected an expression in if then branch",
+                    ));
+                }
+            }
+        } else {
+            return Err(syn::Error::new(
+                Span::call_site(),
+                "expected exactly one statement in if then branch",
+            ));
+        };
+
+        // Process the else branch if present
+        let else_branch = if let Some((_, else_expr)) = &if_expr.else_branch {
+            match else_expr.as_ref() {
+                Expr::Block(block) => {
+                    if block.block.stmts.len() == 1 {
+                        match &block.block.stmts[0] {
+                            syn::Stmt::Expr(expr, _) => {
+                                // Recursively handle the condition in the else branch
+                                Some(handle_boolean_condition_with_macro(expr, macro_name)?)
+                            }
+                            _ => {
+                                return Err(syn::Error::new(
+                                    Span::call_site(),
+                                    "expected an expression in if else branch",
+                                ));
+                            }
+                        }
+                    } else {
+                        return Err(syn::Error::new(
+                            Span::call_site(),
+                            "expected exactly one statement in if else branch",
+                        ));
+                    }
+                }
+                expr => {
+                    // Direct expression in else branch
+                    Some(handle_boolean_condition_with_macro(expr, macro_name)?)
+                }
+            }
+        } else {
+            None
+        };
+
+        // Generate if-else with macro calls in branches
+        if let Some(else_branch_expr) = else_branch {
+            Ok(quote! {
+                if #guard {
+                    #then_branch
+                } else {
+                    #else_branch_expr
+                }
+            })
+        } else {
+            // No else branch, just then branch
+            Ok(quote! {
+                if #guard {
+                    #then_branch
+                }
+            })
+        }
     } else {
-        // Unguarded boolean: cvlr_assert!(condition)
+        // Regular condition - generate macro call
+        let macro_ident = syn::Ident::new(macro_name, Span::call_site());
         Ok(quote! {
-            ::cvlr::asserts::cvlr_assert!(#condition);
+            ::cvlr::asserts::#macro_ident!(#condition);
         })
     }
 }
@@ -168,7 +215,7 @@ pub fn assert_all_impl(input: TokenStream) -> TokenStream {
     let mut assertions = Vec::new();
 
     for expr in &input.expressions {
-        match analyze_condition(&expr.condition, expr.guard.as_ref()) {
+        match analyze_condition(&expr.condition) {
             Ok(assertion) => assertions.push(assertion),
             // stop on first error
             Err(e) => return e.to_compile_error().into(),
@@ -181,7 +228,7 @@ pub fn assert_all_impl(input: TokenStream) -> TokenStream {
     .into()
 }
 
-fn analyze_assume_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
+pub fn analyze_assume_condition(condition: &Expr) -> syn::Result<TokenStream2> {
     // Unwrap any groups first
     let condition = unwrap_groups(condition);
 
@@ -201,57 +248,30 @@ fn analyze_assume_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Resu
             syn::BinOp::Ne(_) => "cvlr_assume_ne",
             _ => {
                 // Not a comparison operator, treat as boolean expression
-                return handle_assume_boolean_condition(condition, guard);
+                return handle_assume_boolean_condition(condition);
             }
         };
 
-        // Generate the macro call
-        if let Some(guard_expr) = guard {
-            // Guarded assumption: if guard { cvlr_assume_<op>!(lhs, rhs) }
-            // Note: There are no cvlr_assume_<op>_if macros, so we wrap in if
-            let macro_ident = syn::Ident::new(macro_name, Span::call_site());
-            Ok(quote! {
-                if #guard_expr {
-                    ::cvlr::asserts::#macro_ident!(#left, #right);
-                }
-            })
-        } else {
-            // Unguarded assumption: cvlr_assume_<op>!(lhs, rhs)
-            let macro_ident = syn::Ident::new(macro_name, Span::call_site());
-            Ok(quote! {
-                ::cvlr::asserts::#macro_ident!(#left, #right);
-            })
-        }
+        // Generate the macro call: cvlr_assume_<op>!(lhs, rhs)
+        let macro_ident = syn::Ident::new(macro_name, Span::call_site());
+        Ok(quote! {
+            ::cvlr::asserts::#macro_ident!(#left, #right);
+        })
     } else {
         // Not a binary comparison, treat as boolean expression
-        handle_assume_boolean_condition(condition, guard)
+        handle_assume_boolean_condition(condition)
     }
 }
 
-fn handle_assume_boolean_condition(
-    condition: &Expr,
-    guard: Option<&Expr>,
-) -> syn::Result<TokenStream2> {
-    if let Some(guard_expr) = guard {
-        // Guarded boolean: if guard { cvlr_assume!(condition) }
-        Ok(quote! {
-            if #guard_expr {
-                ::cvlr::asserts::cvlr_assume!(#condition);
-            }
-        })
-    } else {
-        // Unguarded boolean: cvlr_assume!(condition)
-        Ok(quote! {
-            ::cvlr::asserts::cvlr_assume!(#condition);
-        })
-    }
+fn handle_assume_boolean_condition(condition: &Expr) -> syn::Result<TokenStream2> {
+    handle_boolean_condition_with_macro(condition, "cvlr_assume")
 }
 
 pub fn assume_that_impl(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as AssertThatInput);
 
     // Analyze the condition to detect comparison operators
-    let expanded = match analyze_assume_condition(&input.condition, input.guard.as_ref()) {
+    let expanded = match analyze_assume_condition(&input.condition) {
         Ok(ts) => ts,
         Err(e) => e.to_compile_error(),
     };
@@ -266,7 +286,7 @@ pub fn assume_all_impl(input: TokenStream) -> TokenStream {
     let mut assumptions = Vec::new();
 
     for expr in &input.expressions {
-        match analyze_assume_condition(&expr.condition, expr.guard.as_ref()) {
+        match analyze_assume_condition(&expr.condition) {
             Ok(assumption) => assumptions.push(assumption),
             // stop on first error
             Err(e) => return e.to_compile_error().into(),
@@ -278,33 +298,20 @@ pub fn assume_all_impl(input: TokenStream) -> TokenStream {
     .into()
 }
 
-fn analyze_eval_condition(condition: &Expr, guard: Option<&Expr>) -> syn::Result<TokenStream2> {
-    if let Some(guard_expr) = guard {
-        // Guarded expression: if guard { condition } else { true }
-        Ok(quote! {
-            {
-                if #guard_expr {
-                    #condition
-                } else {
-                    true
-                }
-            }
-        })
-    } else {
-        // Unguarded expression: { condition }
-        Ok(quote! {
-            {
-                #condition
-            }
-        })
-    }
+pub fn analyze_eval_condition(condition: &Expr) -> syn::Result<TokenStream2> {
+    // Expression: { condition }
+    Ok(quote! {
+        {
+            #condition
+        }
+    })
 }
 
 pub fn eval_that_impl(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as AssertThatInput);
 
     // Generate the boolean expression wrapped in a scope
-    let expanded = match analyze_eval_condition(&input.condition, input.guard.as_ref()) {
+    let expanded = match analyze_eval_condition(&input.condition) {
         Ok(ts) => ts,
         Err(e) => e.to_compile_error(),
     };
@@ -319,7 +326,7 @@ pub fn eval_all_impl(input: TokenStream) -> TokenStream {
     let mut evaluated_exprs = Vec::new();
 
     for expr in &input.expressions {
-        match analyze_eval_condition(&expr.condition, expr.guard.as_ref()) {
+        match analyze_eval_condition(&expr.condition) {
             Ok(eval_expr) => evaluated_exprs.push(eval_expr),
             // stop on first error
             Err(e) => return e.to_compile_error().into(),

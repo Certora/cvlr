@@ -23,6 +23,6 @@ no-loc = []
 cvlr-mathint = { workspace = true, optional = true }
 
 [dev-dependencies]
-cvlr = { path = "../cvlr", features = ["rt"] }
+cvlr = { path = "../cvlr", features = ["rt", "no-loc"] }
 trybuild = { workspace = true }
 macrotest = { workspace = true }

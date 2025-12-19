@@ -1,9 +1,11 @@
 use proc_macro::TokenStream;
-use quote::ToTokens;
-use syn::{parse_macro_input, parse_quote, ItemFn};
+use quote::{quote, ToTokens};
+use syn::{parse_macro_input, parse_quote, Ident, ItemFn};
 
 mod assert_that;
 mod mock;
+mod predicate;
+mod rule_for_spec;
 /// Mark a method as a CVT rule
 ///
 /// # Example
@@ -38,17 +40,89 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
     mock::mock_fn_impl(attr, item)
 }
 
+/// Converts a function into a CVLR predicate.
+///
+/// This attribute macro transforms a function into a struct that implements
+/// [`CvlrFormula`](cvlr_spec::CvlrFormula) for the specified context type.
+/// The function body is parsed and used to generate `eval`, `assert`, and `assume`
+/// methods using the same helpers as [`cvlr_def_predicate!`](cvlr_spec::cvlr_def_predicate).
+///
+/// # Syntax
+///
+/// ```ignore
+/// #[cvlr_predicate]
+/// pub fn predicate_name(c: &Ctx) {
+///     c.x > 0;
+///     c.y < 100;
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * The function must have exactly one parameter of type `&Ctx` or `&mut Ctx`
+/// * The function body can contain one or more expressions (statements ending with `;`)
+/// * The function name will be converted from snake_case to PascalCase for the struct name
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_macros::cvlr_predicate;
+/// use cvlr_spec::CvlrFormula;
+///
+/// struct Ctx {
+///     x: i32,
+///     y: i32,
+/// }
+///
+/// #[cvlr_predicate]
+/// pub fn x_gt_zero(c: &Ctx) {
+///     c.x > 0;
+/// }
+///
+/// // This generates:
+/// // pub struct XGtZero;
+/// // impl CvlrFormula<Ctx> for XGtZero { ... }
+///
+/// let ctx = Ctx { x: 5, y: 10 };
+/// let pred = XGtZero;
+/// assert!(pred.eval(&ctx));
+/// ```
+///
+/// # Generated Code
+///
+/// The macro generates a struct and implementation similar to [`cvlr_def_predicate!`](cvlr_spec::cvlr_def_predicate):
+///
+/// ```ignore
+/// pub struct XGtZero;
+/// impl CvlrFormula<Ctx> for XGtZero {
+///     fn eval(&self, ctx: &Ctx) -> bool {
+///         let c = ctx;
+///         cvlr_eval_all!(c.x > 0)
+///     }
+///     fn assert(&self, ctx: &Ctx) {
+///         let c = ctx;
+///         cvlr_assert_all!(c.x > 0);
+///     }
+///     fn assume(&self, ctx: &Ctx) {
+///         let c = ctx;
+///         cvlr_assume_all!(c.x > 0);
+///     }
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn cvlr_predicate(attr: TokenStream, item: TokenStream) -> TokenStream {
+    predicate::cvlr_predicate_impl(attr, item)
+}
+
 /// Assert a condition using a DSL syntax
 ///
-/// This macro provides a convenient DSL for writing assertions. It supports both
-/// guarded (conditional) and unguarded assertions, and automatically detects
+/// This macro provides a convenient DSL for writing assertions and automatically detects
 /// comparison operators to expand to the appropriate `cvlr_assert_*` macros.
 ///
 /// # Syntax
 ///
-/// The macro accepts either:
-/// - **Unguarded expression**: `cvlr_assert_that!(condition)`
-/// - **Guarded expression**: `cvlr_assert_that!(if guard { condition })`
+/// The macro accepts:
+/// - **Expression**: `cvlr_assert_that!(condition)`
 ///
 /// The `condition` can be:
 /// - A comparison: `a < b`, `x >= y`, `p == q`, etc.
@@ -56,7 +130,7 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ## Unguarded comparisons
+/// ## Comparisons
 ///
 /// ```rust,no_run
 /// use cvlr_macros::cvlr_assert_that;
@@ -72,23 +146,6 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// cvlr_assert_that!(x != 0);       // expands to cvlr_assert_ne!(x, 0)
 /// ```
 ///
-/// ## Guarded comparisons
-///
-/// ```rust,no_run
-/// use cvlr_macros::cvlr_assert_that;
-///
-/// let flag = true;
-/// let a = 1;
-/// let b = 2;
-/// let x = 5;
-/// let y = 10;
-/// let z = 15;
-///
-/// // Assert b < a only if flag is true
-/// cvlr_assert_that!(if flag { a < b });  // expands to cvlr_assert_lt_if!(flag, a, b)
-/// cvlr_assert_that!(if x > 0 { y <= z }); // expands to cvlr_assert_le_if!(x > 0, y, z)
-/// ```
-///
 /// ## Boolean expressions
 ///
 /// ```rust,no_run
@@ -97,15 +154,9 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// let flag = true;
 /// let x = 5;
 /// let y = 3;
-/// let z = 7;
 ///
-/// // Unguarded boolean
 /// cvlr_assert_that!(flag);                    // expands to cvlr_assert!(flag)
 /// cvlr_assert_that!(x > 0 && y < 10);         // expands to cvlr_assert!(x > 0 && y < 10)
-///
-/// // Guarded boolean
-/// cvlr_assert_that!(if flag { x > 0 });       // expands to cvlr_assert_if!(flag, x > 0)
-/// cvlr_assert_that!(if x > 0 { y > 0 && z < 10 }); // expands to cvlr_assert_if!(x > 0, y > 0 && z < 10)
 /// ```
 ///
 /// ## Complex expressions
@@ -114,16 +165,15 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// use cvlr_macros::cvlr_assert_that;
 ///
 /// let a = 1;
-/// let c = 3;
 /// let d = 4;
 /// let p = 5;
 /// let x = 5;
 /// let y = 3;
 /// let z = 10;
 ///
-/// // Complex guard and condition
-/// cvlr_assert_that!(if a > c { d < p });      // expands to cvlr_assert_lt_if!(a > c, d, p)
-/// cvlr_assert_that!(if x + 1 > 0 { y * 2 < z }); // expands to cvlr_assert_lt_if!(x + 1 > 0, y * 2, z)
+/// // Complex conditions
+/// cvlr_assert_that!(a < d);                   // expands to cvlr_assert_lt!(a, d)
+/// cvlr_assert_that!(x + 1 > 0 && y * 2 < z); // expands to cvlr_assert!(x + 1 > 0 && y * 2 < z)
 /// ```
 ///
 /// # Expansion
@@ -131,8 +181,8 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// The macro automatically detects comparison operators and expands to the
 /// appropriate assertion macro:
 ///
-/// - Comparisons (`<`, `<=`, `>`, `>=`, `==`, `!=`) expand to `cvlr_assert_<op>!` or `cvlr_assert_<op>_if!`
-/// - Boolean expressions expand to `cvlr_assert!` or `cvlr_assert_if!`
+/// - Comparisons (`<`, `<=`, `>`, `>=`, `==`, `!=`) expand to `cvlr_assert_<op>!`
+/// - Boolean expressions expand to `cvlr_assert!`
 #[proc_macro]
 pub fn cvlr_assert_that(input: TokenStream) -> TokenStream {
     assert_that::assert_that_impl(input)
@@ -152,8 +202,7 @@ pub fn cvlr_assert_that(input: TokenStream) -> TokenStream {
 /// - `cvlr_assert_all!(expr1, expr2; expr3);`  // Mixed separators are also allowed
 ///
 /// Each expression follows the same syntax as `cvlr_assert_that!`:
-/// - Unguarded: `condition`
-/// - Guarded: `if guard { condition }`
+/// - `condition`
 ///
 /// # Examples
 ///
@@ -162,19 +211,15 @@ pub fn cvlr_assert_that(input: TokenStream) -> TokenStream {
 ///
 /// let x = 5;
 /// let y = 10;
-/// let c = true;
 ///
-/// // Multiple unguarded assertions
+/// // Multiple assertions
 /// cvlr_assert_all!(x > 0, y < 20, x < y);
 ///
-/// // Mixed guarded and unguarded
-/// cvlr_assert_all!(x > 0, if c { x < y });
-///
 /// // Using semicolons
-/// cvlr_assert_all!(x > 0; y < 20; if c { x < y });
+/// cvlr_assert_all!(x > 0; y < 20; x < y);
 ///
 /// // Mixed separators
-/// cvlr_assert_all!(x > 0, y < 20; if c { x < y });
+/// cvlr_assert_all!(x > 0, y < 20; x < y);
 /// ```
 ///
 /// # Expansion
@@ -183,11 +228,11 @@ pub fn cvlr_assert_that(input: TokenStream) -> TokenStream {
 ///
 /// ```text
 /// // Input:
-/// cvlr_assert_all!(x > 0, if c { x < y });
+/// cvlr_assert_all!(x > 0, x < y);
 ///
 /// // Expands to:
 /// ::cvlr::asserts::cvlr_assert_gt!(x, 0);
-/// ::cvlr::asserts::cvlr_assert_lt_if!(c, x, y);
+/// ::cvlr::asserts::cvlr_assert_lt!(x, y);
 /// ```
 #[proc_macro]
 pub fn cvlr_assert_all(input: TokenStream) -> TokenStream {
@@ -201,9 +246,8 @@ pub fn cvlr_assert_all(input: TokenStream) -> TokenStream {
 ///
 /// # Syntax
 ///
-/// The macro accepts either:
-/// - **Unguarded expression**: `cvlr_assume_that!(condition)`
-/// - **Guarded expression**: `cvlr_assume_that!(if guard { condition })`
+/// The macro accepts:
+/// - **Expression**: `cvlr_assume_that!(condition)`
 ///
 /// The `condition` can be:
 /// - A comparison: `a < b`, `x >= y`, `p == q`, etc.
@@ -211,7 +255,7 @@ pub fn cvlr_assert_all(input: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ## Unguarded comparisons
+/// ## Comparisons
 ///
 /// ```rust,no_run
 /// use cvlr_macros::cvlr_assume_that;
@@ -227,19 +271,6 @@ pub fn cvlr_assert_all(input: TokenStream) -> TokenStream {
 /// cvlr_assume_that!(x != 0);       // expands to cvlr_assume_ne!(x, 0)
 /// ```
 ///
-/// ## Guarded comparisons
-///
-/// ```rust,no_run
-/// use cvlr_macros::cvlr_assume_that;
-///
-/// let flag = true;
-/// let a = 1;
-/// let b = 2;
-///
-/// // Assume a < b only if flag is true
-/// cvlr_assume_that!(if flag { a < b });  // expands to: if flag { cvlr_assume_lt!(a, b); }
-/// ```
-///
 /// ## Boolean expressions
 ///
 /// ```rust,no_run
@@ -249,12 +280,8 @@ pub fn cvlr_assert_all(input: TokenStream) -> TokenStream {
 /// let x = 5;
 /// let y = 3;
 ///
-/// // Unguarded boolean
 /// cvlr_assume_that!(flag);                    // expands to cvlr_assume!(flag)
 /// cvlr_assume_that!(x > 0 && y < 10);         // expands to cvlr_assume!(x > 0 && y < 10)
-///
-/// // Guarded boolean
-/// cvlr_assume_that!(if flag { x > 0 });       // expands to: if flag { cvlr_assume!(x > 0); }
 /// ```
 ///
 /// # Expansion
@@ -263,7 +290,6 @@ pub fn cvlr_assert_all(input: TokenStream) -> TokenStream {
 /// appropriate assume macro:
 ///
 /// - Comparisons (`<`, `<=`, `>`, `>=`, `==`, `!=`) expand to `cvlr_assume_<op>!`
-/// - For guarded expressions, the assume is wrapped in an `if` block
 /// - Boolean expressions expand to `cvlr_assume!`
 #[proc_macro]
 pub fn cvlr_assume_that(input: TokenStream) -> TokenStream {
@@ -284,8 +310,7 @@ pub fn cvlr_assume_that(input: TokenStream) -> TokenStream {
 /// - `cvlr_assume_all!(expr1, expr2; expr3);`  // Mixed separators are also allowed
 ///
 /// Each expression follows the same syntax as `cvlr_assume_that!`:
-/// - Unguarded: `condition`
-/// - Guarded: `if guard { condition }`
+/// - `condition`
 ///
 /// # Examples
 ///
@@ -294,16 +319,12 @@ pub fn cvlr_assume_that(input: TokenStream) -> TokenStream {
 ///
 /// let x = 5;
 /// let y = 10;
-/// let c = true;
 ///
-/// // Multiple unguarded assumptions
+/// // Multiple assumptions
 /// cvlr_assume_all!(x > 0, y < 20, x < y);
 ///
-/// // Mixed guarded and unguarded
-/// cvlr_assume_all!(x > 0, if c { x < y });
-///
 /// // Using semicolons
-/// cvlr_assume_all!(x > 0; y < 20; if c { x < y });
+/// cvlr_assume_all!(x > 0; y < 20; x < y);
 /// ```
 ///
 /// # Expansion
@@ -312,13 +333,11 @@ pub fn cvlr_assume_that(input: TokenStream) -> TokenStream {
 ///
 /// ```text
 /// // Input:
-/// cvlr_assume_all!(x > 0, if c { x < y });
+/// cvlr_assume_all!(x > 0, x < y);
 ///
 /// // Expands to:
 /// ::cvlr::asserts::cvlr_assume_gt!(x, 0);
-/// if c {
-///     ::cvlr::asserts::cvlr_assume_lt!(x, y);
-/// }
+/// ::cvlr::asserts::cvlr_assume_lt!(x, y);
 /// ```
 #[proc_macro]
 pub fn cvlr_assume_all(input: TokenStream) -> TokenStream {
@@ -332,17 +351,14 @@ pub fn cvlr_assume_all(input: TokenStream) -> TokenStream {
 ///
 /// # Syntax
 ///
-/// The macro accepts either:
-/// - **Unguarded expression**: `cvlr_eval_that!(condition)`
-/// - **Guarded expression**: `cvlr_eval_that!(if guard { condition })`
+/// The macro accepts:
+/// - **Expression**: `cvlr_eval_that!(condition)`
 ///
 /// The `condition` can be:
 /// - A comparison: `a < b`, `x >= y`, `p == q`, etc.
 /// - A boolean expression: `flag`, `x > 0 && y < 10`, etc.
 ///
 /// # Examples
-///
-/// ## Unguarded expressions
 ///
 /// ```rust,no_run
 /// use cvlr_macros::cvlr_eval_that;
@@ -354,22 +370,9 @@ pub fn cvlr_assume_all(input: TokenStream) -> TokenStream {
 /// let flag = cvlr_eval_that!(x > 0 && y < 20); // expands to: { x > 0 && y < 20 }
 /// ```
 ///
-/// ## Guarded expressions
-///
-/// ```rust,no_run
-/// use cvlr_macros::cvlr_eval_that;
-///
-/// let flag = true;
-/// let a = 1;
-/// let b = 2;
-///
-/// let result = cvlr_eval_that!(if flag { a < b });  // expands to: { if flag { a < b } else { true } }
-/// ```
-///
 /// # Expansion
 ///
-/// - Unguarded expressions expand to `{ condition }`
-/// - Guarded expressions expand to `{ if guard { condition } else { true } }`
+/// Expressions expand to `{ condition }`
 #[proc_macro]
 pub fn cvlr_eval_that(input: TokenStream) -> TokenStream {
     assert_that::eval_that_impl(input)
@@ -389,8 +392,7 @@ pub fn cvlr_eval_that(input: TokenStream) -> TokenStream {
 /// - `cvlr_eval_all!(expr1, expr2; expr3);`  // Mixed separators are also allowed
 ///
 /// Each expression follows the same syntax as `cvlr_eval_that!`:
-/// - Unguarded: `condition`
-/// - Guarded: `if guard { condition }`
+/// - `condition`
 ///
 /// # Examples
 ///
@@ -399,16 +401,12 @@ pub fn cvlr_eval_that(input: TokenStream) -> TokenStream {
 ///
 /// let x = 5;
 /// let y = 10;
-/// let c = true;
 ///
-/// // Multiple unguarded expressions
+/// // Multiple expressions
 /// let result = cvlr_eval_all!(x > 0, y < 20, x < y);
 ///
-/// // Mixed guarded and unguarded
-/// let result = cvlr_eval_all!(x > 0, if c { x < y });
-///
 /// // Using semicolons
-/// let result = cvlr_eval_all!(x > 0; y < 20; if c { x < y });
+/// let result = cvlr_eval_all!(x > 0; y < 20; x < y);
 /// ```
 ///
 /// # Expansion
@@ -430,4 +428,93 @@ pub fn cvlr_eval_that(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn cvlr_eval_all(input: TokenStream) -> TokenStream {
     assert_that::eval_all_impl(input)
+}
+
+/// Generate a rule name and call `cvlr_impl_rule!` macro
+///
+/// This macro takes a name, spec expression, and base function identifier,
+/// and generates a call to `cvlr_impl_rule!` with a combined rule name.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_rule_for_spec! {
+///     name: "rule_name",
+///     spec: MySpec,
+///     base: base_function_name,
+/// }
+/// ```
+///
+/// # Parameters
+///
+/// * `name`: A string literal that will be converted to snake_case
+/// * `spec`: An instance implementing `CvlrSpec`
+/// * `base`: An identifier of a function (if it starts with `base_`, that prefix is stripped)
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_macros::cvlr_rule_for_spec;
+///
+/// cvlr_rule_for_spec! {
+///     name: "solvency",
+///     spec: MySpec,
+///     base: base_update_exchange_price_no_interest_free_new,
+/// }
+///
+/// // Expands to:
+/// // cvlr_impl_rule!{solvency_update_exchange_price_no_interest_free_new, MySpec, base_update_exchange_price_no_interest_free_new}
+/// ```
+#[proc_macro]
+pub fn cvlr_rule_for_spec(input: TokenStream) -> TokenStream {
+    rule_for_spec::cvlr_rule_for_spec_impl(input)
+}
+
+/// Convert a `cvlr::predicate` annotated function name to `CvlrPredicate`
+///
+/// The macro is used to adapt function that define predicates into instance of
+/// `CvlrPredicate`.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_pif!(identifier_name)
+/// ```
+///
+/// # Examples
+///
+/// Technically, the macro converts snake_case identifiers to PascalCase:
+///
+/// - `cvlr_pif!(my_struct)` expands to `MyStruct`
+/// - `cvlr_pif!(x_gt_zero)` expands to `XGtZero`
+/// - `cvlr_pif!(some_long_name)` expands to `SomeLongName`
+///
+/// # Technical Details
+///
+/// A `CvlrPredicate` is a trait that is implemented by a struct. It provides
+/// both the `CvlrPredicate` marker and requires implemenation of `CvlrFormula`.
+/// The most conveninet way to define a predicate is via a Rust function that is
+/// annotated with `cvlr::predicate` attribute.
+/// This macro converts the function name to the struct name by converting
+/// snake_case to PascalCase.
+///
+/// Thus, the macro returns a struct name that implements `CvlrPredicate`.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_macros::cvlr_pif;
+///
+/// #[cvlr::predicate]l
+#[proc_macro]
+pub fn cvlr_pif(input: TokenStream) -> TokenStream {
+    let ident = parse_macro_input!(input as Ident);
+
+    // Convert snake_case to PascalCase
+    let pascal_case = predicate::to_pascal_case(&ident.to_string());
+
+    // Create new identifier with the same span as the input
+    let new_ident = Ident::new(&pascal_case, ident.span());
+
+    quote! { #new_ident }.into()
 }

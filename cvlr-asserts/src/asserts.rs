@@ -4,12 +4,14 @@ macro_rules! impl_bin_assert {
         #[macro_export]
         macro_rules! $name {
         ($lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
-            let lhs = $lhs;
-            let rhs = $rhs;
-            cvlr::clog!(stringify!(assert $lhs $pred $rhs) => "_");
-            cvlr::clog!(lhs => stringify!($lhs));
-            cvlr::clog!(rhs => stringify!($rhs));
-            $crate::cvlr_assert!(lhs $pred rhs);
+            let __cvlr_lhs = $lhs;
+            let __cvlr_rhs = $rhs;
+            cvlr::log::log_scope_start("assert");
+            cvlr::clog!(stringify!($lhs $pred $rhs) => "_");
+            cvlr::clog!(__cvlr_lhs => stringify!($lhs));
+            cvlr::clog!(__cvlr_rhs => stringify!($rhs));
+            cvlr::log::log_scope_start("assert");
+            $crate::cvlr_assert!(__cvlr_lhs $pred __cvlr_rhs);
         }};
     }
         pub use $name;
@@ -29,12 +31,14 @@ macro_rules! impl_bin_assume {
         #[macro_export]
         macro_rules! $name {
         ($lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
-            let lhs = $lhs;
-            let rhs = $rhs;
-            cvlr::clog!(stringify!(assume $lhs $pred $rhs) => "_");
-            cvlr::clog!(lhs => stringify!($lhs));
-            cvlr::clog!(rhs => stringify!($rhs));
-            $crate::cvlr_assume!(lhs $pred rhs);
+            let __cvlr_lhs = $lhs;
+            let __cvlr_rhs = $rhs;
+            cvlr::log::log_scope_start("assume");
+            cvlr::clog!(stringify!($lhs $pred $rhs) => "_");
+            cvlr::clog!(__cvlr_lhs => stringify!($lhs));
+            cvlr::clog!(__cvlr_rhs => stringify!($rhs));
+            cvlr::log::log_scope_end("assume");
+            $crate::cvlr_assume!(__cvlr_lhs $pred __cvlr_rhs);
         }};
     }
         pub use $name;
@@ -63,15 +67,15 @@ macro_rules! impl_bin_assert_if {
         #[macro_export]
         macro_rules! $name {
         ($guard: expr,$lhs: expr, $rhs: expr $dollar(, $desc: literal)? ) => {{
-            let guard = $guard;
+            let __cvlr_guard = $guard;
             cvlr::clog!(stringify!(assert if $guard { $lhs $pred $rhs }) => "_");
-            cvlr::clog!(guard => stringify!($guard));
-            if guard {
-                let lhs = $lhs;
-                let rhs = $rhs;
-                cvlr::clog!(lhs => stringify!($lhs));
-                cvlr::clog!(rhs => stringify!($rhs));
-                $crate::cvlr_assert!(lhs $pred rhs);
+            cvlr::clog!(__cvlr_guard => stringify!($guard));
+            if __cvlr_guard {
+                let __cvlr_lhs = $lhs;
+                let __cvlr_rhs = $rhs;
+                cvlr::clog!(__cvlr_lhs => stringify!($lhs));
+                cvlr::clog!(__cvlr_rhs => stringify!($rhs));
+                $crate::cvlr_assert!(__cvlr_lhs $pred __cvlr_rhs);
             }
         }};
     }

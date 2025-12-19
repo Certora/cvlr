@@ -31,8 +31,8 @@ pub fn test_assert_all_mixed_separators() {
     let c = 3;
 
     // Mixed separators
-    cvlr_assert_all!(x > 0, y < 20; if flag { x < y });
-    cvlr_assert_all!(x > 0; y < 20, if flag { c < y });
+    cvlr_assert_all!(x > 0, y < 20; if flag { x < y } else { true });
+    cvlr_assert_all!(x > 0; y < 20, if flag { c < y } else { true });
 }
 
 pub fn test_assert_all_guarded() {
@@ -43,8 +43,8 @@ pub fn test_assert_all_guarded() {
     let y = 10;
 
     // Multiple guarded assertions
-    cvlr_assert_all!(if flag { a < b }, if x > 0 { y < 20 });
-    cvlr_assert_all!(if flag { a < b }; if x > 0 { y < 20 });
+    cvlr_assert_all!(if flag { a < b } else { true }, if x > 0 { y < 20 } else { true });
+    cvlr_assert_all!(if flag { a < b } else { true }; if x > 0 { y < 20 } else { true });
 }
 
 pub fn test_assert_all_mixed_guarded_unguarded() {
@@ -55,9 +55,9 @@ pub fn test_assert_all_mixed_guarded_unguarded() {
     let b = 2;
 
     // Mixed guarded and unguarded
-    cvlr_assert_all!(x > 0, if flag { x < y });
-    cvlr_assert_all!(if flag { a < b }, y > 0);
-    cvlr_assert_all!(x > 0, if flag { a < b }, y < 20);
+    cvlr_assert_all!(x > 0, if flag { x < y } else { true });
+    cvlr_assert_all!(if flag { a < b } else { true }, y > 0);
+    cvlr_assert_all!(x > 0, if flag { a < b } else { true }, y < 20);
 }
 
 pub fn test_assert_all_boolean_expressions() {
@@ -68,7 +68,7 @@ pub fn test_assert_all_boolean_expressions() {
 
     // Boolean expressions
     cvlr_assert_all!(flag, x > 0 && y < 10);
-    cvlr_assert_all!(if flag { x > 0 }, if x > 0 { y > 0 && z < 10 });
+    cvlr_assert_all!(if flag { x > 0 } else { true }, if x > 0 { y > 0 && z < 10 } else { true });
 
     // Group-wrapped boolean expressions
     cvlr_assert_all!((flag), (x > 0 && y < 10));
