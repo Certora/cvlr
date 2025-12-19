@@ -59,4 +59,5 @@ cvlr-macros = { path = "cvlr-macros", version = "=0.5.0" }
 cvlr-early-panic = { path = "cvlr-early-panic", version = "=0.5.0" }
 cvlr-hook = { path = "cvlr-hook", version = "=0.5.0" }
 cvlr-fixed = { path = "cvlr-fixed", version = "=0.5.0" }
+cvlr-decimal = { path = "cvlr-decimal", version = "=0.5.0" }
 cvlr-derive = { path = "cvlr-derive", version = "=0.5.0" }
