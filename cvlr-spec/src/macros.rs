@@ -315,10 +315,11 @@ macro_rules! cvlr_def_states_predicates {
 macro_rules! cvlr_predicate {
     (| $c:ident : $ctx: ident | -> { $( $e: expr );* $(;)? } ) => {
         {
-            $crate::cvlr_def_predicate! {
-                pred __AnonymousPredicate ($c : $ctx) { $( $e );* }
+            #[$crate::__macro_support::cvlr_predicate]
+            fn __anonymous_predicate($c: &$ctx) {
+                $( $e );* ;
             }
-            __AnonymousPredicate
+            $crate::__macro_support::cvlr_pif!(__anonymous_predicate)
         }
     };
 }
