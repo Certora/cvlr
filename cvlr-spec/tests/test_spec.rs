@@ -1589,3 +1589,299 @@ fn test_cvlr_and_macro_nested() {
     };
     assert!(!outer.eval(&ctx2));
 }
+
+// Tests for the new cvlr_lemma! branch with name literal syntax
+#[test]
+fn test_cvlr_lemma_new_branch_basic() {
+    // Test the new branch syntax: name: "string", StructName(Context) { requires: expr, ensures: expr }
+    cvlr_lemma! {
+        name: "BasicLemma",
+        BasicLemmaNew(TestCtx) {
+            requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+            ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; c.y >= 0 } },
+        }
+    }
+
+    let lemma = BasicLemmaNew;
+
+    let ctx1 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    assert!(lemma.requires().eval(&ctx1));
+    assert!(lemma.ensures().eval(&ctx1));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!lemma.requires().eval(&ctx2));
+
+    let ctx3 = TestCtx {
+        x: 5,
+        y: -1,
+        flag: true,
+    };
+    assert!(!lemma.ensures().eval(&ctx3));
+}
+
+#[test]
+fn test_cvlr_lemma_new_branch_with_identifiers() {
+    // Test the new branch with identifier predicates
+    cvlr_lemma! {
+        name: "IdentifierLemma",
+        IdentifierLemmaNew(TestCtx) {
+            requires: XPositive,
+            ensures: YPositive,
+        }
+    }
+
+    let lemma = IdentifierLemmaNew;
+
+    let ctx1 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    assert!(lemma.requires().eval(&ctx1));
+    assert!(lemma.ensures().eval(&ctx1));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!lemma.requires().eval(&ctx2));
+    assert!(lemma.ensures().eval(&ctx2));
+
+    let ctx3 = TestCtx {
+        x: 5,
+        y: -1,
+        flag: true,
+    };
+    assert!(lemma.requires().eval(&ctx3));
+    assert!(!lemma.ensures().eval(&ctx3));
+}
+
+#[test]
+fn test_cvlr_lemma_new_branch_with_composed_expressions() {
+    // Test the new branch with composed expressions (cvlr_and, cvlr_implies)
+    cvlr_lemma! {
+        name: "ComposedLemma",
+        ComposedLemmaNew(TestCtx) {
+            requires: cvlr_and!(XPositive, YPositive),
+            ensures: cvlr_implies!(XPositive, YPositive),
+        }
+    }
+
+    let lemma = ComposedLemmaNew;
+
+    let ctx1 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    assert!(lemma.requires().eval(&ctx1));
+    assert!(lemma.ensures().eval(&ctx1));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!lemma.requires().eval(&ctx2));
+    assert!(lemma.ensures().eval(&ctx2)); // antecedent false, so implication is true
+
+    let ctx3 = TestCtx {
+        x: 5,
+        y: -1,
+        flag: true,
+    };
+    assert!(!lemma.requires().eval(&ctx3));
+    assert!(!lemma.ensures().eval(&ctx3)); // antecedent true, consequent false, so false
+}
+
+#[test]
+fn test_cvlr_lemma_new_branch_verify_with_context() {
+    // Test verify_with_context with the new branch
+    cvlr_lemma! {
+        name: "VerifyLemma",
+        VerifyLemmaNew(TestCtx) {
+            requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+            ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        }
+    }
+
+    let lemma = VerifyLemmaNew;
+
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+
+    // This should not panic since requires and ensures both hold
+    lemma.verify_with_context(&ctx);
+}
+
+#[test]
+fn test_cvlr_lemma_new_branch_apply() {
+    // Test apply with the new branch
+    cvlr_lemma! {
+        name: "ApplyLemma",
+        ApplyLemmaNew(TestCtx) {
+            requires: XPositive,
+            ensures: cvlr_and!(XPositive, YPositive),
+        }
+    }
+
+    let lemma = ApplyLemmaNew;
+
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+
+    // This should not panic since both requires and ensures hold
+    lemma.apply(&ctx);
+}
+
+#[test]
+fn test_cvlr_lemma_new_branch_multiple_conditions() {
+    // Test the new branch with multiple conditions using cvlr_and
+    cvlr_lemma! {
+        name: "MultipleConditionsLemma",
+        MultipleConditionsLemmaNew(TestCtx) {
+            requires: cvlr_and!(
+                XPositive,
+                YPositive,
+                cvlr_predicate! { | c : TestCtx | -> { c.flag } }
+            ),
+            ensures: cvlr_and!(
+                XPositive,
+                YPositive,
+                cvlr_predicate! { | c : TestCtx | -> { c.x + c.y > 10 } }
+            ),
+        }
+    }
+
+    let lemma = MultipleConditionsLemmaNew;
+
+    let ctx1 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    assert!(lemma.requires().eval(&ctx1));
+    assert!(lemma.ensures().eval(&ctx1));
+
+    let ctx2 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: false,
+    };
+    assert!(!lemma.requires().eval(&ctx2));
+    assert!(lemma.ensures().eval(&ctx2));
+
+    let ctx3 = TestCtx {
+        x: 1,
+        y: 2,
+        flag: true,
+    };
+    assert!(lemma.requires().eval(&ctx3));
+    assert!(!lemma.ensures().eval(&ctx3)); // x + y = 3 <= 10
+}
+
+#[test]
+fn test_cvlr_lemma_new_branch_mixed_expressions() {
+    // Test the new branch with mixed identifier and predicate expressions
+    cvlr_lemma! {
+        name: "MixedExpressionsLemma",
+        MixedExpressionsLemmaNew(TestCtx) {
+            requires: cvlr_and!(
+                XPositive,
+                cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+            ),
+            ensures: cvlr_implies!(
+                YPositive,
+                cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } }
+            ),
+        }
+    }
+
+    let lemma = MixedExpressionsLemmaNew;
+
+    let ctx1 = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    assert!(lemma.requires().eval(&ctx1));
+    assert!(lemma.ensures().eval(&ctx1));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!lemma.requires().eval(&ctx2));
+    assert!(!lemma.ensures().eval(&ctx2));
+    assert!(!lemma.ensures().eval(&ctx2));
+}
+
+#[test]
+fn test_cvlr_lemma_new_branch_with_trailing_comma() {
+    // Test the new branch with trailing comma
+    cvlr_lemma! {
+        name: "TrailingCommaLemma",
+        TrailingCommaLemmaNew(TestCtx) {
+            requires: XPositive,
+            ensures: YPositive,
+        }
+    }
+
+    let lemma = TrailingCommaLemmaNew;
+
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+    assert!(lemma.requires().eval(&ctx));
+    assert!(lemma.ensures().eval(&ctx));
+}
+
+#[test]
+fn test_cvlr_lemma_new_branch_requires_ensures_interaction() {
+    // Test that requires and ensures can be independent in the new branch
+    cvlr_lemma! {
+        name: "InteractionLemma",
+        InteractionLemmaNew(TestCtx) {
+            requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+            ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; c.y == c.x * 2 } },
+        }
+    }
+
+    let lemma = InteractionLemmaNew;
+
+    // Test that requires can be true while ensures is false
+    let ctx1 = TestCtx {
+        x: 5,
+        y: 5, // y != x * 2
+        flag: false,
+    };
+    assert!(lemma.requires().eval(&ctx1));
+    assert!(!lemma.ensures().eval(&ctx1));
+
+    // Test that both can be true
+    let ctx2 = TestCtx {
+        x: 5,
+        y: 10, // y == x * 2
+        flag: false,
+    };
+    assert!(lemma.requires().eval(&ctx2));
+    assert!(lemma.ensures().eval(&ctx2));
+}
