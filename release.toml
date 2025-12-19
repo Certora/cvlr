@@ -10,8 +10,8 @@ push = true
 # Publish to crates.io
 publish = true
 # Tag message format
-tag-message = "Release {name} {version}"
+tag-message = "Release {{version}}"
 # Commit message format
-pre-release-commit-message = "chore: release {name} {version}"
+pre-release-commit-message = "chore: release {{version}}"
 consolidate-commits = true
 
