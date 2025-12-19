@@ -127,28 +127,16 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
         }
     }
 
-    // Build the eval block with eager evaluation using early returns
+    // Build the eval block with lazy evaluation using an accumulator variable
     let mut eval_statements = Vec::new();
     for expr in &expressions {
-        // For each expression, generate: if !(expr) { return false; }
-        // If expr is an if-without-else (`if guard { cond }`), convert to `if guard { cond } else { true }`
-        let expr_for_eval: proc_macro2::TokenStream = match expr {
-            syn::Expr::If(expr_if) if expr_if.else_branch.is_none() => {
-                let guard = &expr_if.cond;
-                let body = &expr_if.then_branch;
-                quote! { if #guard #body else { true } }
-            }
-            _ => quote! { #expr },
-        };
         eval_statements.push(quote! {
-            if !(#expr_for_eval) {
-                return false;
-            }
+            __cvlr_eval_res = __cvlr_eval_res && { #expr };
         });
     }
 
-    // If we get to the end, return true
-    eval_statements.push(quote! { true });
+    // If we get to the end, return eval result
+    eval_statements.push(quote! { __cvlr_eval_res });
 
     // Generate the struct and impl, keeping the original function for IDE error checking
     let expanded = quote! {
@@ -167,6 +155,7 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
                 let #param_name = ctx;
                 {
                     #(#let_statements)*
+                    let mut __cvlr_eval_res = true;
                     #(#eval_statements)*
                 }
             }
