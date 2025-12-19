@@ -7,7 +7,10 @@ name = "cvlr"
 version = "0.5.0"
 dependencies = [
  "cvlr-asserts",
+ "cvlr-decimal",
+ "cvlr-derive",
  "cvlr-early-panic",
+ "cvlr-fixed",
  "cvlr-hook",
  "cvlr-log",
  "cvlr-macros",
@@ -26,7 +29,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-decimal"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "cvlr",
  "cvlr-asserts",
