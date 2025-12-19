@@ -13,10 +13,9 @@ impl ::cvlr::spec::CvlrFormula for XGtZero {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            if !(c.x > 0) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { c.x > 0 };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -61,10 +60,9 @@ impl ::cvlr::spec::CvlrFormula for YLtHundred {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            if !(c.y < 100) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { c.y < 100 };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -110,13 +108,10 @@ impl ::cvlr::spec::CvlrFormula for MultipleConditions {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            if !(c.x > 0) {
-                return false;
-            }
-            if !(c.y < 100) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { c.x > 0 };
+            __cvlr_eval_res = __cvlr_eval_res && { c.y < 100 };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -187,10 +182,9 @@ impl ::cvlr::spec::CvlrFormula for WithLetStatement {
         let c = ctx;
         {
             let threshold = 0;
-            if !(c.x > threshold) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { c.x > threshold };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -242,13 +236,10 @@ impl ::cvlr::spec::CvlrFormula for WithMultipleLets {
         {
             let min_x = 0;
             let max_y = 100;
-            if !(c.x > min_x) {
-                return false;
-            }
-            if !(c.y < max_y) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { c.x > min_x };
+            __cvlr_eval_res = __cvlr_eval_res && { c.y < max_y };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -327,16 +318,11 @@ impl ::cvlr::spec::CvlrFormula for LetBeforeExpressions {
         {
             let threshold = 5;
             let limit = 100;
-            if !(c.x > threshold) {
-                return false;
-            }
-            if !(c.y < limit) {
-                return false;
-            }
-            if !(c.x + c.y > threshold) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { c.x > threshold };
+            __cvlr_eval_res = __cvlr_eval_res && { c.y < limit };
+            __cvlr_eval_res = __cvlr_eval_res && { c.x + c.y > threshold };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -433,10 +419,10 @@ impl ::cvlr::spec::CvlrFormula for WithIfElse {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            if !(if c.x > 0 { c.y > 0 } else { c.y < 0 }) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res
+                && { if c.x > 0 { c.y > 0 } else { c.y < 0 } };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -475,10 +461,10 @@ impl ::cvlr::spec::CvlrFormula for WithIfElseTrue {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            if !(if c.x > 0 { c.y > 0 } else { true }) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res
+                && { if c.x > 0 { c.y > 0 } else { true } };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -513,10 +499,9 @@ impl ::cvlr::spec::CvlrFormula for WithIfElseBothTrue {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            if !(if c.x > 0 { true } else { true }) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { if c.x > 0 { true } else { true } };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -539,14 +524,16 @@ impl ::cvlr::spec::CvlrFormula for WithNestedIfElse {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            if !(if c.x > 0 {
-                if c.y > 0 { c.x + c.y > 0 } else { c.x > c.y }
-            } else {
-                c.y < 0
-            }) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res
+                && {
+                    if c.x > 0 {
+                        if c.y > 0 { c.x + c.y > 0 } else { c.x > c.y }
+                    } else {
+                        c.y < 0
+                    }
+                };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -598,13 +585,12 @@ impl ::cvlr::spec::CvlrFormula for MultipleIfElse {
     fn eval(&self, ctx: &Self::Context) -> bool {
         let c = ctx;
         {
-            if !(if c.x > 0 { c.y > 0 } else { c.y < 0 }) {
-                return false;
-            }
-            if !(if c.x < 100 { c.y < 100 } else { c.y > 100 }) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res
+                && { if c.x > 0 { c.y > 0 } else { c.y < 0 } };
+            __cvlr_eval_res = __cvlr_eval_res
+                && { if c.x < 100 { c.y < 100 } else { c.y > 100 } };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -663,10 +649,10 @@ impl ::cvlr::spec::CvlrFormula for IfElseWithLet {
         let c = ctx;
         {
             let threshold = 0;
-            if !(if c.x > threshold { c.y > threshold } else { c.y < threshold }) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res
+                && { if c.x > threshold { c.y > threshold } else { c.y < threshold } };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
@@ -712,13 +698,12 @@ impl ::cvlr::spec::CvlrFormula for IfElseWithMultipleLets {
         {
             let min_val = 0;
             let max_val = 100;
-            if !(if c.x > min_val { c.y > min_val } else { c.y < min_val }) {
-                return false;
-            }
-            if !(if c.x < max_val { c.y < max_val } else { c.y > max_val }) {
-                return false;
-            }
-            true
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res
+                && { if c.x > min_val { c.y > min_val } else { c.y < min_val } };
+            __cvlr_eval_res = __cvlr_eval_res
+                && { if c.x < max_val { c.y < max_val } else { c.y > max_val } };
+            __cvlr_eval_res
         }
     }
     fn assert(&self, ctx: &Self::Context) {
