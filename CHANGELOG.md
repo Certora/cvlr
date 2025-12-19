@@ -5,8 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
+<!-- next-header -->
+## [Unreleased] ReleaseDate
+  ### Fixed
+    - `NativeFixed::to_bits` overly conservative assumption
+  ### Added
+    - `cvlr_log_impl!` macro to help implement `CvlrLog` trait
+    - `cvlr_assume_XXX!` macros to match `cvlr_assert_XXX`
+    - more local tests
+  ### Changed
+    - removed duplicate definitions in cvlr-asserts
 
 ## [0.4.1] - 2025-05-14
 
@@ -42,8 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-
-[unreleased]: https://github.com/Certora/cvlr/compare/v0.4.1...HEAD
+<!-- next-url -->
+[Unreleased]: https://github.com/Certora/cvlr/compare/v0.4.1...HEAD
 [0.4.1]: https://github.com/Certora/cvlr/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Certora/cvlr/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/Certora/cvlr/releases/tag/v0.3.2
