@@ -333,6 +333,9 @@ macro_rules! cvlr_predicate {
 ///
 /// # Syntax
 ///
+/// The macro supports two syntax forms:
+///
+/// **Form 1: Block syntax with inline expressions**
 /// ```ignore
 /// cvlr_lemma! {
 ///     <name> ( <context_var> : <context_type> ) {
@@ -350,13 +353,32 @@ macro_rules! cvlr_predicate {
 /// }
 /// ```
 ///
+/// **Form 2: Expression syntax with pre-built predicates**
+/// ```ignore
+/// cvlr_lemma! {
+///     name: "<string_name>",
+///     <name> ( <context_type> ) {
+///         requires: <requires_expr>,
+///         ensures: <ensures_expr>,
+///     }
+/// }
+/// ```
+///
 /// # Parameters
 ///
+/// **Form 1 parameters:**
 /// * `name` - The name of the lemma type to create
 /// * `context_var` - The variable name to use for the context in the requires/ensures clauses
 /// * `context_type` - The type of the context (must implement [`Nondet`](cvlr_nondet::Nondet) and [`CvlrLog`](cvlr_log::CvlrLog))
 /// * `requires` - One or more expressions that form the preconditions
 /// * `ensures` - One or more expressions that form the postconditions
+///
+/// **Form 2 parameters:**
+/// * `name` (string literal) - A string name for documentation/identification purposes
+/// * `name` (identifier) - The name of the lemma type to create
+/// * `context_type` - The type of the context (must implement [`Nondet`](cvlr_nondet::Nondet) and [`CvlrLog`](cvlr_log::CvlrLog))
+/// * `requires` - A single expression (predicate, identifier, or composed expression) that forms the preconditions
+/// * `ensures` - A single expression (predicate, identifier, or composed expression) that forms the postconditions
 ///
 /// # Returns
 ///
@@ -416,6 +438,48 @@ macro_rules! cvlr_predicate {
 /// }
 /// ```
 ///
+/// **Form 2: Using pre-built predicates or expressions**
+///
+/// This form is useful when you already have predicates defined or want to use composed expressions:
+///
+/// ```ignore
+/// extern crate cvlr;
+/// use cvlr_spec::{cvlr_lemma, cvlr_predicate, cvlr_and};
+///
+/// #[derive(cvlr::derive::Nondet, cvlr::derive::CvlrLog)]
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Define predicates separately
+/// let positive_pred = cvlr_predicate! { | c : Counter | -> { c.value > 0 } };
+/// let bounded_pred = cvlr_predicate! { | c : Counter | -> { c.value < 100 } };
+///
+/// // Use them in a lemma with the expression syntax
+/// cvlr_lemma! {
+///     name: "CounterBoundedLemma",
+///     CounterBoundedLemma(Counter) {
+///         requires: cvlr_and!(positive_pred, bounded_pred),
+///         ensures: positive_pred,
+///     }
+/// }
+///
+/// // Or use identifier predicates
+/// cvlr_def_predicate! {
+///     pred IsPositive(c: Counter) {
+///         c.value > 0
+///     }
+/// }
+///
+/// cvlr_lemma! {
+///     name: "CounterPositiveLemma",
+///     CounterPositiveLemma(Counter) {
+///         requires: IsPositive,
+///         ensures: IsPositive,
+///     }
+/// }
+/// ```
+///
 /// # Verification
 ///
 /// When verifying a lemma:
@@ -440,6 +504,19 @@ macro_rules! cvlr_lemma {
                 }
             }
         };
+
+    (name: $str_name: literal, $name:ident ( $ctx:ident ) { requires: $r:expr , ensures: $e:expr $(,)? }) => {
+        struct $name;
+        impl $crate::spec::CvlrLemma for $name {
+            type Context = $ctx;
+            fn requires(&self) -> impl $crate::CvlrFormula<Context = Self::Context> {
+                $r
+            }
+            fn ensures(&self) -> impl $crate::CvlrFormula<Context = Self::Context> {
+                $e
+            }
+        }
+    };
 }
 
 /// Defines multiple rules for a specification across multiple base functions.
