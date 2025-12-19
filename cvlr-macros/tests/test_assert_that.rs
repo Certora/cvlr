@@ -19,4 +19,5 @@ fn test_cvlr_assert_that_compiles() {
     t.pass("tests/expand/test_cvlr_eval_that.rs");
     t.pass("tests/expand/test_cvlr_eval_all.rs");
     t.pass("tests/expand/test_cvlr_rule_for_spec.rs");
+    t.pass("tests/expand/test_cvlr_predicate.rs");
 }

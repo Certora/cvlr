@@ -131,9 +131,17 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
     let mut eval_statements = Vec::new();
     for expr in &expressions {
         // For each expression, generate: if !(expr) { return false; }
-        // Wrap expr in parentheses to ensure negation applies correctly
+        // If expr is an if-without-else (`if guard { cond }`), convert to `if guard { cond } else { true }`
+        let expr_for_eval: proc_macro2::TokenStream = match expr {
+            syn::Expr::If(expr_if) if expr_if.else_branch.is_none() => {
+                let guard = &expr_if.cond;
+                let body = &expr_if.then_branch;
+                quote! { if #guard #body else { true } }
+            }
+            _ => quote! { #expr },
+        };
         eval_statements.push(quote! {
-            if !(#expr) {
+            if !(#expr_for_eval) {
                 return false;
             }
         });
