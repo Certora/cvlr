@@ -7,16 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
+### Fixed
+  - Restored missing functionality in the `clog!` macro.
+
+### Added
+  - Introduced the `cvlr-derive` crate for custom derive macros
+  - Implemented derives for the `CvlrLog` and `Nondet` traits
+  - Added new assertion macros:
+    - `cvlr_assert_if!` for guarded (conditional) assertions
+    - `cvlr_assert_that!`, a macro supporting a simple DSL for assertions that produces detailed information in counterexamples
+    - `cvlr_assert_all!` for asserting a list of expressions at once
+    - `cvlr_assume_that!` and `cvlr_assume_all!` to mirror their assertion counterparts for making assumptions instead of assertions
 
 ## [0.4.2] 2025-12-19
-  ### Fixed
-    - `NativeFixed::to_bits` overly conservative assumption
-  ### Added
-    - `cvlr_log_impl!` macro to help implement `CvlrLog` trait
-    - `cvlr_assume_XXX!` macros to match `cvlr_assert_XXX`
-    - more local tests
-  ### Changed
-    - removed duplicate definitions in cvlr-asserts
+### Fixed
+  - `NativeFixed::to_bits` overly conservative assumption
+### Added
+  - `cvlr_log_impl!` macro to help implement `CvlrLog` trait
+  - `cvlr_assume_XXX!` macros to match `cvlr_assert_XXX`
+  - more local tests
+### Changed
+  - removed duplicate definitions in cvlr-asserts
 
 ## [0.4.1] - 2025-05-14
 
