@@ -440,7 +440,7 @@ pub fn cvlr_eval_all(input: TokenStream) -> TokenStream {
 /// ```ignore
 /// cvlr_rule_for_spec! {
 ///     name: "rule_name",
-///     spec: expr,
+///     spec: MySpec,
 ///     base: base_function_name,
 /// }
 /// ```
@@ -448,7 +448,7 @@ pub fn cvlr_eval_all(input: TokenStream) -> TokenStream {
 /// # Parameters
 ///
 /// * `name`: A string literal that will be converted to snake_case
-/// * `spec`: An expression (the spec to use)
+/// * `spec`: An instance implementing `CvlrSpec`
 /// * `base`: An identifier of a function (if it starts with `base_`, that prefix is stripped)
 ///
 /// # Examples
@@ -458,22 +458,22 @@ pub fn cvlr_eval_all(input: TokenStream) -> TokenStream {
 ///
 /// cvlr_rule_for_spec! {
 ///     name: "solvency",
-///     spec: expr,
+///     spec: MySpec,
 ///     base: base_update_exchange_price_no_interest_free_new,
 /// }
 ///
 /// // Expands to:
-/// // cvlr_impl_rule!{solvency_update_exchange_price_no_interest_free_new, expr, base_update_exchange_price_no_interest_free_new}
+/// // cvlr_impl_rule!{solvency_update_exchange_price_no_interest_free_new, MySpec, base_update_exchange_price_no_interest_free_new}
 /// ```
 #[proc_macro]
 pub fn cvlr_rule_for_spec(input: TokenStream) -> TokenStream {
     rule_for_spec::cvlr_rule_for_spec_impl(input)
 }
 
-/// Convert a snake_case identifier to PascalCase
+/// Convert a `cvlr::predicate` annotated function name to `CvlrPredicate`
 ///
-/// This macro takes an identifier in snake_case and converts it to PascalCase,
-/// outputting a new identifier.
+/// The macro is used to adapt function that define predicates into instance of
+/// `CvlrPredicate`.
 ///
 /// # Syntax
 ///
@@ -483,11 +483,29 @@ pub fn cvlr_rule_for_spec(input: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// The macro converts snake_case identifiers to PascalCase:
+/// Technically, the macro converts snake_case identifiers to PascalCase:
 ///
 /// - `cvlr_pif!(my_struct)` expands to `MyStruct`
 /// - `cvlr_pif!(x_gt_zero)` expands to `XGtZero`
 /// - `cvlr_pif!(some_long_name)` expands to `SomeLongName`
+///
+/// # Technical Details
+///
+/// A `CvlrPredicate` is a trait that is implemented by a struct. It provides
+/// both the `CvlrPredicate` marker and requires implemenation of `CvlrFormula`.
+/// The most conveninet way to define a predicate is via a Rust function that is
+/// annotated with `cvlr::predicate` attribute.
+/// This macro converts the function name to the struct name by converting
+/// snake_case to PascalCase.
+///
+/// Thus, the macro returns a struct name that implements `CvlrPredicate`.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_macros::cvlr_pif;
+///
+/// #[cvlr::predicate]l
 #[proc_macro]
 pub fn cvlr_pif(input: TokenStream) -> TokenStream {
     let ident = parse_macro_input!(input as Ident);
