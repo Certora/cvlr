@@ -27,7 +27,7 @@ impl ::cvlr::spec::CvlrFormula for XGtZero {
             ::cvlr_log::cvlr_log("_", &("c.x > 0"));
             ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -74,7 +74,7 @@ impl ::cvlr::spec::CvlrFormula for YLtHundred {
             ::cvlr_log::cvlr_log("_", &("c.y < 100"));
             ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("100", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs < __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -123,7 +123,7 @@ impl ::cvlr::spec::CvlrFormula for MultipleConditions {
             ::cvlr_log::cvlr_log("_", &("c.x > 0"));
             ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -137,7 +137,7 @@ impl ::cvlr::spec::CvlrFormula for MultipleConditions {
             ::cvlr_log::cvlr_log("_", &("c.y < 100"));
             ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("100", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs < __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -197,7 +197,7 @@ impl ::cvlr::spec::CvlrFormula for WithLetStatement {
             ::cvlr_log::cvlr_log("_", &("c.x > threshold"));
             ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("threshold", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -253,7 +253,7 @@ impl ::cvlr::spec::CvlrFormula for WithMultipleLets {
             ::cvlr_log::cvlr_log("_", &("c.x > min_x"));
             ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("min_x", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -267,7 +267,7 @@ impl ::cvlr::spec::CvlrFormula for WithMultipleLets {
             ::cvlr_log::cvlr_log("_", &("c.y < max_y"));
             ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("max_y", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs < __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -336,7 +336,7 @@ impl ::cvlr::spec::CvlrFormula for LetBeforeExpressions {
             ::cvlr_log::cvlr_log("_", &("c.x > threshold"));
             ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("threshold", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -350,7 +350,7 @@ impl ::cvlr::spec::CvlrFormula for LetBeforeExpressions {
             ::cvlr_log::cvlr_log("_", &("c.y < limit"));
             ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("limit", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs < __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -364,7 +364,7 @@ impl ::cvlr::spec::CvlrFormula for LetBeforeExpressions {
             ::cvlr_log::cvlr_log("_", &("c.x + c.y > threshold"));
             ::cvlr_log::cvlr_log("c.x + c.y", &(__cvlr_lhs));
             ::cvlr_log::cvlr_log("threshold", &(__cvlr_rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             {
                 let c_ = __cvlr_lhs > __cvlr_rhs;
                 ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -754,4 +754,310 @@ impl ::cvlr::spec::CvlrFormula for IfElseWithMultipleLets {
     }
 }
 impl ::cvlr::spec::CvlrPredicate for IfElseWithMultipleLets {}
+#[allow(unused_must_use, dead_code)]
+fn x_increased(c: &Ctx, old: &Ctx) {
+    c.x > old.x;
+}
+struct XIncreased;
+impl ::cvlr::spec::CvlrFormula for XIncreased {
+    type Context = Ctx;
+    fn eval_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) -> bool {
+        let c = ctx0;
+        let old = ctx1;
+        {
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { c.x > old.x };
+            __cvlr_eval_res
+        }
+    }
+    fn assert_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        let c = ctx0;
+        let old = ctx1;
+        {
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = old.x;
+            cvlr::log::log_scope_start("assert");
+            ::cvlr_log::cvlr_log("_", &("c.x > old.x"));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("old.x", &(__cvlr_rhs));
+            cvlr::log::log_scope_end("assert");
+            {
+                let c_ = __cvlr_lhs > __cvlr_rhs;
+                ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+                ::cvlr_asserts::cvlr_assert_checked(c_);
+            };
+        };
+    }
+    fn assume_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        let c = ctx0;
+        let old = ctx1;
+        {
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = old.x;
+            cvlr::log::log_scope_start("assume");
+            ::cvlr_log::cvlr_log("_", &("c.x > old.x"));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("old.x", &(__cvlr_rhs));
+            cvlr::log::log_scope_end("assume");
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
+        };
+    }
+    fn eval(&self, _ctx: &Self::Context) -> bool {
+        {
+            let c_ = false;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+        {
+            ::core::panicking::panic_fmt(
+                format_args!(
+                    "eval should never be called for a two-state predicate; use eval_with_states instead",
+                ),
+            );
+        };
+    }
+    fn assert(&self, _ctx: &Self::Context) {
+        {
+            let c_ = false;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+        {
+            ::core::panicking::panic_fmt(
+                format_args!(
+                    "assert should never be called for a two-state predicate; use assert_with_states instead",
+                ),
+            );
+        };
+    }
+    fn assume(&self, _ctx: &Self::Context) {
+        {
+            let c_ = false;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+        {
+            ::core::panicking::panic_fmt(
+                format_args!(
+                    "assume should never be called for a two-state predicate; use assume_with_states instead",
+                ),
+            );
+        };
+    }
+}
+impl ::cvlr::spec::CvlrPredicate for XIncreased {}
+#[allow(unused_must_use, dead_code)]
+fn both_increased(c: &Ctx, old: &Ctx) {
+    c.x > old.x;
+    c.y > old.y;
+}
+struct BothIncreased;
+impl ::cvlr::spec::CvlrFormula for BothIncreased {
+    type Context = Ctx;
+    fn eval_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) -> bool {
+        let c = ctx0;
+        let old = ctx1;
+        {
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { c.x > old.x };
+            __cvlr_eval_res = __cvlr_eval_res && { c.y > old.y };
+            __cvlr_eval_res
+        }
+    }
+    fn assert_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        let c = ctx0;
+        let old = ctx1;
+        {
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = old.x;
+            cvlr::log::log_scope_start("assert");
+            ::cvlr_log::cvlr_log("_", &("c.x > old.x"));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("old.x", &(__cvlr_rhs));
+            cvlr::log::log_scope_end("assert");
+            {
+                let c_ = __cvlr_lhs > __cvlr_rhs;
+                ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+                ::cvlr_asserts::cvlr_assert_checked(c_);
+            };
+        };
+        {
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = old.y;
+            cvlr::log::log_scope_start("assert");
+            ::cvlr_log::cvlr_log("_", &("c.y > old.y"));
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("old.y", &(__cvlr_rhs));
+            cvlr::log::log_scope_end("assert");
+            {
+                let c_ = __cvlr_lhs > __cvlr_rhs;
+                ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+                ::cvlr_asserts::cvlr_assert_checked(c_);
+            };
+        };
+    }
+    fn assume_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        let c = ctx0;
+        let old = ctx1;
+        {
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = old.x;
+            cvlr::log::log_scope_start("assume");
+            ::cvlr_log::cvlr_log("_", &("c.x > old.x"));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("old.x", &(__cvlr_rhs));
+            cvlr::log::log_scope_end("assume");
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
+        };
+        {
+            let __cvlr_lhs = c.y;
+            let __cvlr_rhs = old.y;
+            cvlr::log::log_scope_start("assume");
+            ::cvlr_log::cvlr_log("_", &("c.y > old.y"));
+            ::cvlr_log::cvlr_log("c.y", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("old.y", &(__cvlr_rhs));
+            cvlr::log::log_scope_end("assume");
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
+        };
+    }
+    fn eval(&self, _ctx: &Self::Context) -> bool {
+        {
+            let c_ = false;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+        {
+            ::core::panicking::panic_fmt(
+                format_args!(
+                    "eval should never be called for a two-state predicate; use eval_with_states instead",
+                ),
+            );
+        };
+    }
+    fn assert(&self, _ctx: &Self::Context) {
+        {
+            let c_ = false;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+        {
+            ::core::panicking::panic_fmt(
+                format_args!(
+                    "assert should never be called for a two-state predicate; use assert_with_states instead",
+                ),
+            );
+        };
+    }
+    fn assume(&self, _ctx: &Self::Context) {
+        {
+            let c_ = false;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+        {
+            ::core::panicking::panic_fmt(
+                format_args!(
+                    "assume should never be called for a two-state predicate; use assume_with_states instead",
+                ),
+            );
+        };
+    }
+}
+impl ::cvlr::spec::CvlrPredicate for BothIncreased {}
+#[allow(unused_must_use, dead_code)]
+fn x_increased_with_let(c: &Ctx, old: &Ctx) {
+    let threshold = 0;
+    c.x > old.x + threshold;
+}
+struct XIncreasedWithLet;
+impl ::cvlr::spec::CvlrFormula for XIncreasedWithLet {
+    type Context = Ctx;
+    fn eval_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) -> bool {
+        let c = ctx0;
+        let old = ctx1;
+        {
+            let threshold = 0;
+            let mut __cvlr_eval_res = true;
+            __cvlr_eval_res = __cvlr_eval_res && { c.x > old.x + threshold };
+            __cvlr_eval_res
+        }
+    }
+    fn assert_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        let c = ctx0;
+        let old = ctx1;
+        let threshold = 0;
+        {
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = old.x + threshold;
+            cvlr::log::log_scope_start("assert");
+            ::cvlr_log::cvlr_log("_", &("c.x > old.x + threshold"));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("old.x + threshold", &(__cvlr_rhs));
+            cvlr::log::log_scope_end("assert");
+            {
+                let c_ = __cvlr_lhs > __cvlr_rhs;
+                ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+                ::cvlr_asserts::cvlr_assert_checked(c_);
+            };
+        };
+    }
+    fn assume_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+        let c = ctx0;
+        let old = ctx1;
+        let threshold = 0;
+        {
+            let __cvlr_lhs = c.x;
+            let __cvlr_rhs = old.x + threshold;
+            cvlr::log::log_scope_start("assume");
+            ::cvlr_log::cvlr_log("_", &("c.x > old.x + threshold"));
+            ::cvlr_log::cvlr_log("c.x", &(__cvlr_lhs));
+            ::cvlr_log::cvlr_log("old.x + threshold", &(__cvlr_rhs));
+            cvlr::log::log_scope_end("assume");
+            ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs > __cvlr_rhs);
+        };
+    }
+    fn eval(&self, _ctx: &Self::Context) -> bool {
+        {
+            let c_ = false;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+        {
+            ::core::panicking::panic_fmt(
+                format_args!(
+                    "eval should never be called for a two-state predicate; use eval_with_states instead",
+                ),
+            );
+        };
+    }
+    fn assert(&self, _ctx: &Self::Context) {
+        {
+            let c_ = false;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+        {
+            ::core::panicking::panic_fmt(
+                format_args!(
+                    "assert should never be called for a two-state predicate; use assert_with_states instead",
+                ),
+            );
+        };
+    }
+    fn assume(&self, _ctx: &Self::Context) {
+        {
+            let c_ = false;
+            ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
+            ::cvlr_asserts::cvlr_assert_checked(c_);
+        };
+        {
+            ::core::panicking::panic_fmt(
+                format_args!(
+                    "assume should never be called for a two-state predicate; use assume_with_states instead",
+                ),
+            );
+        };
+    }
+}
+impl ::cvlr::spec::CvlrPredicate for XIncreasedWithLet {}
 pub fn main() {}

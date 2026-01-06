@@ -31,7 +31,7 @@ fn test_cvlr_lemma_example_syntax() {
     use cvlr_spec::cvlr_lemma;
 
     #[derive(cvlr::derive::Nondet, cvlr::derive::CvlrLog)]
-    struct Counter {
+    pub struct Counter {
         value: i32,
     }
 
@@ -61,7 +61,7 @@ fn test_cvlr_lemma_complex_example() {
     use cvlr_spec::cvlr_lemma;
 
     #[derive(cvlr::derive::Nondet, cvlr::derive::CvlrLog)]
-    struct Counter {
+    pub struct Counter {
         value: i32,
     }
 

@@ -16,7 +16,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("a < b"));
         ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -30,7 +30,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("x <= y"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("y", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs <= __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -44,7 +44,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("p > q"));
         ::cvlr_log::cvlr_log("p", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("q", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -58,7 +58,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("m >= n"));
         ::cvlr_log::cvlr_log("m", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("n", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs >= __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -72,7 +72,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("x == y"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("y", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs == __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -86,7 +86,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("a != b"));
         ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs != __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -100,7 +100,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("x + 1 < y * 2"));
         ::cvlr_log::cvlr_log("x + 1", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("y * 2", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -114,7 +114,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("a > c"));
         ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("c", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -128,7 +128,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("a < b"));
         ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -142,7 +142,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("x > y"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("y", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -156,7 +156,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("p <= q"));
         ::cvlr_log::cvlr_log("p", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("q", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs <= __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -170,7 +170,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("m >= n"));
         ::cvlr_log::cvlr_log("m", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("n", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs >= __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -184,7 +184,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("x == y"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("y", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs == __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -198,7 +198,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("a != b"));
         ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs != __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -212,7 +212,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("a < b"));
         ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -226,7 +226,7 @@ pub fn test_comparisons() {
         ::cvlr_log::cvlr_log("_", &("x > y"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("y", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
