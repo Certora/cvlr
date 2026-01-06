@@ -309,7 +309,7 @@ pub trait CvlrLemma {
     ///
     /// * `ctx` - The context to apply the lemma to
     fn apply(&self, ctx: &Self::Context) {
-        self.requires().assume(ctx);
-        self.ensures().assert(ctx);
+        self.requires().assert(ctx);
+        self.ensures().assume(ctx);
     }
 }
