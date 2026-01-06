@@ -356,8 +356,7 @@ macro_rules! cvlr_predicate {
 /// **Form 2: Expression syntax with pre-built predicates**
 /// ```ignore
 /// cvlr_lemma! {
-///     name: "<string_name>",
-///     <name> ( <context_type> ) {
+///     <name> for <context_type> {
 ///         requires: <requires_expr>,
 ///         ensures: <ensures_expr>,
 ///     }
@@ -374,8 +373,7 @@ macro_rules! cvlr_predicate {
 /// * `ensures` - One or more expressions that form the postconditions
 ///
 /// **Form 2 parameters:**
-/// * `name` (string literal) - A string name for documentation/identification purposes
-/// * `name` (identifier) - The name of the lemma type to create
+/// * `name` - The name of the lemma type to create
 /// * `context_type` - The type of the context (must implement [`Nondet`](cvlr_nondet::Nondet) and [`CvlrLog`](cvlr_log::CvlrLog))
 /// * `requires` - A single expression (predicate, identifier, or composed expression) that forms the preconditions
 /// * `ensures` - A single expression (predicate, identifier, or composed expression) that forms the postconditions
@@ -457,8 +455,7 @@ macro_rules! cvlr_predicate {
 ///
 /// // Use them in a lemma with the expression syntax
 /// cvlr_lemma! {
-///     name: "CounterBoundedLemma",
-///     CounterBoundedLemma(Counter) {
+///     CounterBoundedLemma for Counter {
 ///         requires: cvlr_and!(positive_pred, bounded_pred),
 ///         ensures: positive_pred,
 ///     }
@@ -472,8 +469,7 @@ macro_rules! cvlr_predicate {
 /// }
 ///
 /// cvlr_lemma! {
-///     name: "CounterPositiveLemma",
-///     CounterPositiveLemma(Counter) {
+///     CounterPositiveLemma for Counter {
 ///         requires: IsPositive,
 ///         ensures: IsPositive,
 ///     }
@@ -505,7 +501,7 @@ macro_rules! cvlr_lemma {
             }
         };
 
-    (name: $str_name: literal, $name:ident ( $ctx:ident ) { requires: $r:expr , ensures: $e:expr $(,)? }) => {
+    ($name:ident for $ctx:ident { requires: $r:expr , ensures: $e:expr $(,)? }) => {
         struct $name;
         impl $crate::spec::CvlrLemma for $name {
             type Context = $ctx;
