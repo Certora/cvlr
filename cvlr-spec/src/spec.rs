@@ -1,6 +1,6 @@
 //! Specification types and traits.
 
-use crate::bool_expr::CvlrFormula;
+use crate::formula::CvlrFormula;
 
 /// A specification that defines preconditions (requires) and postconditions (ensures).
 ///
