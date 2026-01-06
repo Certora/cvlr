@@ -49,6 +49,7 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// # Syntax
 ///
+/// Single-state predicate:
 /// ```ignore
 /// #[cvlr_predicate]
 /// pub fn predicate_name(c: &Ctx) {
@@ -57,9 +58,20 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
+/// Two-state predicate:
+/// ```ignore
+/// #[cvlr_predicate]
+/// pub fn solvency_post(c: &SolvencyCtx, old: &SolvencyCtx) {
+///     c.borrow_value > old.borrow_value;
+/// }
+/// ```
+///
 /// # Parameters
 ///
-/// * The function must have exactly one parameter of type `&Ctx` or `&mut Ctx`
+/// * The function must have exactly one or two parameters of type `&Ctx` or `&mut Ctx`
+/// * For two-parameter predicates, both parameters must have the same context type
+/// * Two-parameter predicates use `eval_with_states`, `assert_with_states`, and `assume_with_states` methods
+/// * The first parameter represents the post-state, the second represents the pre-state
 /// * The function body can contain one or more expressions (statements ending with `;`)
 /// * The function name will be converted from snake_case to PascalCase for the struct name
 ///
@@ -88,9 +100,22 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 /// assert!(pred.eval(&ctx));
 /// ```
 ///
+/// Two-state predicate example:
+/// ```ignore
+/// #[cvlr_predicate]
+/// pub fn x_increased(c: &Ctx, old: &Ctx) {
+///     c.x > old.x;
+/// }
+///
+/// let pre = Ctx { x: 1, y: 2 };
+/// let post = Ctx { x: 5, y: 10 };
+/// let pred = XIncreased;
+/// assert!(pred.eval_with_states(&post, &pre));
+/// ```
+///
 /// # Generated Code
 ///
-/// The macro generates a struct and implementation similar to [`cvlr_def_predicate!`](cvlr_spec::cvlr_def_predicate):
+/// For single-parameter predicates, the macro generates a struct and implementation similar to [`cvlr_def_predicate!`](cvlr_spec::cvlr_def_predicate):
 ///
 /// ```ignore
 /// pub struct XGtZero;
@@ -107,6 +132,20 @@ pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///         let c = ctx;
 ///         cvlr_assume_all!(c.x > 0);
 ///     }
+/// }
+/// ```
+///
+/// For two-parameter predicates, the macro generates methods using `_with_states`:
+///
+/// ```ignore
+/// pub struct XIncreased;
+/// impl CvlrFormula<Ctx> for XIncreased {
+///     fn eval_with_states(&self, ctx0: &Ctx, ctx1: &Ctx) -> bool {
+///         let c = ctx0;  // post-state
+///         let old = ctx1;  // pre-state
+///         cvlr_eval_all!(c.x > old.x)
+///     }
+///     // ... similar for assert_with_states and assume_with_states
 /// }
 /// ```
 #[proc_macro_attribute]

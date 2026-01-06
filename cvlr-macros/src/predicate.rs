@@ -87,20 +87,43 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
     // Extract function visibility
     let vis = &fn_item.vis;
 
-    // Validate function signature - must have exactly one parameter
-    if fn_item.sig.inputs.len() != 1 {
+    // Validate function signature - must have exactly one or two parameters
+    let num_params = fn_item.sig.inputs.len();
+    if num_params != 1 && num_params != 2 {
         return syn::Error::new(
             Span::call_site(),
-            "cvlr_predicate function must have exactly one parameter",
+            "cvlr_predicate function must have exactly one or two parameters",
         )
         .to_compile_error()
         .into();
     }
 
-    // Extract context type and parameter name
-    let (ctx_type, param_name) = match extract_context_info(&fn_item.sig.inputs[0]) {
+    // Extract context types and parameter names
+    let (ctx_type, param1_name) = match extract_context_info(&fn_item.sig.inputs[0]) {
         Ok(info) => info,
         Err(e) => return e.to_compile_error().into(),
+    };
+
+    // For two-parameter case, extract second parameter and verify same context type
+    let (param2_name, is_two_state) = if num_params == 2 {
+        let (ctx_type2, param2) = match extract_context_info(&fn_item.sig.inputs[1]) {
+            Ok(info) => info,
+            Err(e) => return e.to_compile_error().into(),
+        };
+        
+        // Verify both parameters have the same context type
+        if ctx_type != ctx_type2 {
+            return syn::Error::new(
+                Span::call_site(),
+                "cvlr_predicate function with two parameters must have the same context type for both",
+            )
+            .to_compile_error()
+            .into();
+        }
+        
+        (param2, true)
+    } else {
+        (syn::Ident::new("_unused", Span::call_site()), false)
     };
 
     // Separate let statements from expressions in function body
@@ -139,41 +162,102 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
     eval_statements.push(quote! { __cvlr_eval_res });
 
     // Generate the struct and impl, keeping the original function for IDE error checking
-    let expanded = quote! {
-        // Keep the original function so IDEs can report errors
-        // But mark it dead code and unused must use to avoid warnings
-        #[allow(unused_must_use, dead_code)]
-        #fn_item
+    let expanded = if is_two_state {
+        // Two-parameter case: use _with_states methods
+        // First parameter (param1_name) = post-state (ctx0)
+        // Second parameter (param2_name) = pre-state (ctx1)
+        quote! {
+            // Keep the original function so IDEs can report errors
+            // But mark it dead code and unused must use to avoid warnings
+            #[allow(unused_must_use, dead_code)]
+            #fn_item
 
-        #vis struct #struct_name;
+            #vis struct #struct_name;
 
-        impl ::cvlr::spec::CvlrFormula for #struct_name {
+            impl ::cvlr::spec::CvlrFormula for #struct_name {
 
-            type Context = #ctx_type;
+                type Context = #ctx_type;
 
-            fn eval(&self, ctx: &Self::Context) -> bool {
-                let #param_name = ctx;
-                {
+                fn eval_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) -> bool {
+                    let #param1_name = ctx0;
+                    let #param2_name = ctx1;
+                    {
+                        #(#let_statements)*
+                        let mut __cvlr_eval_res = true;
+                        #(#eval_statements)*
+                    }
+                }
+
+                fn assert_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+                    let #param1_name = ctx0;
+                    let #param2_name = ctx1;
                     #(#let_statements)*
-                    let mut __cvlr_eval_res = true;
-                    #(#eval_statements)*
+                    #(#assert_statements)*
+                }
+
+                fn assume_with_states(&self, ctx0: &Self::Context, ctx1: &Self::Context) {
+                    let #param1_name = ctx0;
+                    let #param2_name = ctx1;
+                    #(#let_statements)*
+                    #(#assume_statements)*
+                }
+
+                fn eval(&self, _ctx: &Self::Context) -> bool {
+                    ::cvlr::asserts::cvlr_assert!(false);
+                    panic!("eval should never be called for a two-state predicate; use eval_with_states instead");
+                }
+
+                fn assert(&self, _ctx: &Self::Context) {
+                    ::cvlr::asserts::cvlr_assert!(false);
+                    panic!("assert should never be called for a two-state predicate; use assert_with_states instead");
+                }
+
+                fn assume(&self, _ctx: &Self::Context) {
+                    ::cvlr::asserts::cvlr_assert!(false);
+                    panic!("assume should never be called for a two-state predicate; use assume_with_states instead");
                 }
             }
 
-            fn assert(&self, ctx: &Self::Context) {
-                let #param_name = ctx;
-                #(#let_statements)*
-                #(#assert_statements)*
-            }
-
-            fn assume(&self, ctx: &Self::Context) {
-                let #param_name = ctx;
-                #(#let_statements)*
-                #(#assume_statements)*
-            }
+            impl ::cvlr::spec::CvlrPredicate for #struct_name { }
         }
+    } else {
+        // Single-parameter case: use single-state methods
+        quote! {
+            // Keep the original function so IDEs can report errors
+            // But mark it dead code and unused must use to avoid warnings
+            #[allow(unused_must_use, dead_code)]
+            #fn_item
 
-        impl ::cvlr::spec::CvlrPredicate for #struct_name { }
+            #vis struct #struct_name;
+
+            impl ::cvlr::spec::CvlrFormula for #struct_name {
+
+                type Context = #ctx_type;
+
+                fn eval(&self, ctx: &Self::Context) -> bool {
+                    let #param1_name = ctx;
+                    {
+                        #(#let_statements)*
+                        let mut __cvlr_eval_res = true;
+                        #(#eval_statements)*
+                    }
+                }
+
+                fn assert(&self, ctx: &Self::Context) {
+                    let #param1_name = ctx;
+                    #(#let_statements)*
+                    #(#assert_statements)*
+                }
+
+                fn assume(&self, ctx: &Self::Context) {
+                    let #param1_name = ctx;
+                    #(#let_statements)*
+                    #(#assume_statements)*
+                }
+            }
+
+            impl ::cvlr::spec::CvlrPredicate for #struct_name { }
+        }
     };
 
     expanded.into()
