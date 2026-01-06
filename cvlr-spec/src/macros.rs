@@ -489,7 +489,7 @@ macro_rules! cvlr_lemma {
     ($name: ident ( $c:ident : $ctx: ident ) {
         requires -> { $( $requires: expr );* $(;)? }
         ensures -> { $( $ensures: expr );* $(;)? } }) => {
-            struct $name;
+            pub struct $name;
             impl $crate::spec::CvlrLemma for $name {
                 type Context = $ctx;
                 fn requires(&self) -> impl $crate::CvlrFormula<Context = Self::Context> {
@@ -502,7 +502,7 @@ macro_rules! cvlr_lemma {
         };
 
     ($name:ident for $ctx:ident { requires: $r:expr , ensures: $e:expr $(,)? }) => {
-        struct $name;
+        pub struct $name;
         impl $crate::spec::CvlrLemma for $name {
             type Context = $ctx;
             fn requires(&self) -> impl $crate::CvlrFormula<Context = Self::Context> {
