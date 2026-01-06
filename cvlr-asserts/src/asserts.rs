@@ -10,7 +10,7 @@ macro_rules! impl_bin_assert {
             cvlr::clog!(stringify!($lhs $pred $rhs) => "_");
             cvlr::clog!(__cvlr_lhs => stringify!($lhs));
             cvlr::clog!(__cvlr_rhs => stringify!($rhs));
-            cvlr::log::log_scope_start("assert");
+            cvlr::log::log_scope_end("assert");
             $crate::cvlr_assert!(__cvlr_lhs $pred __cvlr_rhs);
         }};
     }
