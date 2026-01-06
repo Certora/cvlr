@@ -110,7 +110,7 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
             Ok(info) => info,
             Err(e) => return e.to_compile_error().into(),
         };
-        
+
         // Verify both parameters have the same context type
         if ctx_type != ctx_type2 {
             return syn::Error::new(
@@ -120,7 +120,7 @@ pub fn cvlr_predicate_impl(_attr: TokenStream, item: TokenStream) -> TokenStream
             .to_compile_error()
             .into();
         }
-        
+
         (param2, true)
     } else {
         (syn::Ident::new("_unused", Span::call_site()), false)
