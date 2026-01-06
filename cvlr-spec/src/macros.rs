@@ -902,6 +902,154 @@ macro_rules! cvlr_and {
     };
 }
 
+/// Creates a boolean expression representing the logical AND of two or more predicate functions.
+///
+/// This macro is similar to [`cvlr_and!`], but it automatically converts predicate function names
+/// (snake_case) to their corresponding struct names (PascalCase) using [`cvlr_pif!`](crate::__macro_support::cvlr_pif)
+/// before combining them. This is useful when working with predicates defined using the
+/// [`#[cvlr::predicate]`](crate::__macro_support::cvlr_predicate) attribute macro.
+///
+/// # Syntax
+///
+/// ```ignore
+/// cvlr_pif_and!(predicate_func1, predicate_func2)                    // Two arguments
+/// cvlr_pif_and!(predicate_func1, predicate_func2, predicate_func3)   // Three arguments
+/// cvlr_pif_and!(predicate_func1, predicate_func2, predicate_func3, predicate_func4)  // Four arguments
+/// cvlr_pif_and!(predicate_func1, predicate_func2, predicate_func3, predicate_func4, predicate_func5)  // Five arguments
+/// cvlr_pif_and!(predicate_func1, predicate_func2, predicate_func3, predicate_func4, predicate_func5, predicate_func6)  // Six arguments
+/// ```
+///
+/// # Arguments
+///
+/// The macro accepts identifiers (function names) that correspond to predicates defined with
+/// the [`#[cvlr::predicate]`](crate::__macro_support::cvlr_predicate) attribute. Each identifier
+/// is converted from snake_case to PascalCase:
+///
+/// - `my_predicate` → `MyPredicate`
+/// - `is_positive` → `IsPositive`
+/// - `x_gt_zero` → `XGtZero`
+///
+/// All predicates must implement [`CvlrFormula`](crate::CvlrFormula) with the same context type.
+///
+/// # Returns
+///
+/// Returns a value implementing [`CvlrFormula`](crate::CvlrFormula) that evaluates to `true`
+/// only when all input predicates evaluate to `true`.
+///
+/// # Examples
+///
+/// ```ignore
+/// use cvlr_spec::{cvlr_pif_and, CvlrFormula};
+/// use cvlr::predicate;
+///
+/// struct Counter {
+///     value: i32,
+/// }
+///
+/// // Define predicates using the attribute macro
+/// #[predicate]
+/// fn is_positive(c: &Counter) {
+///     c.value > 0
+/// }
+///
+/// #[predicate]
+/// fn is_even(c: &Counter) {
+///     c.value % 2 == 0
+/// }
+///
+/// #[predicate]
+/// fn is_bounded(c: &Counter) {
+///     c.value < 100
+/// }
+///
+/// // Combine predicates using cvlr_pif_and
+/// let ctx = Counter { value: 6 };
+/// let expr = cvlr_pif_and!(is_positive, is_even);
+/// assert!(expr.eval(&ctx)); // Both predicates are true
+///
+/// // Combine multiple predicates
+/// let expr2 = cvlr_pif_and!(is_positive, is_even, is_bounded);
+/// assert!(expr2.eval(&ctx)); // All three predicates are true
+///
+/// let ctx2 = Counter { value: 5 };
+/// assert!(!expr.eval(&ctx2)); // is_even is false, so the AND is false
+/// ```
+///
+/// # Comparison with `cvlr_and!`
+///
+/// - **`cvlr_and!`**: Works with struct names (PascalCase) or expressions directly
+///   - Example: `cvlr_and!(IsPositive, IsEven)` or `cvlr_and!(pred1, pred2)` where `pred1` is already a struct
+/// - **`cvlr_pif_and!`**: Works with function names (snake_case) and converts them automatically
+///   - Example: `cvlr_pif_and!(is_positive, is_even)` where `is_positive` is a function name
+///
+/// Use `cvlr_pif_and!` when you have predicates defined with `#[cvlr::predicate]` and want
+/// to reference them by their function names. Use `cvlr_and!` when you already have struct
+/// names or expressions.
+#[macro_export]
+macro_rules! cvlr_pif_and {
+    ($a:expr, $b:expr) => {
+        $crate::cvlr_and(
+            $crate::__macro_support::cvlr_pif!($a),
+            $crate::__macro_support::cvlr_pif!($b),
+        )
+    };
+
+    ($a:expr, $b:expr, $c:expr) => {
+        $crate::cvlr_and(
+            $crate::__macro_support::cvlr_pif!($a),
+            $crate::cvlr_and(
+                $crate::__macro_support::cvlr_pif!($b),
+                $crate::__macro_support::cvlr_pif!($c),
+            ),
+        )
+    };
+    ($a:expr, $b:expr, $c:expr, $d:expr) => {
+        $crate::cvlr_and(
+            $crate::__macro_support::cvlr_pif!($a),
+            $crate::cvlr_and(
+                $crate::__macro_support::cvlr_pif!($b),
+                $crate::cvlr_and(
+                    $crate::__macro_support::cvlr_pif!($c),
+                    $crate::__macro_support::cvlr_pif!($d),
+                ),
+            ),
+        )
+    };
+    ($a:expr, $b:expr, $c:expr, $d:expr, $e:expr) => {
+        $crate::cvlr_and(
+            $crate::__macro_support::cvlr_pif!($a),
+            $crate::cvlr_and(
+                $crate::__macro_support::cvlr_pif!($b),
+                $crate::cvlr_and(
+                    $crate::__macro_support::cvlr_pif!($c),
+                    $crate::cvlr_and(
+                        $crate::__macro_support::cvlr_pif!($d),
+                        $crate::__macro_support::cvlr_pif!($e),
+                    ),
+                ),
+            ),
+        )
+    };
+    ($a:expr, $b:expr, $c:expr, $d:expr, $e:expr, $f:expr) => {
+        $crate::cvlr_and(
+            $crate::__macro_support::cvlr_pif!($a),
+            $crate::cvlr_and(
+                $crate::__macro_support::cvlr_pif!($b),
+                $crate::cvlr_and(
+                    $crate::__macro_support::cvlr_pif!($c),
+                    $crate::cvlr_and(
+                        $crate::__macro_support::cvlr_pif!($d),
+                        $crate::cvlr_and(
+                            $crate::__macro_support::cvlr_pif!($e),
+                            $crate::__macro_support::cvlr_pif!($f),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    };
+}
+
 /// Creates a boolean expression representing logical implication (A → B).
 ///
 /// This macro is a convenience wrapper around [`cvlr_implies`](crate::cvlr_implies) that
