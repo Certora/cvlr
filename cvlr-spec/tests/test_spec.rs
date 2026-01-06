@@ -1590,13 +1590,12 @@ fn test_cvlr_and_macro_nested() {
     assert!(!outer.eval(&ctx2));
 }
 
-// Tests for the new cvlr_lemma! branch with name literal syntax
+// Tests for the new cvlr_lemma! branch with expression syntax
 #[test]
 fn test_cvlr_lemma_new_branch_basic() {
-    // Test the new branch syntax: name: "string", StructName(Context) { requires: expr, ensures: expr }
+    // Test the new branch syntax: StructName for Context { requires: expr, ensures: expr }
     cvlr_lemma! {
-        name: "BasicLemma",
-        BasicLemmaNew(TestCtx) {
+        BasicLemmaNew for TestCtx {
             requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
             ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; c.y >= 0 } },
         }
@@ -1631,8 +1630,7 @@ fn test_cvlr_lemma_new_branch_basic() {
 fn test_cvlr_lemma_new_branch_with_identifiers() {
     // Test the new branch with identifier predicates
     cvlr_lemma! {
-        name: "IdentifierLemma",
-        IdentifierLemmaNew(TestCtx) {
+        IdentifierLemmaNew for TestCtx {
             requires: XPositive,
             ensures: YPositive,
         }
@@ -1669,8 +1667,7 @@ fn test_cvlr_lemma_new_branch_with_identifiers() {
 fn test_cvlr_lemma_new_branch_with_composed_expressions() {
     // Test the new branch with composed expressions (cvlr_and, cvlr_implies)
     cvlr_lemma! {
-        name: "ComposedLemma",
-        ComposedLemmaNew(TestCtx) {
+        ComposedLemmaNew for TestCtx {
             requires: cvlr_and!(XPositive, YPositive),
             ensures: cvlr_implies!(XPositive, YPositive),
         }
@@ -1707,8 +1704,7 @@ fn test_cvlr_lemma_new_branch_with_composed_expressions() {
 fn test_cvlr_lemma_new_branch_verify_with_context() {
     // Test verify_with_context with the new branch
     cvlr_lemma! {
-        name: "VerifyLemma",
-        VerifyLemmaNew(TestCtx) {
+        VerifyLemmaNew for TestCtx {
             requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
             ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
         }
@@ -1730,8 +1726,7 @@ fn test_cvlr_lemma_new_branch_verify_with_context() {
 fn test_cvlr_lemma_new_branch_apply() {
     // Test apply with the new branch
     cvlr_lemma! {
-        name: "ApplyLemma",
-        ApplyLemmaNew(TestCtx) {
+        ApplyLemmaNew for TestCtx {
             requires: XPositive,
             ensures: cvlr_and!(XPositive, YPositive),
         }
@@ -1753,8 +1748,7 @@ fn test_cvlr_lemma_new_branch_apply() {
 fn test_cvlr_lemma_new_branch_multiple_conditions() {
     // Test the new branch with multiple conditions using cvlr_and
     cvlr_lemma! {
-        name: "MultipleConditionsLemma",
-        MultipleConditionsLemmaNew(TestCtx) {
+        MultipleConditionsLemmaNew for TestCtx {
             requires: cvlr_and!(
                 XPositive,
                 YPositive,
@@ -1799,8 +1793,7 @@ fn test_cvlr_lemma_new_branch_multiple_conditions() {
 fn test_cvlr_lemma_new_branch_mixed_expressions() {
     // Test the new branch with mixed identifier and predicate expressions
     cvlr_lemma! {
-        name: "MixedExpressionsLemma",
-        MixedExpressionsLemmaNew(TestCtx) {
+        MixedExpressionsLemmaNew for TestCtx {
             requires: cvlr_and!(
                 XPositive,
                 cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
@@ -1836,8 +1829,7 @@ fn test_cvlr_lemma_new_branch_mixed_expressions() {
 fn test_cvlr_lemma_new_branch_with_trailing_comma() {
     // Test the new branch with trailing comma
     cvlr_lemma! {
-        name: "TrailingCommaLemma",
-        TrailingCommaLemmaNew(TestCtx) {
+        TrailingCommaLemmaNew for TestCtx {
             requires: XPositive,
             ensures: YPositive,
         }
@@ -1858,8 +1850,7 @@ fn test_cvlr_lemma_new_branch_with_trailing_comma() {
 fn test_cvlr_lemma_new_branch_requires_ensures_interaction() {
     // Test that requires and ensures can be independent in the new branch
     cvlr_lemma! {
-        name: "InteractionLemma",
-        InteractionLemmaNew(TestCtx) {
+        InteractionLemmaNew for TestCtx {
             requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
             ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; c.y == c.x * 2 } },
         }
