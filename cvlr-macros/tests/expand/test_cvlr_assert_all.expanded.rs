@@ -12,7 +12,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("x > 0"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -26,7 +26,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("y < 20"));
         ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("20", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -40,7 +40,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("z > x"));
         ::cvlr_log::cvlr_log("z", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("x", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -54,7 +54,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("a < b"));
         ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -68,7 +68,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("x == 5"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("5", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs == __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -82,7 +82,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("y != 0"));
         ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs != __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -96,7 +96,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("x > 0"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -110,7 +110,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("y < 20"));
         ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("20", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -124,7 +124,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("z > x"));
         ::cvlr_log::cvlr_log("z", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("x", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -138,7 +138,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("a < b"));
         ::cvlr_log::cvlr_log("a", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("b", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -152,7 +152,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("x == 5"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("5", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs == __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -166,7 +166,7 @@ pub fn test_assert_all_comma_separated() {
         ::cvlr_log::cvlr_log("_", &("y != 0"));
         ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs != __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -184,7 +184,7 @@ pub fn test_assert_all_semicolon_separated() {
         ::cvlr_log::cvlr_log("_", &("x > 0"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -198,7 +198,7 @@ pub fn test_assert_all_semicolon_separated() {
         ::cvlr_log::cvlr_log("_", &("y < 20"));
         ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("20", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -212,7 +212,7 @@ pub fn test_assert_all_semicolon_separated() {
         ::cvlr_log::cvlr_log("_", &("x < y"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("y", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -232,7 +232,7 @@ pub fn test_assert_all_mixed_separators() {
         ::cvlr_log::cvlr_log("_", &("x > 0"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -246,7 +246,7 @@ pub fn test_assert_all_mixed_separators() {
         ::cvlr_log::cvlr_log("_", &("y < 20"));
         ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("20", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -269,7 +269,7 @@ pub fn test_assert_all_mixed_separators() {
         ::cvlr_log::cvlr_log("_", &("x > 0"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -283,7 +283,7 @@ pub fn test_assert_all_mixed_separators() {
         ::cvlr_log::cvlr_log("_", &("y < 20"));
         ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("20", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -356,7 +356,7 @@ pub fn test_assert_all_mixed_guarded_unguarded() {
         ::cvlr_log::cvlr_log("_", &("x > 0"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -388,7 +388,7 @@ pub fn test_assert_all_mixed_guarded_unguarded() {
         ::cvlr_log::cvlr_log("_", &("y > 0"));
         ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -402,7 +402,7 @@ pub fn test_assert_all_mixed_guarded_unguarded() {
         ::cvlr_log::cvlr_log("_", &("x > 0"));
         ::cvlr_log::cvlr_log("x", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("0", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs > __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);
@@ -425,7 +425,7 @@ pub fn test_assert_all_mixed_guarded_unguarded() {
         ::cvlr_log::cvlr_log("_", &("y < 20"));
         ::cvlr_log::cvlr_log("y", &(__cvlr_lhs));
         ::cvlr_log::cvlr_log("20", &(__cvlr_rhs));
-        cvlr::log::log_scope_start("assert");
+        cvlr::log::log_scope_end("assert");
         {
             let c_ = __cvlr_lhs < __cvlr_rhs;
             ::cvlr_asserts::log::add_loc("<FILE>", 0u32);

@@ -167,5 +167,42 @@ fn test_if_else_predicates() {
     assert!(!pred4.eval(&ctx4)); // x <= 0 && y >= 0
 }
 
+// Two-argument predicate tests
+#[cvlr_predicate]
+fn x_increased(c: &Ctx, old: &Ctx) {
+    c.x > old.x;
+}
+
+#[cvlr_predicate]
+fn both_increased(c: &Ctx, old: &Ctx) {
+    c.x > old.x;
+    c.y > old.y;
+}
+
+#[cvlr_predicate]
+fn x_increased_with_let(c: &Ctx, old: &Ctx) {
+    let threshold = 0;
+    c.x > old.x + threshold;
+}
+
+#[test]
+fn test_two_state_predicate() {
+    let pre = Ctx { x: 1, y: 2 };
+    let post = Ctx { x: 5, y: 10 };
+
+    let pred = XIncreased;
+    assert!(pred.eval_with_states(&post, &pre));
+    assert!(!pred.eval_with_states(&pre, &post));
+
+    let pred2 = BothIncreased;
+    assert!(pred2.eval_with_states(&post, &pre));
+    
+    let post2 = Ctx { x: 5, y: 1 };
+    assert!(!pred2.eval_with_states(&post2, &pre));
+
+    let pred3 = XIncreasedWithLet;
+    assert!(pred3.eval_with_states(&post, &pre));
+}
+
 pub fn main() {}
 

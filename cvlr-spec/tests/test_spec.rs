@@ -7,7 +7,7 @@ use cvlr_spec::*;
 
 // Test context type
 #[derive(Clone, Copy, Debug, PartialEq, Eq, cvlr::derive::Nondet, cvlr::derive::CvlrLog)]
-struct TestCtx {
+pub struct TestCtx {
     x: i32,
     y: i32,
     flag: bool,
