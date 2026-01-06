@@ -238,7 +238,7 @@ fn test_two_state_predicate() {
 
     let pred2 = BothIncreased;
     assert!(pred2.eval_with_states(&post, &pre));
-    
+
     let post2 = Ctx { x: 5, y: 1 };
     assert!(!pred2.eval_with_states(&post2, &pre));
 
@@ -247,7 +247,7 @@ fn test_two_state_predicate() {
 
     let pred4 = ComplexTwoState;
     assert!(pred4.eval_with_states(&post, &pre));
-    
+
     let post3 = Ctx { x: 2, y: 10 };
     assert!(!pred4.eval_with_states(&post3, &pre)); // x increased by only 1, not > 1
 }
