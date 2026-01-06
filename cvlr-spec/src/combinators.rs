@@ -1,6 +1,6 @@
 //! Combinators for composing boolean expressions.
 
-use crate::bool_expr::CvlrFormula;
+use crate::formula::CvlrFormula;
 
 /// A boolean expression representing the logical AND of two expressions.
 ///
