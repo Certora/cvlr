@@ -53,7 +53,17 @@ fn extract_context_info(arg: &FnArg) -> syn::Result<(Type, syn::Ident)> {
     }
 }
 
-/// Separates let statements from expressions in function body statements
+/// Returns true if the expression represents an empty statement (e.g. a bare `;`).
+fn is_empty_expr(expr: &Expr) -> bool {
+   if let Expr::Verbatim(ts) = expr {
+        ts.is_empty()
+    } else {
+        false
+    }
+}
+
+/// Separates let statements from expressions in function body statements.
+/// Skips empty statements (bare `;`) which may be added by the cvlr_predicate! macro.
 fn separate_statements(stmts: &[Stmt]) -> syn::Result<(Vec<&Stmt>, Vec<Expr>)> {
     let mut let_statements = Vec::new();
     let mut expressions = Vec::new();
@@ -63,7 +73,11 @@ fn separate_statements(stmts: &[Stmt]) -> syn::Result<(Vec<&Stmt>, Vec<Expr>)> {
             // Stmt::Local represents let statements
             Stmt::Local(_) => let_statements.push(stmt),
             // Stmt::Expr covers both expressions with and without semicolons
-            Stmt::Expr(expr, _) => expressions.push(expr.clone()),
+            Stmt::Expr(expr, _) => {
+                if !is_empty_expr(expr) {
+                    expressions.push(expr.clone());
+                }
+            }
             _ => {
                 return Err(syn::Error::new(
                     Span::call_site(),
