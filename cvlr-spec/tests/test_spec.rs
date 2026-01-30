@@ -635,10 +635,10 @@ fn test_cvlr_predicate_with_let() {
     };
 
     let pred = cvlr_predicate! { | c : TestCtx | -> {
-        //let x = c.x;
-        // let y = c.y;
-        c.x > 0;
-        c.y > 0;
+        let x = c.x;
+        let y = c.y;
+        x > 0;
+        y > 0;
     } };
 
     assert!(pred.eval(&ctx));

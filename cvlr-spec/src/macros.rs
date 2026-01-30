@@ -313,11 +313,11 @@ macro_rules! cvlr_def_states_predicates {
 /// and ensures predicates.
 #[macro_export]
 macro_rules! cvlr_predicate {
-    (| $c:ident : $ctx: ident | -> { $( $s: stmt )+ } ) => {
+    (| $c:ident : $ctx: ident | -> { $($body:tt)* } ) => {
         {
             #[$crate::__macro_support::cvlr_predicate]
             fn __anonymous_predicate($c: &$ctx) {
-                $( $s )+ 
+                $($body)*
             }
             $crate::__macro_support::cvlr_pif!(__anonymous_predicate)
         }
@@ -487,16 +487,16 @@ macro_rules! cvlr_predicate {
 #[macro_export]
 macro_rules! cvlr_lemma {
     ($name: ident ( $c:ident : $ctx: ident ) {
-        requires -> { $( $requires: stmt )+ }
-        ensures -> { $( $ensures: stmt )+ } }) => {
+        requires -> { $($requires:tt)* }
+        ensures -> { $($ensures:tt)* } }) => {
             pub struct $name;
             impl $crate::spec::CvlrLemma for $name {
                 type Context = $ctx;
                 fn requires(&self) -> impl $crate::CvlrFormula<Context = Self::Context> {
-                    $crate::cvlr_predicate! { | $c : $ctx | -> { $( $requires )+ } }
+                    $crate::cvlr_predicate! { | $c : $ctx | -> { $($requires)* } }
                 }
                 fn ensures(&self) -> impl $crate::CvlrFormula<Context = Self::Context> {
-                    $crate::cvlr_predicate! { | $c : $ctx | -> { $( $ensures )+ } }
+                    $crate::cvlr_predicate! { | $c : $ctx | -> { $($ensures)* } }
                 }
             }
         };

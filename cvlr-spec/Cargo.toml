@@ -25,3 +25,4 @@ cvlr-macros = { workspace = true }
 
 [dev-dependencies]
 cvlr = { path = "../cvlr", features = ["rt", "no-loc"] }
+macrotest = { workspace = true }
