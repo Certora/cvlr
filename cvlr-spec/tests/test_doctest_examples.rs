@@ -19,7 +19,7 @@ fn test_cvlr_predicate_example() {
     // Create an anonymous predicate
     let pred = cvlr_predicate! { | c : Counter | -> {
         c.value > 0;
-        c.value < 100
+        c.value < 100;
     } };
 
     assert!(pred.eval(&ctx));
@@ -39,10 +39,10 @@ fn test_cvlr_lemma_example_syntax() {
     cvlr_lemma! {
         CounterPositiveLemma(c: Counter) {
             requires -> {
-                c.value > 0
+                c.value > 0;
             }
             ensures -> {
-                c.value > 0
+                c.value > 0;
             }
         }
     }
@@ -69,11 +69,11 @@ fn test_cvlr_lemma_complex_example() {
         CounterDoublesLemma(c: Counter) {
             requires -> {
                 c.value > 0;
-                c.value < 100
+                c.value < 100;
             }
             ensures -> {
                 c.value > 0;
-                c.value * 2 > c.value
+                c.value * 2 > c.value;
             }
         }
     }

@@ -612,7 +612,7 @@ fn test_cvlr_predicate() {
 
     let pred = cvlr_predicate! { | c : TestCtx | -> {
         c.x > 0;
-        c.y > 0
+        c.y > 0;
     } };
 
     assert!(pred.eval(&ctx));
@@ -626,6 +626,34 @@ fn test_cvlr_predicate() {
 }
 
 #[test]
+fn test_cvlr_predicate_with_let() {
+    // Test cvlr_predicate! macro creates an anonymous predicate
+    let ctx = TestCtx {
+        x: 5,
+        y: 10,
+        flag: true,
+    };
+
+    let pred = cvlr_predicate! { | c : TestCtx | -> {
+        //let x = c.x;
+        // let y = c.y;
+        c.x > 0;
+        c.y > 0;
+    } };
+
+    assert!(pred.eval(&ctx));
+
+    let ctx2 = TestCtx {
+        x: -1,
+        y: 10,
+        flag: true,
+    };
+    assert!(!pred.eval(&ctx2));
+}
+
+
+
+#[test]
 fn test_cvlr_predicate_single_condition() {
     let ctx = TestCtx {
         x: 5,
@@ -634,7 +662,7 @@ fn test_cvlr_predicate_single_condition() {
     };
 
     let pred = cvlr_predicate! { | c : TestCtx | -> {
-        c.x > 0
+        c.x > 0;
     } };
 
     assert!(pred.eval(&ctx));
@@ -653,11 +681,11 @@ fn test_cvlr_lemma() {
     cvlr_lemma! {
         TestLemma(c: TestCtx) {
             requires -> {
-                c.x > 0
+                c.x > 0;
             }
             ensures -> {
                 c.x > 0;
-                c.y >= 0
+                c.y >= 0;
             }
         }
     }
@@ -695,10 +723,10 @@ fn test_cvlr_lemma_verify_with_context() {
     cvlr_lemma! {
         PositiveXLemma(c: TestCtx) {
             requires -> {
-                c.x > 0
+                c.x > 0;
             }
             ensures -> {
-                c.x > 0
+                c.x > 0;
             }
         }
     }
@@ -721,11 +749,11 @@ fn test_cvlr_lemma_apply() {
     cvlr_lemma! {
         XAndYPositiveLemma(c: TestCtx) {
             requires -> {
-                c.x > 0
+                c.x > 0;
             }
             ensures -> {
                 c.x > 0;
-                c.y > 0
+                c.y > 0;
             }
         }
     }
@@ -750,12 +778,12 @@ fn test_cvlr_lemma_multiple_conditions() {
             requires -> {
                 c.x > 0;
                 c.y > 0;
-                c.flag
+                c.flag;
             }
             ensures -> {
                 c.x > 0;
                 c.y > 0;
-                c.x + c.y > 10
+                c.x + c.y > 10;
             }
         }
     }
@@ -796,14 +824,14 @@ impl cvlr_spec::spec::CvlrLemma for ManualLemma {
     type Context = TestCtx;
     fn requires(&self) -> impl CvlrFormula<Context = Self::Context> {
         cvlr_predicate! { | c : TestCtx | -> {
-            c.x > 0
+            c.x > 0;
         } }
     }
 
     fn ensures(&self) -> impl CvlrFormula<Context = Self::Context> {
         cvlr_predicate! { | c : TestCtx | -> {
             c.x > 0;
-            c.y > 0
+            c.y > 0;
         } }
     }
 }
@@ -836,11 +864,11 @@ fn test_cvlr_lemma_requires_ensures_interaction() {
     cvlr_lemma! {
         ImplicationLemma(c: TestCtx) {
             requires -> {
-                c.x > 0
+                c.x > 0;
             }
             ensures -> {
                 c.x > 0;
-                c.y == c.x * 2
+                c.y == c.x * 2;
             }
         }
     }
@@ -1005,8 +1033,8 @@ fn test_cvlr_spec_macro() {
 fn test_cvlr_spec_macro_with_predicates() {
     // Test cvlr_spec! macro with cvlr_predicate!
     let spec = cvlr_spec! {
-        requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
-        ensures: cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+        requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
+        ensures: cvlr_predicate! { | c : TestCtx | -> { c.y > 0; } }
     };
 
     let pre = TestCtx {
@@ -1049,8 +1077,8 @@ fn test_cvlr_invar_spec_macro() {
 fn test_cvlr_invar_spec_macro_with_predicates() {
     // Test cvlr_invar_spec! macro with cvlr_predicate!
     let spec = cvlr_invar_spec! {
-        assumption: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
-        invariant: cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+        assumption: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
+        invariant: cvlr_predicate! { | c : TestCtx | -> { c.y > 0; } }
     };
 
     let ctx = TestCtx {
@@ -1134,8 +1162,8 @@ fn test_cvlr_invariant_rules_macro() {
     // Define invariant rules for multiple functions
     cvlr_invariant_rules! {
         name: "non_negative",
-        assumption: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
-        invariant: cvlr_predicate! { | c : TestCtx | -> { c.y >= 0 } },
+        assumption: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
+        invariant: cvlr_predicate! { | c : TestCtx | -> { c.y >= 0; } },
         bases: [
             base_update_counter,
             base_reset_counter,
@@ -1203,8 +1231,8 @@ fn test_cvlr_and_macro_with_expressions() {
         flag: true,
     };
     let expr = cvlr_and!(
-        cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
-        cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+        cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
+        cvlr_predicate! { | c : TestCtx | -> { c.y > 0; } }
     );
     assert!(expr.eval(&ctx));
 
@@ -1226,12 +1254,12 @@ fn test_cvlr_and_macro_mixed_ident_expr() {
     };
     let expr1 = cvlr_and!(
         XPositive,
-        cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+        cvlr_predicate! { | c : TestCtx | -> { c.y > 0; } }
     );
     assert!(expr1.eval(&ctx));
 
     let expr2 = cvlr_and!(
-        cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
         YPositive
     );
     assert!(expr2.eval(&ctx));
@@ -1270,7 +1298,7 @@ fn test_cvlr_and_macro_four_args() {
         XPositive,
         YPositive,
         true_expr,
-        cvlr_predicate! { | c : TestCtx | -> { c.flag } }
+        cvlr_predicate! { | c : TestCtx | -> { c.flag; } }
     );
     assert!(expr.eval(&ctx));
 
@@ -1295,8 +1323,8 @@ fn test_cvlr_and_macro_five_args() {
         XPositive,
         YPositive,
         true_expr,
-        cvlr_predicate! { | c : TestCtx | -> { c.flag } },
-        cvlr_predicate! { | c : TestCtx | -> { c.x + c.y > 0 } }
+        cvlr_predicate! { | c : TestCtx | -> { c.flag; } },
+        cvlr_predicate! { | c : TestCtx | -> { c.x + c.y > 0; } }
     );
     assert!(expr.eval(&ctx));
 
@@ -1321,9 +1349,9 @@ fn test_cvlr_and_macro_six_args() {
         XPositive,
         YPositive,
         true_expr,
-        cvlr_predicate! { | c : TestCtx | -> { c.flag } },
-        cvlr_predicate! { | c : TestCtx | -> { c.x + c.y > 0 } },
-        cvlr_predicate! { | c : TestCtx | -> { c.x * c.y > 0 } }
+        cvlr_predicate! { | c : TestCtx | -> { c.flag; } },
+        cvlr_predicate! { | c : TestCtx | -> { c.x + c.y > 0; } },
+        cvlr_predicate! { | c : TestCtx | -> { c.x * c.y > 0; } }
     );
     assert!(expr.eval(&ctx));
 
@@ -1430,8 +1458,8 @@ fn test_cvlr_implies_macro_with_expressions() {
         flag: true,
     };
     let expr = cvlr_implies!(
-        cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
-        cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+        cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
+        cvlr_predicate! { | c : TestCtx | -> { c.y > 0; } }
     );
     assert!(expr.eval(&ctx));
 
@@ -1454,13 +1482,13 @@ fn test_cvlr_implies_macro_mixed_ident_expr() {
     // Identifier as antecedent, expression as consequent
     let expr1 = cvlr_implies!(
         XPositive,
-        cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+        cvlr_predicate! { | c : TestCtx | -> { c.y > 0; } }
     );
     assert!(expr1.eval(&ctx));
 
     // Expression as antecedent, identifier as consequent
     let expr2 = cvlr_implies!(
-        cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+        cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
         YPositive
     );
     assert!(expr2.eval(&ctx));
@@ -1579,7 +1607,7 @@ fn test_cvlr_and_macro_nested() {
         flag: true,
     };
     let inner = cvlr_and!(XPositive, YPositive);
-    let outer = cvlr_and!(inner, cvlr_predicate! { | c : TestCtx | -> { c.flag } });
+    let outer = cvlr_and!(inner, cvlr_predicate! { | c : TestCtx | -> { c.flag; } });
     assert!(outer.eval(&ctx));
 
     let ctx2 = TestCtx {
@@ -1596,8 +1624,8 @@ fn test_cvlr_lemma_new_branch_basic() {
     // Test the new branch syntax: StructName for Context { requires: expr, ensures: expr }
     cvlr_lemma! {
         BasicLemmaNew for TestCtx {
-            requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
-            ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; c.y >= 0 } },
+            requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
+            ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; c.y >= 0; } },
         }
     }
 
@@ -1705,8 +1733,8 @@ fn test_cvlr_lemma_new_branch_verify_with_context() {
     // Test verify_with_context with the new branch
     cvlr_lemma! {
         VerifyLemmaNew for TestCtx {
-            requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
-            ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
+            requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
+            ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
         }
     }
 
@@ -1752,12 +1780,12 @@ fn test_cvlr_lemma_new_branch_multiple_conditions() {
             requires: cvlr_and!(
                 XPositive,
                 YPositive,
-                cvlr_predicate! { | c : TestCtx | -> { c.flag } }
+                cvlr_predicate! { | c : TestCtx | -> { c.flag; } }
             ),
             ensures: cvlr_and!(
                 XPositive,
                 YPositive,
-                cvlr_predicate! { | c : TestCtx | -> { c.x + c.y > 10 } }
+                cvlr_predicate! { | c : TestCtx | -> { c.x + c.y > 10; } }
             ),
         }
     }
@@ -1796,11 +1824,11 @@ fn test_cvlr_lemma_new_branch_mixed_expressions() {
         MixedExpressionsLemmaNew for TestCtx {
             requires: cvlr_and!(
                 XPositive,
-                cvlr_predicate! { | c : TestCtx | -> { c.y > 0 } }
+                cvlr_predicate! { | c : TestCtx | -> { c.y > 0; } }
             ),
             ensures: cvlr_implies!(
                 YPositive,
-                cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } }
+                cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } }
             ),
         }
     }
@@ -1851,8 +1879,8 @@ fn test_cvlr_lemma_new_branch_requires_ensures_interaction() {
     // Test that requires and ensures can be independent in the new branch
     cvlr_lemma! {
         InteractionLemmaNew for TestCtx {
-            requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0 } },
-            ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; c.y == c.x * 2 } },
+            requires: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; } },
+            ensures: cvlr_predicate! { | c : TestCtx | -> { c.x > 0; c.y == c.x * 2; } },
         }
     }
 
