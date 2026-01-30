@@ -55,7 +55,7 @@ fn extract_context_info(arg: &FnArg) -> syn::Result<(Type, syn::Ident)> {
 
 /// Returns true if the expression represents an empty statement (e.g. a bare `;`).
 fn is_empty_expr(expr: &Expr) -> bool {
-   if let Expr::Verbatim(ts) = expr {
+    if let Expr::Verbatim(ts) = expr {
         ts.is_empty()
     } else {
         false

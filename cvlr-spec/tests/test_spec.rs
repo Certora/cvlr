@@ -651,8 +651,6 @@ fn test_cvlr_predicate_with_let() {
     assert!(!pred.eval(&ctx2));
 }
 
-
-
 #[test]
 fn test_cvlr_predicate_single_condition() {
     let ctx = TestCtx {
