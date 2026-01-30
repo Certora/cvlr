@@ -131,6 +131,7 @@ dependencies = [
  "cvlr-macros",
  "cvlr-mathint",
  "cvlr-nondet",
+ "macrotest",
 ]
 
 [[package]]
