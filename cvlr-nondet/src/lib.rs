@@ -3,9 +3,9 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-mod core;
-mod option;
-mod scalars;
+pub mod core;
+pub mod option;
+pub mod scalars;
 
 #[cfg(feature = "std")]
 pub mod havoc;
