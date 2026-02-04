@@ -6,6 +6,12 @@ mod rt_decls {
     }
 }
 
+#[cfg(feature = "rt")]
+mod rt_impls {
+    #[no_mangle]
+    pub extern "C" fn CVT_calltrace_attach_location(_: &str, _: u64) {}
+}
+
 #[inline(always)]
 pub fn add_loc(file: &str, line: u32) {
     unsafe {
