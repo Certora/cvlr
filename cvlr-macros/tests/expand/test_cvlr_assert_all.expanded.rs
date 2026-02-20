@@ -487,4 +487,7 @@ pub fn test_assert_all_boolean_expressions() {
         ::cvlr_asserts::cvlr_assert_checked(c_);
     };
 }
-pub fn main() {}
+pub fn test_assert_all_empty() {}
+pub fn main() {
+    test_assert_all_empty();
+}

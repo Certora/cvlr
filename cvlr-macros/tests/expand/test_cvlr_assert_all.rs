@@ -75,4 +75,10 @@ pub fn test_assert_all_boolean_expressions() {
     cvlr_assert_all!((((flag))), ((x > 0 && y < 10)));
 }
 
-pub fn main() {}
+pub fn test_assert_all_empty() {
+    cvlr_assert_all!();
+}
+
+pub fn main() {
+    test_assert_all_empty();
+}

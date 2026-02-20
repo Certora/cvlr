@@ -64,4 +64,13 @@ pub fn test_assume_all_mixed_guarded_unguarded() {
     cvlr_assume_all!((x > 0), if flag { a < b } else { true }, (y < 20));
 }
 
-pub fn main() {}
+pub fn test_assume_all_empty() { 
+    cvlr_assume_all!{
+        // x > 0;
+        // y < x;
+    };
+}
+
+pub fn main() {
+    test_assume_all_empty();
+}

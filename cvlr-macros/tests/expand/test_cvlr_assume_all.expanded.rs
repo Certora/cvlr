@@ -359,4 +359,7 @@ pub fn test_assume_all_mixed_guarded_unguarded() {
         ::cvlr_asserts::cvlr_assume_checked(__cvlr_lhs < __cvlr_rhs);
     };
 }
-pub fn main() {}
+pub fn test_assume_all_empty() {}
+pub fn main() {
+    test_assume_all_empty();
+}

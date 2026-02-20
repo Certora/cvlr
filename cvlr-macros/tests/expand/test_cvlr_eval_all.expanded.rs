@@ -59,6 +59,13 @@ pub fn test_eval_all() {
         __cvlr_eval_all_res
     };
 }
+pub fn test_eval_all_empty() {
+    let _ = {
+        let __cvlr_eval_all_res = true;
+        __cvlr_eval_all_res
+    };
+}
 pub fn main() {
     test_eval_all();
+    test_eval_all_empty();
 }

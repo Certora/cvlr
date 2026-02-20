@@ -30,7 +30,12 @@ pub fn test_eval_all() {
     let _result7 = cvlr_eval_all!(x + 1 > 0, y * 2 < 30, if a > 0 { b < 10 } else { true });
 }
 
+pub fn test_eval_all_empty() {
+    let _ = cvlr_eval_all!();
+}
+
 pub fn main() {
     test_eval_all();
+    test_eval_all_empty();
 }
 

@@ -184,6 +184,11 @@ impl Parse for AssertAllInput {
         let mut expressions = Vec::new();
 
         loop {
+            // Allow empty input (no-op)
+            if input.is_empty() {
+                break;
+            }
+
             // Parse one expression
             let expr: AssertThatInput = input.parse()?;
             expressions.push(expr);
@@ -195,11 +200,6 @@ impl Parse for AssertAllInput {
                 let _: Token![;] = input.parse()?;
             } else {
                 // No more separators, we're done
-                break;
-            }
-
-            // Check if we're at the end
-            if input.is_empty() {
                 break;
             }
         }
