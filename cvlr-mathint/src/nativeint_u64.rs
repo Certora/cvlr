@@ -17,6 +17,12 @@ mod rt_decls {
         pub fn CVT_nativeint_u64_lt(_: u64, _: u64) -> BoolU64;
         pub fn CVT_nativeint_u64_le(_: u64, _: u64) -> BoolU64;
 
+        pub fn CVT_nativeint_u64_slt(_: u64, _: u64) -> BoolU64;
+        pub fn CVT_nativeint_u64_sle(_: u64, _: u64) -> BoolU64;
+        pub fn CVT_nativeint_u64_neg(_: u64) -> u64;
+        pub fn CVT_nativeint_u64_sext(_: u64, _: u64) -> u64;
+        pub fn CVT_nativeint_u64_mask(_: u64, _: u64) -> u64;
+
         pub fn CVT_nativeint_u64_add(_: u64, _: u64) -> u64;
         pub fn CVT_nativeint_u64_sub(_: u64, _: u64) -> u64;
         pub fn CVT_nativeint_u64_mul(_: u64, _: u64) -> u64;
@@ -123,12 +129,59 @@ mod rt_impls {
 
     #[no_mangle]
     pub extern "C" fn CVT_nativeint_u64_u128_max() -> u64 {
-        panic!();
+        assert!(false, "u128_max is not supported");
+        todo!();
     }
 
     #[no_mangle]
     pub extern "C" fn CVT_nativeint_u64_u256_max() -> u64 {
-        panic!();
+        assert!(false, "u256_max is not supported");
+        todo!();
+    }
+
+    #[no_mangle]
+    pub extern "C" fn CVT_nativeint_u64_slt(a: u64, b: u64) -> u64 {
+        ((a as i64) < (b as i64)) as u64
+    }
+
+    #[no_mangle]
+    pub extern "C" fn CVT_nativeint_u64_sle(a: u64, b: u64) -> u64 {
+        ((a as i64) <= (b as i64)) as u64
+    }
+
+    #[no_mangle]
+    pub extern "C" fn CVT_nativeint_u64_sext(a: u64, bits: u64) -> u64 {
+        // Handle edge case bits==0 to avoid shifting by 64 (UB)
+        assert!(
+            (bits > 0 && bits <= 64),
+            "bits must be in 1..=64, got {}",
+            bits
+        );
+        let s = 64 - bits;
+        (((a << s) as i64) >> s) as u64
+    }
+
+    #[no_mangle]
+    pub extern "C" fn CVT_nativeint_u64_neg(a: u64) -> u64 {
+        use core::ops::Neg;
+        (a as i64).neg() as u64
+    }
+
+    #[no_mangle]
+    pub extern "C" fn CVT_nativeint_u64_mask(a: u64, bits: u64) -> u64 {
+        // Handle edge case bits==0 to avoid shifting by 64 (UB)
+        assert!(
+            (bits > 0 && bits <= 64),
+            "bits must be in 1..=64, got {}",
+            bits
+        );
+
+        let mask = if bits == 64 {
+            u64::MAX
+        } else {
+            (1 << bits) - 1
+        };
+        a & mask
     }
 }
 
@@ -205,6 +258,30 @@ impl NativeIntU64 {
 
     pub fn checked_sub(&self, v: NativeIntU64) -> Self {
         *self - v
+    }
+
+    pub fn sext(self, bits: u64) -> Self {
+        unsafe { Self(CVT_nativeint_u64_sext(self.0, bits)) }
+    }
+
+    pub fn slt(self, other: Self) -> bool {
+        unsafe { CVT_nativeint_u64_slt(self.0, other.0) != 0 }
+    }
+
+    pub fn sle(self, other: Self) -> bool {
+        unsafe { CVT_nativeint_u64_sle(self.0, other.0) != 0 }
+    }
+
+    pub fn sgt(self, other: Self) -> bool {
+        unsafe { CVT_nativeint_u64_slt(other.0, self.0) != 0 }
+    }
+
+    pub fn sge(self, other: Self) -> bool {
+        unsafe { CVT_nativeint_u64_sle(other.0, self.0) != 0 }
+    }
+
+    pub fn mask(self, bits: u64) -> Self {
+        unsafe { Self(CVT_nativeint_u64_mask(self.0, bits)) }
     }
 
     // Expose internal representation. Internal use only.
@@ -289,6 +366,14 @@ impl Ord for NativeIntU64 {
         } else {
             self
         }
+    }
+}
+
+impl core::ops::Neg for NativeIntU64 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        unsafe { Self(CVT_nativeint_u64_neg(self.0)) }
     }
 }
 
@@ -828,5 +913,153 @@ mod tests {
         assert_eq!(a / 2u32, 5);
         assert_eq!(a / 2u64, 5);
         assert_eq!(a / 2u128, 5);
+    }
+
+    #[test]
+    fn test_sext() {
+        // Positive value in 8 bits stays positive
+        let x: NativeIntU64 = 0x7Fu64.into();
+        assert_eq!(x.sext(8), 0x7Fu64);
+
+        // Negative value in 8 bits: 0xFF is -1, sign-extends to full u64
+        let x: NativeIntU64 = 0xFFu64.into();
+        assert_eq!(x.sext(8), 0xFFFF_FFFF_FFFF_FFFFu64);
+
+        // 0x80 in 8 bits is -128
+        let x: NativeIntU64 = 0x80u64.into();
+        assert_eq!(x.sext(8), 0xFFFF_FFFF_FFFF_FF80u64);
+
+        // 16-bit sign extension
+        let x: NativeIntU64 = 0xFFFFu64.into();
+        assert_eq!(x.sext(16), 0xFFFF_FFFF_FFFF_FFFFu64);
+
+        let x: NativeIntU64 = 0x7FFFu64.into();
+        assert_eq!(x.sext(16), 0x7FFFu64);
+
+        // 64 bits: no change
+        let x: NativeIntU64 = 0xFFFF_FFFF_FFFF_FFFFu64.into();
+        assert_eq!(x.sext(64), 0xFFFF_FFFF_FFFF_FFFFu64);
+    }
+
+    #[test]
+    fn test_slt() {
+        // Unsigned 0 < 1
+        let a: NativeIntU64 = 0u64.into();
+        let b: NativeIntU64 = 1u64.into();
+        assert!(a.slt(b));
+        assert!(!b.slt(a));
+
+        // Signed: -1 (0xFF...FF) < 0
+        let neg_one: NativeIntU64 = 0xFFFF_FFFF_FFFF_FFFFu64.into();
+        let zero: NativeIntU64 = 0u64.into();
+        assert!(neg_one.slt(zero));
+        assert!(!zero.slt(neg_one));
+
+        // Equal values
+        let x: NativeIntU64 = 42u64.into();
+        assert!(!x.slt(x));
+
+        // Positive comparison
+        let small: NativeIntU64 = 10u64.into();
+        let large: NativeIntU64 = 100u64.into();
+        assert!(small.slt(large));
+        assert!(!large.slt(small));
+    }
+
+    #[test]
+    fn test_sle() {
+        let a: NativeIntU64 = 0u64.into();
+        let b: NativeIntU64 = 1u64.into();
+        assert!(a.sle(b));
+        assert!(!b.sle(a));
+
+        let x: NativeIntU64 = 42u64.into();
+        assert!(x.sle(x));
+
+        let neg_one: NativeIntU64 = 0xFFFF_FFFF_FFFF_FFFFu64.into();
+        let zero: NativeIntU64 = 0u64.into();
+        assert!(neg_one.sle(zero));
+        assert!(!zero.sle(neg_one));
+    }
+
+    #[test]
+    fn test_sgt() {
+        let a: NativeIntU64 = 0u64.into();
+        let b: NativeIntU64 = 1u64.into();
+        assert!(b.sgt(a));
+        assert!(!a.sgt(b));
+
+        let zero: NativeIntU64 = 0u64.into();
+        let neg_one: NativeIntU64 = 0xFFFF_FFFF_FFFF_FFFFu64.into();
+        assert!(zero.sgt(neg_one));
+        assert!(!neg_one.sgt(zero));
+
+        let x: NativeIntU64 = 42u64.into();
+        assert!(!x.sgt(x));
+    }
+
+    #[test]
+    fn test_sge() {
+        let a: NativeIntU64 = 0u64.into();
+        let b: NativeIntU64 = 1u64.into();
+        assert!(b.sge(a));
+        assert!(!a.sge(b));
+
+        let x: NativeIntU64 = 42u64.into();
+        assert!(x.sge(x));
+
+        let zero: NativeIntU64 = 0u64.into();
+        let neg_one: NativeIntU64 = 0xFFFF_FFFF_FFFF_FFFFu64.into();
+        assert!(zero.sge(neg_one));
+        assert!(!neg_one.sge(zero));
+    }
+
+    #[test]
+    fn test_mask() {
+        // Mask 8 bits: keep low 8
+        let x: NativeIntU64 = 0xFFu64.into();
+        assert_eq!(x.mask(8), 0xFFu64);
+
+        let x: NativeIntU64 = 0x1FFu64.into();
+        assert_eq!(x.mask(8), 0xFFu64);
+
+        // Mask 4 bits
+        let x: NativeIntU64 = 0x1234u64.into();
+        assert_eq!(x.mask(4), 4u64); // 0x1234 & 0xF = 4
+
+        // Mask 1 bit
+        let x: NativeIntU64 = 3u64.into();
+        assert_eq!(x.mask(1), 1u64);
+
+        // Mask 64 bits: full value
+        let x: NativeIntU64 = 0xFFFF_FFFF_FFFF_FFFFu64.into();
+        assert_eq!(x.mask(64), 0xFFFF_FFFF_FFFF_FFFFu64);
+
+        // Zero masked
+        let x: NativeIntU64 = 0u64.into();
+        assert_eq!(x.mask(8), 0u64);
+    }
+
+    #[test]
+    fn test_neg() {
+        // neg(0) = 0
+        let zero: NativeIntU64 = 0u64.into();
+        assert_eq!(-zero, 0u64);
+
+        // neg(1) = -1 as u64 (two's complement)
+        let one: NativeIntU64 = 1u64.into();
+        assert_eq!(-one, 0xFFFF_FFFF_FFFF_FFFFu64);
+
+        // neg(-1) = 1
+        let neg_one: NativeIntU64 = 0xFFFF_FFFF_FFFF_FFFFu64.into();
+        assert_eq!(-neg_one, 1u64);
+
+        // neg(42) = -42
+        let x: NativeIntU64 = 42u64.into();
+        assert_eq!(-x, (-42i64 as u64));
+
+        // neg(neg(x)) = x
+        let x: NativeIntU64 = 100u64.into();
+        assert_eq!(-(-x), 100u64);
     }
 }
