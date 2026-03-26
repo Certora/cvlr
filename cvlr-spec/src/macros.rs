@@ -611,17 +611,23 @@ macro_rules! cvlr_rules {
 ///     requires: requires_expression,
 ///     ensures: ensures_expression,
 /// }
+///
+/// // Or omit `requires` to use [`cvlr_true`](crate::cvlr_true) as the precondition:
+/// cvlr_spec! {
+///     ensures: ensures_expression,
+/// }
 /// ```
 ///
 /// # Parameters
 ///
-/// * `requires` - A boolean expression over the context type representing the precondition
+/// * `requires` (optional) - A boolean expression over the context type representing the precondition.
+///   If omitted, [`cvlr_true`](crate::cvlr_true) is used for the same context as `ensures`.
 /// * `ensures` - A boolean expression over the context type that uses [`eval_with_states`](crate::CvlrFormula::eval_with_states)
 ///   to evaluate over both pre-state and post-state
 ///
 /// # Returns
 ///
-/// Returns a value implementing [`CvlrSpec`](crate::spec::CvlrSpec) with the same context type as the requires expression.
+/// Returns a value implementing [`CvlrSpec`](crate::spec::CvlrSpec) with the same context type as the `ensures` expression.
 ///
 /// # Examples
 ///
@@ -656,6 +662,9 @@ macro_rules! cvlr_spec {
     (requires: $r:expr, ensures: $e:expr $(,)?) => {
         $crate::cvlr_spec($r, $e)
     };
+    (ensures: $e:expr $(,)?) => {
+        $crate::cvlr_spec($crate::cvlr_true::<_>(), $e)
+    };
 }
 
 /// Creates an invariant specification from an assumption and an invariant.
@@ -674,16 +683,22 @@ macro_rules! cvlr_spec {
 ///     assumption: assumption_expression,
 ///     invariant: invariant_expression,
 /// }
+///
+/// // Or omit `assumption` to use [`cvlr_true`](crate::cvlr_true) as the extra precondition:
+/// cvlr_invar_spec! {
+///     invariant: invariant_expression,
+/// }
 /// ```
 ///
 /// # Parameters
 ///
-/// * `assumption` - A boolean expression representing an additional precondition
+/// * `assumption` (optional) - A boolean expression representing an additional precondition.
+///   If omitted, [`cvlr_true`](crate::cvlr_true) is used for the same context as `invariant`.
 /// * `invariant` - A boolean expression representing an invariant that must hold before and after
 ///
 /// # Returns
 ///
-/// Returns a value implementing [`CvlrSpec`](crate::spec::CvlrSpec) with the same context type as the assumption expression.
+/// Returns a value implementing [`CvlrSpec`](crate::spec::CvlrSpec) with the same context type as the `invariant` expression.
 ///
 /// # Examples
 ///
@@ -710,6 +725,9 @@ macro_rules! cvlr_invar_spec {
     (assumption: $a:expr, invariant: $i:expr $(,)?) => {
         $crate::cvlr_invar_spec($a, $i)
     };
+    (invariant: $i:expr $(,)?) => {
+        $crate::cvlr_invar_spec($crate::cvlr_true::<_>(), $i)
+    };
 }
 
 /// Defines multiple rules for an invariant specification across multiple base functions.
@@ -732,12 +750,20 @@ macro_rules! cvlr_invar_spec {
 ///         base_function3,
 ///     ]
 /// }
+///
+/// // `assumption` may be omitted (uses [`cvlr_true`](crate::cvlr_true)):
+/// cvlr_invariant_rules! {
+///     name: "rule_name",
+///     invariant: invariant_expression,
+///     bases: [ base_function1 ]
+/// }
 /// ```
 ///
 /// # Parameters
 ///
 /// * `name` - A string literal that will be converted to snake_case and combined with each base function name
-/// * `assumption` - A boolean expression representing an additional precondition
+/// * `assumption` (optional) - A boolean expression representing an additional precondition.
+///   If omitted, [`cvlr_true`](crate::cvlr_true) is used for the same context as `invariant`.
 /// * `invariant` - A boolean expression representing an invariant that must hold before and after
 /// * `bases` - A list of function identifiers (if they start with `base_`, that prefix is stripped)
 ///
@@ -759,6 +785,8 @@ macro_rules! cvlr_invar_spec {
 /// cvlr_rule_for_spec!{name: "non_negative", spec: cvlr_invar_spec(assumption_expr, invariant_expr), base: base_function1}
 /// cvlr_rule_for_spec!{name: "non_negative", spec: cvlr_invar_spec(assumption_expr, invariant_expr), base: base_function2}
 /// ```
+///
+/// If `assumption` is omitted, `cvlr_invar_spec(cvlr_true::<_>(), invariant_expr)` is used instead.
 ///
 /// # Examples
 ///
@@ -797,6 +825,15 @@ macro_rules! cvlr_invariant_rules {
             $crate::__macro_support::cvlr_rule_for_spec!{
                 name: $name,
                 spec: $crate::spec::cvlr_invar_spec($a, $i),
+                base: $base
+            }
+        )*
+    };
+    (name: $name:literal, invariant: $i:expr, bases: [ $( $base:ident ),* $(,)? ] ) => {
+        $(
+            $crate::__macro_support::cvlr_rule_for_spec!{
+                name: $name,
+                spec: $crate::spec::cvlr_invar_spec($crate::cvlr_true::<_>(), $i),
                 base: $base
             }
         )*
