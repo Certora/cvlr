@@ -1028,6 +1028,31 @@ fn test_cvlr_spec_macro() {
 }
 
 #[test]
+fn test_cvlr_spec_macro_omitted_requires() {
+    let spec_macro = cvlr_spec! {
+        ensures: YPositive,
+    };
+    let spec_fn = cvlr_spec(cvlr_true::<TestCtx>(), YPositive);
+
+    let pre_bad = TestCtx {
+        x: -1,
+        y: 0,
+        flag: false,
+    };
+    let post_ok = TestCtx {
+        x: -1,
+        y: 10,
+        flag: false,
+    };
+
+    // No precondition: assume_requires is a no-op for the macro form
+    spec_macro.assume_requires(&pre_bad);
+    spec_fn.assume_requires(&pre_bad);
+    spec_macro.check_ensures(&post_ok, &pre_bad);
+    spec_fn.check_ensures(&post_ok, &pre_bad);
+}
+
+#[test]
 fn test_cvlr_spec_macro_with_predicates() {
     // Test cvlr_spec! macro with cvlr_predicate!
     let spec = cvlr_spec! {
@@ -1069,6 +1094,25 @@ fn test_cvlr_invar_spec_macro() {
 
     // Test check_ensures - should assert invariant holds
     spec.check_ensures(&ctx, &ctx);
+}
+
+#[test]
+fn test_cvlr_invar_spec_macro_omitted_assumption() {
+    let spec_macro = cvlr_invar_spec! {
+        invariant: YPositive,
+    };
+    let spec_fn = cvlr_invar_spec(cvlr_true::<TestCtx>(), YPositive);
+
+    let ctx_bad_x = TestCtx {
+        x: -1,
+        y: 10,
+        flag: false,
+    };
+
+    spec_macro.assume_requires(&ctx_bad_x);
+    spec_fn.assume_requires(&ctx_bad_x);
+    spec_macro.check_ensures(&ctx_bad_x, &ctx_bad_x);
+    spec_fn.check_ensures(&ctx_bad_x, &ctx_bad_x);
 }
 
 #[test]
@@ -1193,6 +1237,17 @@ fn test_cvlr_invariant_rules_macro_single_base() {
     cvlr_invariant_rules! {
         name: "test_invariant",
         assumption: XPositive,
+        invariant: YPositive,
+        bases: [
+            base_single_function,
+        ]
+    }
+}
+
+#[test]
+fn test_cvlr_invariant_rules_macro_omitted_assumption() {
+    cvlr_invariant_rules! {
+        name: "invar_no_assume",
         invariant: YPositive,
         bases: [
             base_single_function,
