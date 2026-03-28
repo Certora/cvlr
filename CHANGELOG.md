@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+# Changes
+ - implementation of NativeInt into u128 conversion using new Prover intrinsic
+
 ## [0.6.0] - 2026-03-28
 
 ### Added
