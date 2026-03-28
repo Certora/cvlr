@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Added
+  - `cvlr-spec`: lemmas, predicates, formulas (including two-state), and macros to generate rules from specs
+  - `cvlr-decimal` with CVLR logging for decimals
+  - `cvlr_eval_that!` / `cvlr_eval_all!` to evaluate the assert-that DSL as boolean Rust code
+  - Richer `cvlr_assert_that!` behavior (e.g. `if`/`else`) and scope logging around asserts and assumes
+
+### Changed
+  - `CvlrBoolExpr` renamed to `CvlrFormula`; `cvlr_impl!` renamed to `cvlr_implies!`
+  - `cvlr` re-exports the new spec and decimal crates
+
+### Fixed
+  - Macro expansion issues in asserts, assumes, lemmas, and generated temporaries (ordering, scopes, empty lists, grouped expressions)
+
 ## [0.5.0] - 2025-12-19
 ### Fixed
   - Restored missing functionality in the `clog!` macro.
@@ -66,8 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 <!-- next-url -->
-[Unreleased]: https://github.com/crate-ci/cargo-release/compare/cvlr-v0.5.0...HEAD
-[0.5.0]: https://github.com/crate-ci/cargo-release/compare/cvlr-v0.4.2...cvlr-v0.5.0
+[Unreleased]: https://github.com/Certora/cvlr/compare/cvlr-v0.5.0...HEAD
+[0.5.0]: https://github.com/Certora/cvlr/compare/cvlr-v0.4.2...cvlr-v0.5.0
 [0.4.2]: https://github.com/Certora/cvlr/compare/v0.4.1...cvlr-v0.4.2
 [0.4.1]: https://github.com/Certora/cvlr/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Certora/cvlr/compare/v0.3.2...v0.4.0
