@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.6.1] - 2026-03-28
+
 # Changes
  - implementation of NativeInt into u128 conversion using new Prover intrinsic
 
@@ -84,7 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 <!-- next-url -->
-[Unreleased]: https://github.com/crate-ci/cargo-release/compare/cvlr-v0.6.0...HEAD
+[Unreleased]: https://github.com/crate-ci/cargo-release/compare/cvlr-v0.6.1...HEAD
+[0.6.1]: https://github.com/crate-ci/cargo-release/compare/cvlr-v0.6.0...cvlr-v0.6.1
 [0.6.0]: https://github.com/Certora/cvlr/compare/cvlr-v0.5.0...cvlr-v0.6.0
 [0.5.0]: https://github.com/Certora/cvlr/compare/cvlr-v0.4.2...cvlr-v0.5.0
 [0.4.2]: https://github.com/Certora/cvlr/compare/v0.4.1...cvlr-v0.4.2
