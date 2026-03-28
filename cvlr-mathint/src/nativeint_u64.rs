@@ -34,6 +34,7 @@ mod rt_decls {
         pub fn CVT_nativeint_u64_nondet() -> u64;
 
         pub fn CVT_nativeint_u64_from_u128(w0: u64, w1: u64) -> u64;
+        pub fn CVT_nativeint_u64_into_u128(_: u64) -> u128;
         pub fn CVT_nativeint_u64_from_u256(w0: u64, w1: u64, w2: u64, w3: u64) -> u64;
 
         pub fn CVT_nativeint_u64_u64_max() -> u64;
@@ -112,6 +113,11 @@ mod rt_impls {
             panic!();
         }
         w0
+    }
+
+    #[no_mangle]
+    pub extern "C" fn CVT_nativeint_u64_into_u128(a: u64) -> u128 {
+        a as u128
     }
 
     #[no_mangle]
@@ -209,6 +215,11 @@ impl NativeIntU64 {
 
     pub fn from_u128(w0: u64, w1: u64) -> Self {
         unsafe { Self(CVT_nativeint_u64_from_u128(w0, w1)) }
+    }
+
+    pub fn into_u128(self) -> u128 {
+        cvlr_asserts::cvlr_assume!(self.is_u128());
+        unsafe { CVT_nativeint_u64_into_u128(self.0) }
     }
 
     pub fn from_u256(w0: u64, w1: u64, w2: u64, w3: u64) -> Self {
@@ -518,10 +529,7 @@ impl From<NativeIntU64> for u64 {
 
 impl From<NativeIntU64> for u128 {
     fn from(value: NativeIntU64) -> Self {
-        cvlr_asserts::cvlr_assume!(value.is_u128());
-        let res: u128 = cvlr_nondet::nondet();
-        cvlr_asserts::cvlr_assume!(value == res);
-        res
+        value.into_u128()
     }
 }
 
