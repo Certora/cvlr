@@ -115,7 +115,7 @@ pub fn test_edge_cases() {
 }
 
 pub fn test_spec_with_method_calls() {
-    let expr = vec![1, 2, 3];
+    let expr = [1, 2, 3];
     
     // Test with method calls in spec
     cvlr_rule_for_spec! {
