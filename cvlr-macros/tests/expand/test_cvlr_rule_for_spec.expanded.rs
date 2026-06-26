@@ -73,7 +73,7 @@ pub fn test_edge_cases() {
     }
 }
 pub fn test_spec_with_method_calls() {
-    let expr = <[_]>::into_vec(::alloc::boxed::box_new([1, 2, 3]));
+    let expr = [1, 2, 3];
     {
         let _rule_name = "method_check";
         let _spec = expr.len() > 0;
