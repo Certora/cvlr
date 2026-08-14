@@ -1,4 +1,5 @@
 mod rt_decls {
+    #[link(wasm_import_module = "env")]
     extern "C" {
         #![allow(improper_ctypes)]
         // duplicated to avoid cvlr-assert depend on any other cvlr crate

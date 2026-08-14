@@ -1,6 +1,7 @@
 use crate::Nondet;
 
 mod rt_decls {
+    #[link(wasm_import_module = "env")]
     #[allow(improper_ctypes)]
     extern "C" {
         // Definition of external functions that represent getting arbitrary values

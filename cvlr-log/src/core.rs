@@ -1,5 +1,6 @@
 pub mod rt_decls {
-    #[allow(improper_ctypes)]
+   #[link(wasm_import_module = "env")]
+   #[allow(improper_ctypes)]
     extern "C" {
         pub fn CVT_calltrace_print_tag(tag: &str);
 
