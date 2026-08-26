@@ -43,7 +43,5 @@ jobs:
           toolchain: stable
       - name: Install cargo-expand
         run: cargo install cargo-expand
-      - name: Run cargo test (excluding cvlr-hook)
-        run: cargo test --verbose --workspace --exclude cvlr-hook
-      - name: Run cvlr-hook tests serially
-        run: cargo test -p cvlr-hook --test tests -- --test-threads=1
+      - name: Run cargo test
+        run: cargo test --verbose
