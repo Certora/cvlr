@@ -45,3 +45,5 @@ jobs:
         run: cargo install cargo-expand
       - name: Run cargo test
         run: cargo test --verbose
+      - name: Run cvlr-hook tests
+        run: cargo test -p cvlr-hook --test tests -- --test-threads=1
