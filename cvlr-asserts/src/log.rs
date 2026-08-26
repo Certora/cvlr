@@ -1,5 +1,8 @@
 mod rt_decls {
-    #[link(wasm_import_module = "env")]
+    #[cfg_attr(
+        all(target_family = "wasm", target_os = "none"),
+        link(wasm_import_module = "cvlr")
+    )]
     extern "C" {
         #![allow(improper_ctypes)]
         // duplicated to avoid cvlr-assert depend on any other cvlr crate

@@ -12,7 +12,10 @@ pub struct NativeIntU64(u64);
 mod rt_decls {
     type BoolU64 = u64;
 
-    #[link(wasm_import_module = "env")]
+    #[cfg_attr(
+        all(target_family = "wasm", target_os = "none"),
+        link(wasm_import_module = "cvlr")
+    )]
     extern "C" {
         pub fn CVT_nativeint_u64_eq(_: u64, _: u64) -> BoolU64;
         pub fn CVT_nativeint_u64_lt(_: u64, _: u64) -> BoolU64;
