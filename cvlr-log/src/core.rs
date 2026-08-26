@@ -3,7 +3,7 @@ pub mod rt_decls {
         all(target_family = "wasm", target_os = "none"),
         link(wasm_import_module = "cvlr")
     )]
-   #[allow(improper_ctypes)]
+    #[allow(improper_ctypes)]
     extern "C" {
         pub fn CVT_calltrace_print_tag(tag: &str);
 
