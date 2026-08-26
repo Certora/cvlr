@@ -54,7 +54,6 @@
 //! // Define a simple spec - cvlr_true uses eval_with_states for ensures
 //! let spec = cvlr_spec(cvlr_true::<Counter>(), cvlr_true::<Counter>());
 //! ```
-#![no_std]
 
 mod combinators;
 mod formula;
