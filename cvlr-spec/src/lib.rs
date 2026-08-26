@@ -1,3 +1,4 @@
+#![no_std]
 //! Specification language for CVL (Certora Verification Language) in Rust.
 //!
 //! This module provides a framework for writing specifications with preconditions
