@@ -2,9 +2,10 @@ use cvlr_hook::cvlr_hook_on_entry;
 fn hook() {
     ();
 }
+fn work(_msg: &str) {
+    ();
+}
 fn t1() {
     hook();
-    {
-        ::std::io::_print(format_args!("t1\n"));
-    };
+    work("t1");
 }

@@ -5,68 +5,45 @@ fn hook_start() {
 fn hook_end() {
     ();
 }
+fn check_eq(_a: i32, _b: i32) {
+    ();
+}
+fn check_res(_a: Result<()>, _b: Result<()>) {
+    ();
+}
+fn log(_msg: &str) {
+    ();
+}
 fn tmp() -> Result<()> {
     hook_start();
     hook_end();
     Ok(())
 }
 fn t3() {
-    match (&tmp(), &Ok(())) {
-        (left_val, right_val) => {
-            if !(*left_val == *right_val) {
-                let kind = ::core::panicking::AssertKind::Eq;
-                ::core::panicking::assert_failed(
-                    kind,
-                    &*left_val,
-                    &*right_val,
-                    ::core::option::Option::None,
-                );
-            }
-        }
-    };
+    check_res(tmp(), Ok(()));
 }
 fn t4() {
     hook_start();
-    match (&1, &1) {
-        (left_val, right_val) => {
-            if !(*left_val == *right_val) {
-                let kind = ::core::panicking::AssertKind::Eq;
-                ::core::panicking::assert_failed(
-                    kind,
-                    &*left_val,
-                    &*right_val,
-                    ::core::option::Option::None,
-                );
-            }
-        }
-    };
+    check_eq(1, 1);
     hook_end();
 }
 fn abs(x: i32) -> i32 {
     hook_start();
     if x >= 0 {
-        {
-            ::std::io::_print(format_args!("x is positive\n"));
-        };
+        log("x is positive");
         x
     } else {
-        {
-            ::std::io::_print(format_args!("x is negative\n"));
-        };
+        log("x is negative");
         -x
     }
 }
 fn abs2(x: i32) -> i32 {
     hook_end();
     if x >= 0 {
-        {
-            ::std::io::_print(format_args!("x is positive\n"));
-        };
+        log("x is positive");
         x
     } else {
-        {
-            ::std::io::_print(format_args!("x is negative\n"));
-        };
+        log("x is negative");
         -x
     }
 }
