@@ -14,7 +14,7 @@ mod rt_decls {
 
     #[cfg_attr(
         all(target_family = "wasm", target_os = "none"),
-        link(wasm_import_module = "cvlr")
+        link(wasm_import_module = "env")
     )]
     extern "C" {
         pub fn CVT_nativeint_u64_eq(_: u64, _: u64) -> BoolU64;

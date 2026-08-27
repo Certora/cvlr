@@ -1,7 +1,7 @@
 mod rt_decls {
     #[cfg_attr(
         all(target_family = "wasm", target_os = "none"),
-        link(wasm_import_module = "cvlr")
+        link(wasm_import_module = "env")
     )]
     extern "C" {
         #![allow(improper_ctypes)]
