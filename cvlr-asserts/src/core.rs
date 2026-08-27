@@ -1,4 +1,8 @@
 mod rt_decls {
+    #[cfg_attr(
+        all(target_family = "wasm", target_os = "none"),
+        link(wasm_import_module = "env")
+    )]
     extern "C" {
         pub fn CVT_assume(_c: bool);
         pub fn CVT_assert(_c: bool);

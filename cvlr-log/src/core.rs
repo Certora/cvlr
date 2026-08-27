@@ -1,4 +1,8 @@
 pub mod rt_decls {
+    #[cfg_attr(
+        all(target_family = "wasm", target_os = "none"),
+        link(wasm_import_module = "env")
+    )]
     #[allow(improper_ctypes)]
     extern "C" {
         pub fn CVT_calltrace_print_tag(tag: &str);
