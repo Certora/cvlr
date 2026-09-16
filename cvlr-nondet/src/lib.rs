@@ -14,5 +14,6 @@ pub use core::{nondet, nondet_with, Nondet};
 
 pub use option::nondet_option;
 pub use scalars::{
-    cvlr_nondet_small_i128, cvlr_nondet_small_u128, cvlr_nondet_u32, cvlr_nondet_u64, cvlr_nondet_i32
+    cvlr_nondet_i32, cvlr_nondet_small_i128, cvlr_nondet_small_u128, cvlr_nondet_u32,
+    cvlr_nondet_u64,
 };
