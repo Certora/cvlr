@@ -41,8 +41,8 @@ mod rt_impls {
 /// compiled code and handles them specially on its own, and a call to
 /// `CVT_u128_leq` is treated as an unknown external function whose result is
 /// unconstrained. An assertion over the result can then fail spuriously, and an
-/// assumption over it constrains nothing. Use the ordinary `u128` operator `x
-/// <= y` instead.
+/// assumption over it constrains nothing. Use the ordinary `u128` operator
+/// `x <= y` instead.
 pub fn cvlr_u128_leq(x: u128, y: u128) -> bool {
     unsafe { rt_decls::CVT_u128_leq(x, y) }
 }
@@ -58,8 +58,8 @@ pub fn cvlr_u128_leq(x: u128, y: u128) -> bool {
 /// compiled code and handles them specially on its own, and a call to
 /// `CVT_u128_gt0` is treated as an unknown external function whose result is
 /// unconstrained. An assertion over the result can then fail spuriously, and an
-/// assumption over it constrains nothing. Use the ordinary `u128` operator `x >
-/// 0` instead.
+/// assumption over it constrains nothing. Use the ordinary `u128` operator
+/// `x > 0` instead.
 pub fn cvlr_u128_gt0(x: u128) -> bool {
     unsafe { rt_decls::CVT_u128_gt0(x) }
 }

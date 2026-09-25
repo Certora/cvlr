@@ -75,6 +75,17 @@ fn of_enum_variant(variant: &Variant, enum_name: &Ident) -> proc_macro2::TokenSt
 /// This macro generates an implementation of `Nondet` for structs and enums,
 /// allowing them to be created with non-deterministic (symbolic) values.
 ///
+/// * A struct gets every field from `nondet()`, so every field type must
+///   implement `Nondet`; a unit struct is returned as is.
+/// * An enum is any one of its variants, chosen arbitrarily, with every field
+///   of that variant from `nondet()`. An enum must have at least one variant.
+///
+/// The result is completely unconstrained apart from the field types' own
+/// ranges; add constraints with `cvlr_assume!` or
+/// `cvlr::nondet::nondet_with`. Generic types and unions are not supported.
+/// The generated code refers to `::cvlr::nondet`, so the crate must depend on
+/// `cvlr`. Also available from `cvlr::derive` and the prelude.
+///
 /// # Example
 ///
 /// ```ignore
@@ -192,7 +203,17 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
 /// - Structs with unnamed fields (uses field indices "0", "1", "2", etc. as tags)
 /// - Unit structs (empty scope)
 /// - Enums with unit variants (logs variant name)
-/// - Enums with field variants (logs variant name first, then fields; uses scope for multiple fields)
+/// - Enums with field variants (logs variant name first, then fields, inside a scope)
+///
+/// In the call trace, a struct logged under `tag` appears as a collapsible
+/// scope named `tag` containing one entry per field. A unit enum variant is
+/// shown as the line `tag: Variant`; a variant with fields as a scope `tag`
+/// containing `tag: Variant` followed by the fields. Every field type must
+/// implement `CvlrLog`. To log only some fields, use
+/// `cvlr::log::impl_cvlr_log_for_struct!` instead. Generic types and unions
+/// are not supported. The generated code refers to `::cvlr::log`, so the
+/// crate must depend on `cvlr`. Also available from `cvlr::derive` and the
+/// prelude.
 ///
 /// # Example
 ///
@@ -217,13 +238,13 @@ pub fn derive_nondet(item: TokenStream) -> TokenStream {
 /// }
 ///
 /// let p = Point { x: 1, y: 2 };
-/// p.log("point", &mut logger);
+/// clog!(p);                  // scope "p" with entries x, y
 ///
 /// let t = Tuple(1, -2);
-/// t.log("tuple", &mut logger);
+/// clog!(t => "tuple");       // scope "tuple" with entries 0, 1
 ///
 /// let e = MyEnum::Variant2(42);
-/// e.log("enum", &mut logger);
+/// clog!(e);                  // scope "e": "e: Variant2", then "0: 42"
 /// ```
 #[proc_macro_derive(CvlrLog)]
 pub fn derive_cvlr_log(item: TokenStream) -> TokenStream {

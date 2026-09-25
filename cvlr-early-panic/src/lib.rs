@@ -76,6 +76,30 @@ impl VisitMut for EarlyPanic {
 
 /// Attribute to replace question mark operator by unwrap.
 ///
+/// Turns error returns in the annotated function into panics, so that under
+/// the Certora Prover the error paths end the execution instead of returning
+/// an error to the caller. A panic stops the execution: no later assertion is
+/// reached, so executions that take an error path cannot violate the
+/// assertions that follow it, and rules effectively consider only executions
+/// in which the function succeeds. Use it on code under verification (usually
+/// behind the verification feature) to focus a rule on the success case, and
+/// keep in mind that it hides error paths: a rule about "the function fails
+/// when ..." cannot be checked through a function with this attribute. Also
+/// available as `cvlr_early_panic` in `cvlr`'s prelude.
+///
+/// The rewriting, applied throughout the function body including nested
+/// blocks and closures:
+///
+/// * every `expr?` becomes `expr.unwrap()`. For a `Result`, this requires the
+///   error type to implement `Debug`, and no `From` conversion of the error
+///   takes place;
+/// * every statement `return Err(...)` and every statement consisting of an
+///   `Err(...)` expression (including a block's tail expression) becomes
+///   `panic!()`.
+///
+/// An `Err(...)` that is not a statement on its own, such as a match arm
+/// `x => Err(e)` or `let r = Err(e);`, is left unchanged.
+///
 /// # Example
 ///
 /// ```

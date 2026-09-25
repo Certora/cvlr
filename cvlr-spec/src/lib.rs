@@ -16,8 +16,8 @@
 //! ## Composing Expressions
 //!
 //! Boolean expressions can be composed using:
-//! - [`cvlr_and`] - Logical AND
-//! - [`cvlr_impl`] - Logical implication (A → B)
+//! - [`cvlr_and`](fn@cvlr_and) - Logical AND
+//! - [`cvlr_implies`](fn@cvlr_implies) - Logical implication (A → B)
 //! - [`cvlr_true`] - Constant true expression
 //!
 //! ## State Pairs
@@ -32,8 +32,8 @@
 //! - Preconditions (requires) - conditions that must hold before an operation (assumed by the verifier)
 //! - Postconditions (ensures) - conditions that hold after an operation (asserted by the verifier)
 //!
-//! Use [`cvlr_spec`] to create a specification from requires and ensures clauses,
-//! or [`cvlr_invar_spec`] for specifications with invariants.
+//! Use [`cvlr_spec`](fn@cvlr_spec) to create a specification from requires and ensures clauses,
+//! or [`cvlr_invar_spec`](fn@cvlr_invar_spec) for specifications with invariants.
 //!
 //! ## Lemmas
 //!

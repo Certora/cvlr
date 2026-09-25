@@ -68,8 +68,9 @@ pub fn cvlr_log_with<T: CvlrLog>(tag: &str, val: &T, logger: &mut CvlrLogger) {
 
 /// Logs `val` under `tag` in the counterexample call trace.
 ///
-/// The function form of the [`cvlr_log!`](macro@crate::cvlr_log) macro's `value
-/// => tag` case; most specs use the macro (`clog!` in the prelude) instead.
+/// The function form of the [`cvlr_log!`](macro@crate::cvlr_log) macro's
+/// `value => tag` case; most specs use the macro (`clog!` in the prelude)
+/// instead.
 #[inline(always)]
 pub fn cvlr_log<T: CvlrLog>(tag: &str, val: &T) {
     let mut logger = CvlrLogger::new();

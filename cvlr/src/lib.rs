@@ -1,4 +1,52 @@
 #![no_std]
+//! Certora Verification Language for Rust (CVLR): write specifications for the
+//! Certora Prover in Rust.
+//!
+//! A specification is a set of *rules*: ordinary Rust functions marked with
+//! `#[rule]` that call the code under verification on nondeterministic inputs
+//! and state what must hold. The Prover checks each rule for every possible
+//! value of those inputs.
+//!
+//! ```ignore
+//! use cvlr::prelude::*;
+//!
+//! #[rule]
+//! fn withdraw_never_increases_balance() {
+//!     let balance: u64 = nondet();
+//!     let amount: u64 = nondet();
+//!     cvlr_assume!(amount <= balance);
+//!     let new_balance = withdraw(balance, amount);
+//!     cvlr_assert_le!(new_balance, balance);
+//! }
+//! ```
+//!
+//! `use cvlr::prelude::*` (or `use cvlr::*`) brings in everything commonly
+//! needed. Solana-specific helpers (nondeterministic accounts, account logging,
+//! CPI models) are in the separate `cvlr-solana` family of crates.
+//!
+//! # Where things are
+//!
+//! | task | items | module |
+//! | --- | --- | --- |
+//! | define a rule | `#[rule]` | [`macros`] |
+//! | check, assume, reach | `cvlr_assert!`, `cvlr_assume!`, `cvlr_satisfy!`, `cvlr_assert_eq!`/`_le!`/..., `cvlr_assume_eq!`/..., `cvlr_assert_*_if!` | [`asserts`] |
+//! | check several conditions, DSL | `cvlr_assert_that!`, `cvlr_assert_all!`, `cvlr_assume_that!`, `cvlr_assume_all!` | [`macros`] |
+//! | arbitrary inputs | `nondet()`, `nondet_with`, `nondet_option`, `#[derive(Nondet)]`, `havoc::alloc_ref_havoced` | [`nondet`](mod@nondet), [`derive`](mod@derive) |
+//! | readable counterexamples | `clog!`, `CvlrLog`, `#[derive(CvlrLog)]`, `CvlrLogger` | [`log`], [`derive`](mod@derive) |
+//! | exact arithmetic | `NativeInt` (256-bit), `is_u64` and friends | [`mathint`] |
+//! | fixed-point / decimal values | `NativeFixedU64`, `NativeFixedU128`, `NativeDecimal` | [`fixed`], [`decimal`] |
+//! | reusable pre/postconditions | `#[predicate]`, `cvlr_def_predicate!`, `cvlr_spec!`, `cvlr_invar_spec!`, `cvlr_rules!`, `cvlr_lemma!` | [`spec`], [`macros`] |
+//! | adapt the code under verification | `#[mock_fn]`, `#[hook_on_entry]`, `#[hook_on_exit]`, `#[early_panic]` | prelude |
+//!
+//! # Features
+//!
+//! * `rt` — run-time implementations of the Prover builtins, so specs and
+//!   CVLR itself can be compiled and run as ordinary tests (nondeterministic
+//!   values become fixed defaults such as `0`). Not for verification builds.
+//! * `vacuity` — makes the check `#[rule]` appends to every rule a
+//!   `cvlr_assert!(false)` (see `cvlr_vacuity_check!`).
+//! * `no-loc` — replaces recorded source locations with placeholders, for
+//!   stable macro-expansion snapshots.
 
 pub mod u128_arith;
 

@@ -397,9 +397,9 @@ impl NativeIntU64 {
 
     /// `self - v`; exactly the same as the `-` operator.
     ///
-    /// Despite the name, nothing is checked and no `Option` is returned: if `v
-    /// > self` the result wraps to `2^256 - (v - self)`, the two's-complement
-    /// encoding of the negative difference.
+    /// Despite the name, nothing is checked and no `Option` is returned: if
+    /// `v > self` the result wraps to `2^256 - (v - self)`, the
+    /// two's-complement encoding of the negative difference.
     pub fn checked_sub(&self, v: NativeIntU64) -> Self {
         *self - v
     }

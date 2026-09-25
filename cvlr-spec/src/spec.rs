@@ -13,6 +13,31 @@ use crate::formula::CvlrFormula;
 ///
 /// * [`Context`](CvlrSpec::Context) - The context type representing the state
 ///
+/// # Usage in a rule
+///
+/// A spec is written once and checked against many operations. The usual
+/// pattern is a "base" function per operation that is generic over the spec:
+///
+/// ```ignore
+/// fn base_deposit<S: CvlrSpec<Context = VaultCtx>>(accounts: &[AccountInfo], spec: S) {
+///     let pre = VaultCtx::snapshot(accounts);   // read the state before
+///     spec.assume_requires(&pre);
+///     process_deposit(accounts, nondet());      // the operation under verification
+///     let post = VaultCtx::snapshot(accounts);  // read the state after
+///     spec.check_ensures(&post, &pre);
+/// }
+///
+/// #[rule]
+/// fn rule_deposit_solvent() {
+///     let accounts = cvlr_deserialize_nondet_accounts();
+///     base_deposit(&accounts, cvlr_spec!(requires: Solvent, ensures: Solvent));
+/// }
+/// ```
+///
+/// [`cvlr_rules!`](crate::cvlr_rules) and
+/// [`cvlr_invariant_rules!`](crate::cvlr_invariant_rules) generate such rules
+/// for several base functions at once.
+///
 /// # Examples
 ///
 /// ```ignore
@@ -59,6 +84,14 @@ pub trait CvlrSpec {
 /// a boolean expression for the postcondition (ensures). The ensures expression
 /// uses [`eval_with_states`](crate::CvlrFormula::eval_with_states) to evaluate
 /// over both pre-state and post-state.
+///
+/// [`assume_requires`](CvlrSpec::assume_requires) assumes the requires
+/// formula on the pre-state (single-state `assume`), and
+/// [`check_ensures`](CvlrSpec::check_ensures) asserts the ensures formula with
+/// `assert_with_states(post, pre)`. The requires formula must therefore be a
+/// single-state formula; the ensures formula may be either kind (a
+/// single-state one is checked on the post-state). Constructed by
+/// [`cvlr_spec`] / [`cvlr_spec!`](crate::cvlr_spec!).
 #[derive(Copy, Clone)]
 pub struct CvlrPropImpl<Pre, Post>(Pre, Post);
 
@@ -84,9 +117,12 @@ where
 ///
 /// # Arguments
 ///
-/// * `requires` - A boolean expression over the context type representing the precondition
-/// * `ensures` - A boolean expression over the context type that uses [`eval_with_states`](crate::CvlrFormula::eval_with_states)
-///   to evaluate over both pre-state and post-state
+/// * `requires` - A single-state boolean expression over the context type representing the
+///   precondition, assumed on the pre-state
+/// * `ensures` - A boolean expression over the context type, asserted with
+///   [`assert_with_states`](crate::CvlrFormula::assert_with_states)`(post, pre)`. A two-state
+///   formula can compare the post-state with the pre-state; a single-state formula is
+///   checked on the post-state.
 ///
 /// # Examples
 ///
@@ -130,6 +166,11 @@ where
 /// - An invariant must hold both before and after the operation
 ///
 /// The invariant is assumed in the pre-state and asserted in the post-state.
+/// The assumption is only assumed in the pre-state; it is not checked
+/// afterwards. Both formulas must be single-state formulas, since they are
+/// evaluated on one state at a time.
+///
+/// Constructed by [`cvlr_invar_spec`] / [`cvlr_invar_spec!`](crate::cvlr_invar_spec!).
 #[derive(Copy, Clone)]
 pub struct CvlrInvarSpec<A, B>(A, B);
 
@@ -175,7 +216,7 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// use cvlr_spec::{cvlr_invar_spec, CvlrFormula};
+/// use cvlr_spec::{cvlr_invar_spec, cvlr_predicate};
 ///
 /// struct Counter {
 ///     value: i32,
@@ -184,11 +225,13 @@ where
 /// // Create a spec with an assumption and an invariant
 /// let spec = cvlr_invar_spec(
 ///     // assumption: value is even
-///     |c: &Counter| c.value % 2 == 0,
+///     cvlr_predicate! { | c : Counter | -> { c.value % 2 == 0 } },
 ///     // invariant: value is non-negative
-///     |c: &Counter| c.value >= 0,
+///     cvlr_predicate! { | c : Counter | -> { c.value >= 0 } },
 /// );
 /// ```
+///
+/// Both arguments must implement [`CvlrFormula`]; plain closures do not.
 pub fn cvlr_invar_spec<A, B>(assumption: A, invariant: B) -> CvlrInvarSpec<A, B>
 where
     A: CvlrFormula,
@@ -221,7 +264,7 @@ where
 ///
 /// # Usage
 ///
-/// Lemmas are typically created using the [`cvlr_lemma!`] macro:
+/// Lemmas are typically created using the [`cvlr_lemma!`](crate::cvlr_lemma) macro:
 ///
 /// ```ignore
 /// extern crate cvlr;
@@ -257,6 +300,13 @@ where
 ///
 /// If the postconditions don't hold when the preconditions are assumed,
 /// the verification will fail.
+///
+/// A lemma is checked by a rule that calls [`verify`](CvlrLemma::verify),
+/// e.g. `#[rule] fn lemma_counter_positive() { CounterPositiveLemma.verify(); }`.
+/// Once verified, it can be used in other rules with
+/// [`apply`](CvlrLemma::apply), which asserts the requires and then assumes
+/// the ensures, so the Prover does not have to rediscover the fact. Both
+/// formulas are single-state formulas over one context.
 pub trait CvlrLemma {
     type Context: cvlr_nondet::Nondet + cvlr_log::CvlrLog;
 
@@ -274,7 +324,7 @@ pub trait CvlrLemma {
     ///
     /// This method:
     /// 1. Creates a non-deterministic context of type `Ctx`
-    /// 2. Logs the context using [`clog!`](cvlr_log::clog)
+    /// 2. Logs the context using `clog!`
     /// 3. Calls [`verify_with_context`](CvlrLemma::verify_with_context) with that context
     ///
     /// This is useful for verifying lemmas over all possible contexts.
@@ -300,10 +350,13 @@ pub trait CvlrLemma {
 
     /// Applies the lemma to a context.
     ///
-    /// This method assumes the preconditions and asserts the postconditions,
-    /// which is useful for applying lemmas in proofs. It has the same behavior
-    /// as [`verify_with_context`](CvlrLemma::verify_with_context), but the name
-    /// emphasizes that this is for applying the lemma rather than verifying it.
+    /// This method asserts the preconditions and then assumes the
+    /// postconditions: the opposite of
+    /// [`verify_with_context`](CvlrLemma::verify_with_context). Use it in a rule
+    /// to rely on a lemma that is verified by a separate rule: the rule fails if
+    /// `ctx` does not satisfy the lemma's requires, and otherwise gains the
+    /// ensures as an assumption. Applying a lemma that has not been verified
+    /// can make the rule unsound.
     ///
     /// # Arguments
     ///

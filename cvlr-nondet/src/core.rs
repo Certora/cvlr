@@ -1,7 +1,23 @@
 /// A trait for giving a type a non-deterministic value
+///
+/// A nondeterministic value is one the Prover may choose freely: a rule that
+/// draws `let x: u64 = nondet();` is verified for every possible `u64`, and a
+/// counterexample reports the value that breaks it. Nondeterministic values are
+/// how rules model unknown inputs and program state.
+///
+/// Implemented for `()`, `bool`, all integer types from `u8`/`i8` to
+/// `u128`/`i128` and `usize` (any value of the type), `Option<T>` (`None` or
+/// `Some` of a nondeterministic `T`), and CVLR's numeric types (`NativeInt`,
+/// `NativeFixedU64`, `NativeDecimal`, ...). Derive it for your own structs and
+/// enums with `#[derive(Nondet)]`, or implement it with
+/// [`nondet_impl!`](crate::nondet_impl). Each call returns a new value,
+/// unrelated to any earlier one.
 pub trait Nondet: Sized {
+    /// Returns an arbitrary value of this type.
     fn nondet() -> Self;
 
+    /// Returns an arbitrary value of this type for which `func` returns
+    /// `true`; see the free function [`nondet_with`](crate::nondet_with).
     fn nondet_with<F>(func: F) -> Self
     where
         F: FnOnce(&Self) -> bool,
@@ -13,6 +29,11 @@ pub trait Nondet: Sized {
 }
 
 /// Return a nondet value of type according to the Nondet trait
+///
+/// The type is usually inferred: `let amount: u64 = nondet();`. Constrain the
+/// value afterwards with `cvlr_assume!`, or draw it with
+/// [`nondet_with`](crate::nondet_with). Also available in `cvlr`'s prelude as
+/// `nondet` and `cvlr_nondet`.
 pub fn nondet<T: Nondet>() -> T {
     Nondet::nondet()
 }

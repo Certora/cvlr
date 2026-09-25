@@ -7,9 +7,9 @@ macro_rules! native_fixed {
         #[derive(Copy, Clone, Eq, Debug)]
         /// Native Fixed point numbers with F bits of precision
         ///
-        /// A non-negative binary fixed-point number whose value is `bits /
-        /// 2^F`, where `bits` is a [`NativeInt`] that is always assumed to fit
-        /// in
+        /// A non-negative binary fixed-point number whose value is
+        /// `bits / 2^F`, where `bits` is a [`NativeInt`] that is always assumed
+        /// to fit in
         #[doc = concat!("`", stringify!($uint), "`. `F` must be less than 64.")]
         ///
         /// Intended for modeling fixed-point types in the code under
@@ -90,8 +90,8 @@ macro_rules! native_fixed {
                 self.val.into()
             }
 
-            /// The number whose raw representation is `bits`, i.e. `bits /
-            /// 2^F`.
+            /// The number whose raw representation is `bits`, i.e.
+            /// `bits / 2^F`.
             ///
             /// Use this to reinterpret a fixed-point value read from program
             /// state. To convert an integer, use [`new`](Self::new).
