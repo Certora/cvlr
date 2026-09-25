@@ -35,6 +35,57 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
     fn_ast.into_token_stream().into()
 }
 
+/// Replace a function with a mock when a cargo feature is enabled.
+///
+/// Use this to swap code the Prover cannot or should not analyze (a CPI call, a
+/// heavy computation, an external dependency) for a verification-only model,
+/// without touching its call sites.
+///
+/// # Syntax
+///
+/// ```ignore
+/// #[cvlr::mock_fn(with = path::to::mock)]
+/// #[cvlr::mock_fn(with = path::to::mock, when = "feature-name")]
+/// ```
+///
+/// * `with` (required) — path to the replacement item, normally a function
+///   with the same signature as the annotated one.
+/// * `when` (optional, default `"certora"`) — name of the cargo feature that
+///   selects the mock. The feature is checked in the crate that contains the
+///   annotated function, so that crate must declare it.
+///
+/// # Expansion
+///
+/// ```ignore
+/// #[cfg(not(feature = "certora"))]
+/// pub fn original(..) { .. }            // the annotated function, unchanged
+///
+/// #[cfg(feature = "certora")]
+/// pub use path::to::mock as original;   // same visibility as the original
+/// ```
+///
+/// With the feature on, the original body is not compiled at all and every use
+/// of `original` resolves to the mock; with it off, the attribute has no
+/// effect. Because the mock is re-exported under the original name, it must be
+/// callable exactly as the original is at each call site.
+///
+/// # Example
+///
+/// ```ignore
+/// #[cvlr::mock_fn(with = crate::certora::mocks::spl_mint_shares)]
+/// pub fn spl_mint_shares(amount: u64, shares: &AccountInfo) -> ProgramResult {
+///     // real CPI to the token program
+/// }
+///
+/// // crate::certora::mocks
+/// pub fn spl_mint_shares(amount: u64, shares: &AccountInfo) -> ProgramResult {
+///     // model of the token program's effect
+/// }
+/// ```
+///
+/// It is common to also gate the attribute itself, as
+/// `#[cfg_attr(feature = "certora", cvlr::mock_fn(with = ...))]`, so that
+/// non-verification builds do not depend on `cvlr` at all.
 #[proc_macro_attribute]
 pub fn mock_fn(attr: TokenStream, item: TokenStream) -> TokenStream {
     mock::mock_fn_impl(attr, item)

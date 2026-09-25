@@ -1,20 +1,88 @@
 use crate::CvlrLogger;
 
+/// A value that can be shown in the Prover's counterexample call trace.
+///
+/// This is the trait behind [`cvlr_log!`](macro@crate::cvlr_log) / `clog!`, and
+/// it is the bound on the operands of the logging assertion macros
+/// (`cvlr_assert_eq!` and friends). Logging has no effect on what is verified;
+/// it only makes counterexamples readable.
+///
+/// # Provided implementations
+///
+/// | type | shown as |
+/// | --- | --- |
+/// | `bool`, `u8`, `u16`, `u32`, `u64`, `usize` | unsigned 64-bit integer under `tag` (`bool` as `0`/`1`) |
+/// | `i8`, `i16`, `i32`, `i64` | 64-bit integer under `tag`; negative values currently display as their unsigned two's-complement bit pattern (see [`CvlrLogger::log_i64`]) |
+/// | `u128` / `i128` | unsigned / signed 128-bit integer under `tag` |
+/// | `&T` | as `T` |
+/// | `&str` | the string itself as a message line; **`tag` is ignored** (use [`log_str`](crate::log_str) to show a string under a tag) |
+/// | `()` | the string `"()"` under `tag` |
+/// | `Option<T>` | `Some(v)` as `v` under `tag` (no `Some` marker); `None` as the string `"None"` under `tag` |
+/// | `Result<T, E>` | a message line `Ok` or `Err`, followed by the payload under `tag` |
+/// | `NativeInt` (feature `mathint`, on by default) | its value under `tag` |
+///
+/// Other CVLR crates implement it for their types (e.g. `NativeFixedU64`,
+/// `NativeDecimal`).
+///
+/// Tags must be string literals (or `stringify!` output); see
+/// [`CvlrLogger`] for this and other display rules.
+///
+/// # Implementing for your own types
+///
+/// Prefer `#[derive(CvlrLog)]` (from `cvlr::derive` / the prelude), which logs
+/// each field under its name inside a scope named by `tag`, or
+/// [`impl_cvlr_log_for_struct!`](macro@crate::impl_cvlr_log_for_struct) to log
+/// only selected fields. A manual implementation should call the logging
+/// methods of `logger`, or [`cvlr_log_with`] for nested fields, typically
+/// bracketed by [`CvlrLogger::log_scope_start`]/[`CvlrLogger::log_scope_end`]
+/// with `tag` so the fields are grouped under it:
+///
+/// ```
+/// use cvlr_log::{cvlr_log_with, CvlrLog, CvlrLogger};
+///
+/// struct Range { lo: u64, hi: u64 }
+///
+/// impl CvlrLog for Range {
+///     fn log(&self, tag: &str, logger: &mut CvlrLogger) {
+///         logger.log_scope_start(tag);
+///         cvlr_log_with("lo", &self.lo, logger);
+///         cvlr_log_with("hi", &self.hi, logger);
+///         logger.log_scope_end(tag);
+///     }
+/// }
+/// ```
 pub trait CvlrLog {
+    /// Emits `self` into the call trace under the label `tag`.
     fn log(&self, tag: &str, logger: &mut CvlrLogger);
 }
 
+/// Logs `val` under `tag` through an explicit `logger`.
+///
+/// The same as `val.log(tag, logger)`. Use it inside [`CvlrLog`]
+/// implementations to log nested fields. [`CvlrLogger`] carries no state, so
+/// this behaves exactly like [`cvlr_log()`](fn@crate::cvlr_log).
 #[inline(always)]
 pub fn cvlr_log_with<T: CvlrLog>(tag: &str, val: &T, logger: &mut CvlrLogger) {
     val.log(tag, logger);
 }
 
+/// Logs `val` under `tag` in the counterexample call trace.
+///
+/// The function form of the [`cvlr_log!`](macro@crate::cvlr_log) macro's `value
+/// => tag` case; most specs use the macro (`clog!` in the prelude) instead.
 #[inline(always)]
 pub fn cvlr_log<T: CvlrLog>(tag: &str, val: &T) {
     let mut logger = CvlrLogger::new();
     val.log(tag, &mut logger);
 }
 
+/// Expands to the current source file name, or `"<FILE>"` with feature
+/// `no-loc`.
+///
+/// Implementation detail of [`cvlr_log!`](macro@crate::cvlr_log); exported only
+/// so the macro can reach it from other crates. The `no-loc` feature exists to
+/// make macro expansion output independent of source locations (for snapshot
+/// tests).
 #[cfg(not(feature = "no-loc"))]
 #[macro_export]
 macro_rules! cvlr_log_core_file {
@@ -23,6 +91,12 @@ macro_rules! cvlr_log_core_file {
     };
 }
 
+/// Expands to the current source line, or `0u32` with feature `no-loc`.
+///
+/// Implementation detail of [`cvlr_log!`](macro@crate::cvlr_log); exported only
+/// so the macro can reach it from other crates. The `no-loc` feature exists to
+/// make macro expansion output independent of source locations (for snapshot
+/// tests).
 #[cfg(not(feature = "no-loc"))]
 #[macro_export]
 macro_rules! cvlr_log_core_line {
@@ -31,6 +105,11 @@ macro_rules! cvlr_log_core_line {
     };
 }
 
+/// Expands to the current source file name, or `"<FILE>"` with feature
+/// `no-loc`.
+///
+/// Implementation detail of [`cvlr_log!`](macro@crate::cvlr_log); exported only
+/// so the macro can reach it from other crates.
 #[cfg(feature = "no-loc")]
 #[macro_export]
 macro_rules! cvlr_log_core_file {
@@ -39,6 +118,10 @@ macro_rules! cvlr_log_core_file {
     };
 }
 
+/// Expands to the current source line, or `0u32` with feature `no-loc`.
+///
+/// Implementation detail of [`cvlr_log!`](macro@crate::cvlr_log); exported only
+/// so the macro can reach it from other crates.
 #[cfg(feature = "no-loc")]
 #[macro_export]
 macro_rules! cvlr_log_core_line {
@@ -47,6 +130,36 @@ macro_rules! cvlr_log_core_line {
     };
 }
 
+/// Logs values to the counterexample call trace. Also available as `clog!`.
+///
+/// Logging has no effect on what is verified; it records values so that a
+/// counterexample (a failed `cvlr_assert!` or a witness for `cvlr_satisfy!`)
+/// shows them at the point where they were logged.
+///
+/// # Forms
+///
+/// * `clog!(expr)` — logs the value of `expr`, tagged with the source text of
+///   `expr` (e.g. `clog!(vault.shares)` shows under `vault.shares`).
+/// * `clog!(expr => tag)` — logs the value under `tag`, a `&str` expression.
+/// * `clog!(a, b => "b", c, ...)` — any mix of the two, left to right, one
+///   trace entry per value; a trailing comma is allowed.
+/// * `clog!()` — logs the current source location (file and line).
+/// * `clog!(expr => tag; logger)` — logs through the [`CvlrLogger`] bound to
+///   the identifier `logger` (only this single-value form takes a logger).
+///
+/// Each value is borrowed, not moved, and must implement [`CvlrLog`]; see that
+/// trait for how each type is shown. Note that a `&str` value is shown as a
+/// message line and its tag is dropped, so `clog!("reached withdraw")` is the
+/// way to log a plain message.
+///
+/// ```ignore
+/// use cvlr::prelude::*;
+///
+/// let amount: u64 = nondet();
+/// clog!(amount);                    // under "amount"
+/// clog!(amount * 2 => "doubled");   // under "doubled"
+/// clog!("before transfer", amount, vault.balance);
+/// ```
 #[macro_export]
 macro_rules! cvlr_log {
     () => {
@@ -194,6 +307,13 @@ impl CvlrLog for cvlr_mathint::NativeInt {
 }
 
 /// Implements CvlrLog trait given a struct and a list of fields
+///
+/// `impl_cvlr_log_for_struct!(Type, field1, field2, ...)` logs each listed
+/// field under its name, inside a call-trace scope named by the tag, and
+/// ignores unlisted fields. Every listed field must implement [`CvlrLog`]; the
+/// fields must be accessible at the invocation site, and the usual orphan rule
+/// applies. Also exported as `impl_clog_for_struct!`. `#[derive(CvlrLog)]` is
+/// the alternative that logs every field.
 ///
 /// Example usage
 /// ```

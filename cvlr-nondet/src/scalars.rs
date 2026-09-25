@@ -58,6 +58,21 @@ use rt_decls::*;
 
 macro_rules! impl_checked_fn {
     ($name:ident, $c_name:ident, $ty:ident) => {
+        impl_checked_fn!(
+            $name,
+            $c_name,
+            $ty,
+            concat!(
+                "An arbitrary `",
+                stringify!($ty),
+                "` value; the same as `nondet::<",
+                stringify!($ty),
+                ">()`."
+            )
+        );
+    };
+    ($name:ident, $c_name:ident, $ty:ident, $doc:expr) => {
+        #[doc = $doc]
         #[inline(always)]
         pub fn $name() -> $ty {
             unsafe { $c_name() }
@@ -78,8 +93,30 @@ impl_checked_fn!(cvlr_nondet_i32, CVT_nondet_i32, i32);
 impl_checked_fn!(cvlr_nondet_i64, CVT_nondet_i64, i64);
 impl_checked_fn!(cvlr_nondet_i128, CVT_nondet_i128, i128);
 
-impl_checked_fn!(cvlr_nondet_small_u128, CVT_nondet_small_u128, u128);
-impl_checked_fn!(cvlr_nondet_small_i128, CVT_nondet_small_i128, i128);
+impl_checked_fn!(
+    cvlr_nondet_small_u128,
+    CVT_nondet_small_u128,
+    u128,
+    "Do not use: the Certora Prover does not model this function.
+
+The name suggests a value restricted to a small range, but no range is
+defined or enforced anywhere. The Prover does not recognize the underlying
+`CVT_nondet_small_u128` builtin, so the returned value is neither guaranteed to be
+arbitrary nor fresh. Use `nondet::<u128>()` instead, constrained with
+`cvlr_assume!` if a bound is needed. With the `rt` feature this returns `0`."
+);
+impl_checked_fn!(
+    cvlr_nondet_small_i128,
+    CVT_nondet_small_i128,
+    i128,
+    "Do not use: the Certora Prover does not model this function.
+
+The name suggests a value restricted to a small range, but no range is
+defined or enforced anywhere. The Prover does not recognize the underlying
+`CVT_nondet_small_i128` builtin, so the returned value is neither guaranteed to be
+arbitrary nor fresh. Use `nondet::<i128>()` instead, constrained with
+`cvlr_assume!` if a bound is needed. With the `rt` feature this returns `0`."
+);
 
 crate::nondet_impl! { (), (),  "No nondet value for  unit" }
 crate::nondet_impl! { bool, cvlr_nondet_u64() > 0, "Nondet for bool"}

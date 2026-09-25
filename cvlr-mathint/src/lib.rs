@@ -3,7 +3,8 @@
 /// ! Mathematical Integers
 ///
 /// This crate provides various representations of integers that behave like
-/// mathematical integers that do not overflow. ///
+/// mathematical integers that do not overflow at machine-word widths (they are
+/// 256 bits wide; see [NativeInt] for the exact semantics).
 ///
 /// [NativeInt] is a native symbolic integer of the Certora Prover. Typically,
 /// this is a 256 bit integer.
