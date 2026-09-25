@@ -1,3 +1,7 @@
+//! The [`macro@early_panic`] attribute, which turns error returns into panics
+//! so that rules consider only the success paths of a function. Use it
+//! through the `cvlr` prelude.
+
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::visit_mut::{self, VisitMut};

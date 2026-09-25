@@ -55,6 +55,7 @@ use crate::formula::CvlrFormula;
 /// spec.assume_requires(&ctx);
 /// ```
 pub trait CvlrSpec {
+    /// The type of state the spec's clauses are evaluated on.
     type Context;
     /// Assumes that the preconditions (requires) hold for the given pre-state.
     ///
@@ -308,6 +309,9 @@ where
 /// the ensures, so the Prover does not have to rediscover the fact. Both
 /// formulas are single-state formulas over one context.
 pub trait CvlrLemma {
+    /// The type of state the lemma is about; [`verify`](CvlrLemma::verify)
+    /// draws an arbitrary one, so it must be `Nondet`, and logs it, so it must
+    /// be `CvlrLog`.
     type Context: cvlr_nondet::Nondet + cvlr_log::CvlrLog;
 
     /// Returns a boolean expression representing the preconditions (requires) of the lemma.

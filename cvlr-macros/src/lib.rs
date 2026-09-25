@@ -1,3 +1,10 @@
+//! Procedural macros for CVLR: [`macro@rule`], [`macro@mock_fn`],
+//! [`macro@cvlr_predicate`], the condition DSL ([`cvlr_assert_that!`],
+//! [`cvlr_assert_all!`], [`cvlr_assume_that!`], [`cvlr_assume_all!`],
+//! [`cvlr_eval_that!`], [`cvlr_eval_all!`]), [`cvlr_rule_for_spec!`] and
+//! [`cvlr_pif!`]. Use them through the `cvlr` crate, whose paths the
+//! expansions refer to.
+
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, parse_quote, Ident, ItemFn};

@@ -1,3 +1,5 @@
+/// Declarations of the Prover's call-trace builtins, which the functions of
+/// this crate wrap. Their items are also exported at the crate root.
 pub mod rt_decls {
     #[cfg_attr(
         all(target_family = "wasm", target_os = "none"),

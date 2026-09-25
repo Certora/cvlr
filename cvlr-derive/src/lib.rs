@@ -1,3 +1,8 @@
+//! Derive macros for CVLR: [`macro@Nondet`] makes a struct or enum
+//! nondeterministic and [`macro@CvlrLog`] makes it loggable. Use them through
+//! `cvlr::derive` or the `cvlr` prelude; the generated code refers to the
+//! `cvlr` crate.
+
 use {
     proc_macro::TokenStream,
     proc_macro2::Span,

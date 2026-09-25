@@ -60,6 +60,7 @@ use cvlr_asserts::{cvlr_assert, cvlr_assume};
 /// }
 /// ```
 pub trait CvlrFormula {
+    /// The type of state the formula is evaluated on.
     type Context;
 
     /// Evaluates the expression in the given context.

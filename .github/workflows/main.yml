@@ -28,6 +28,11 @@ jobs:
       - name: Run Clippy
         if: success() || failure()
         run: cargo clippy -- --deny warnings
+      - name: Check documentation
+        if: success() || failure()
+        run: cargo doc --no-deps --workspace --all-features
+        env:
+          RUSTDOCFLAGS: "-D warnings -D missing_docs"
 
   testing:
     strategy:

@@ -1,3 +1,8 @@
+//! Attributes that insert a call at the start
+//! ([`macro@cvlr_hook_on_entry`]) or end ([`macro@cvlr_hook_on_exit`]) of a
+//! function, for running spec code inside the code under verification. Use
+//! them through the `cvlr` prelude.
+
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, punctuated::Punctuated, ItemFn, Meta, Token};

@@ -48,44 +48,79 @@
 //! * `no-loc` — replaces recorded source locations with placeholders, for
 //!   stable macro-expansion snapshots.
 
+/// `u128` comparison and ceiling division through Prover builtins that
+/// current Prover releases no longer recognize; use the ordinary operators.
 pub mod u128_arith;
 
+/// Assertions, assumptions and reachability checks: `cvlr_assert!`,
+/// `cvlr_assume!`, `cvlr_satisfy!` and their comparison forms
+/// (`cvlr_assert_eq!`, `cvlr_assume_le!`, `cvlr_assert_lt_if!`, ...).
+/// Re-exports [`cvlr_asserts`](mod@cvlr_asserts).
 pub mod asserts {
     pub use cvlr_asserts::*;
 }
 
+/// `NativeInt`, the Prover's 256-bit integer, for exact arithmetic in specs,
+/// and the `is_u*` range checks. Re-exports [`cvlr_mathint`](mod@cvlr_mathint).
 pub mod mathint {
     pub use cvlr_mathint::*;
 }
 
+/// Nondeterministic values: `nondet()`, `nondet_with`, `nondet_option`, the
+/// `Nondet` trait, and heap allocation with arbitrary contents (`havoc`).
+/// Re-exports [`cvlr_nondet`](mod@cvlr_nondet).
 pub mod nondet {
     pub use cvlr_nondet::*;
 }
 
+/// Logging to the counterexample call trace: `clog!` / `cvlr_log!`, the
+/// `CvlrLog` trait and `CvlrLogger`. Re-exports [`cvlr_log`](mod@cvlr_log).
 pub mod log {
     pub use cvlr_log::*;
 }
 
+/// Procedural macros: `#[rule]`, `#[mock_fn]`, `#[cvlr_predicate]`, the
+/// condition DSL (`cvlr_assert_that!`, `cvlr_assert_all!`, `cvlr_assume_that!`,
+/// `cvlr_eval_that!`, ...) and `cvlr_rule_for_spec!`. Re-exports
+/// [`cvlr_macros`](mod@cvlr_macros).
 pub mod macros {
     pub use cvlr_macros::*;
 }
 
+/// `#[derive(Nondet)]` and `#[derive(CvlrLog)]`. Re-exports
+/// [`cvlr_derive`](mod@cvlr_derive).
 pub mod derive {
     pub use cvlr_derive::*;
 }
 
+/// Reusable specifications: formulas and predicates (`CvlrFormula`,
+/// `cvlr_def_predicate!`, `cvlr_and!`, `cvlr_implies!`), pre/postcondition
+/// specs (`cvlr_spec!`, `cvlr_invar_spec!`), rule generation (`cvlr_rules!`)
+/// and lemmas (`cvlr_lemma!`). Re-exports [`cvlr_spec`](mod@cvlr_spec).
 pub mod spec {
     pub use cvlr_spec::*;
 }
 
+/// Binary fixed-point numbers backed by `NativeInt`: `NativeFixedU64` and
+/// `NativeFixedU128`. Re-exports [`cvlr_fixed`](mod@cvlr_fixed).
 pub mod fixed {
     pub use cvlr_fixed::*;
 }
 
+/// Decimal numbers with a fixed number of fractional digits, backed by
+/// `NativeInt`: `NativeDecimal`. Re-exports [`cvlr_decimal`](mod@cvlr_decimal).
 pub mod decimal {
     pub use cvlr_decimal::*;
 }
 
+/// Everything commonly needed in a spec: `use cvlr::prelude::*;`.
+///
+/// Contains all of [`asserts`] and [`spec`]; `clog!`; `nondet` (also as
+/// `cvlr_nondet`); the attributes `rule` (also `cvlr_rule`), `mock_fn`,
+/// `early_panic` (also `cvlr_early_panic`), `hook_on_entry` and
+/// `hook_on_exit` (also `cvlr_hook_on_entry` / `cvlr_hook_on_exit`); the
+/// condition DSL macros; and the `Nondet` and `CvlrLog` derives. The crate
+/// root re-exports the prelude, so `use cvlr::*;` works as well.
 pub mod prelude {
     pub use super::asserts::*;
 
