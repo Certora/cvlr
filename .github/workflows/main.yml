@@ -47,6 +47,6 @@ jobs:
         with:
           toolchain: stable
       - name: Install cargo-expand
-        run: cargo install cargo-expand
+        run: cargo install cargo-expand --version 1.0.126 --locked
       - name: Run cargo test
         run: cargo test --verbose
