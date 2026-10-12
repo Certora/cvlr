@@ -2,7 +2,7 @@
 
 /// Defines a predicate (boolean expression) over a context type.
 ///
-/// This macro creates a new type implementing [`CvlrFormula`] for the specified context.
+/// This macro creates a new type implementing [`CvlrFormula`](crate::CvlrFormula) for the specified context.
 /// The predicate body consists of one or more expressions that are evaluated, asserted,
 /// or assumed together.
 ///
@@ -22,8 +22,25 @@
 ///
 /// * `name` - The name of the predicate type to create
 /// * `context_var` - The variable name to use for the context in the predicate body
-/// * `context_type` - The type of the context
+/// * `context_type` - The type of the context. It must be a single identifier
+///   (no path or generic arguments); bring the type into scope with `use` or a
+///   type alias first.
 /// * `expressions` - One or more expressions that form the predicate body
+///
+/// The generated unit struct is private to the enclosing module. In the body,
+/// `context_var` is a `&context_type`.
+///
+/// # Body
+///
+/// Each expression is a condition in the DSL of
+/// [`cvlr_assert_that!`](crate::__macro_support::cvlr_assert_that): a
+/// comparison (`a <= b`), any other `bool` expression, or a guarded condition
+/// `if guard { cond } else { cond2 }`. `assert` checks each condition as a
+/// separate assertion (comparisons with the logging `cvlr_assert_<op>!`
+/// macros, so a counterexample shows both operands), `assume` assumes each one,
+/// and `eval` is their conjunction. Because `eval` needs every condition to be
+/// a `bool`, a guarded condition must have an `else` branch; write
+/// `if guard { cond } else { true }` for an implication.
 ///
 /// # Examples
 ///
@@ -78,7 +95,7 @@ macro_rules! cvlr_def_predicate {
 
 /// Defines a predicate that evaluates over two states.
 ///
-/// This macro creates a new type implementing [`CvlrFormula`] with `Context = Ctx`.
+/// This macro creates a new type implementing [`CvlrFormula`](crate::CvlrFormula) with `Context = Ctx`.
 /// The predicate uses [`eval_with_states`](crate::CvlrFormula::eval_with_states) to evaluate
 /// over both the current/post-state (`c`) and the old/pre-state (`o`),
 /// allowing you to express postconditions that compare pre-state and post-state.
@@ -100,8 +117,16 @@ macro_rules! cvlr_def_predicate {
 /// * `name` - The name of the predicate type to create
 /// * `current_var` - The variable name for the current/post-state context
 /// * `old_var` - The variable name for the old/pre-state context
-/// * `context_type` - The type of the context
+/// * `context_type` - The type of the context. It must be a single identifier
+///   (no path or generic arguments).
 /// * `expressions` - One or more expressions that form the predicate body
+///
+/// The generated unit struct is private to the enclosing module. The body
+/// follows the same rules as [`cvlr_def_predicate!`]. The predicate is
+/// two-state: use it only as an ensures clause (see
+/// [`CvlrFormula`](crate::CvlrFormula#single-state-and-two-state-formulas)). Its
+/// single-state methods fail the rule with `cvlr_assert!(false)`, so using it
+/// as a requires clause or invariant makes every such rule fail.
 ///
 /// # Examples
 ///
@@ -278,8 +303,16 @@ macro_rules! cvlr_def_states_predicates {
 /// # Parameters
 ///
 /// * `context_var` - The variable name to use for the context in the predicate body
-/// * `context_type` - The type of the context
-/// * `expressions` - One or more expressions that form the predicate body
+/// * `context_type` - The type of the context. It must be a single identifier
+///   (no path or generic arguments).
+/// * `expressions` - One or more expressions that form the predicate body.
+///   `let` statements are also allowed; they are evaluated before the
+///   conditions.
+///
+/// The body follows the same rules as [`cvlr_def_predicate!`]. The predicate
+/// is an expression and does not capture variables from the surrounding scope;
+/// it can only refer to its context variable (and items such as constants and
+/// functions).
 ///
 /// # Returns
 ///
@@ -309,7 +342,7 @@ macro_rules! cvlr_def_states_predicates {
 /// Note: This example is marked `ignore` because it doesn't require special setup.
 /// In actual usage, predicates are often used within lemmas or other verification contexts.
 ///
-/// This macro is often used internally by [`cvlr_lemma!`] to create the requires
+/// This macro is often used internally by [`cvlr_lemma!`](crate::cvlr_lemma) to create the requires
 /// and ensures predicates.
 #[macro_export]
 macro_rules! cvlr_predicate {
@@ -326,10 +359,10 @@ macro_rules! cvlr_predicate {
 
 /// Defines a lemma with preconditions (requires) and postconditions (ensures).
 ///
-/// This macro creates a new type implementing [`CvlrLemma`](spec::CvlrLemma) for the specified context.
+/// This macro creates a new type implementing [`CvlrLemma`](crate::spec::CvlrLemma) for the specified context.
 /// A lemma is a logical statement: if the preconditions hold, then the postconditions
-/// must also hold. Lemmas can be verified using the [`verify`](spec::CvlrLemma::verify) or
-/// [`verify_with_context`](spec::CvlrLemma::verify_with_context) methods.
+/// must also hold. Lemmas can be verified using the [`verify`](crate::spec::CvlrLemma::verify) or
+/// [`verify_with_context`](crate::spec::CvlrLemma::verify_with_context) methods.
 ///
 /// # Syntax
 ///
@@ -378,9 +411,15 @@ macro_rules! cvlr_predicate {
 /// * `requires` - A single expression (predicate, identifier, or composed expression) that forms the preconditions
 /// * `ensures` - A single expression (predicate, identifier, or composed expression) that forms the postconditions
 ///
+/// In both forms, `context_type` must be a single identifier, and the lemma
+/// struct is `pub`. In form 2, `requires` and `ensures` become the bodies of
+/// the generated `requires()` / `ensures()` methods, so they cannot refer to
+/// local variables; use predicate type names, `cvlr_predicate! { ... }`, or
+/// combinations of those.
+///
 /// # Returns
 ///
-/// Creates a struct with the given name that implements [`CvlrLemma`](spec::CvlrLemma) with `Context = Ctx`.
+/// Creates a struct with the given name that implements [`CvlrLemma`](crate::spec::CvlrLemma) with `Context = Ctx`.
 ///
 /// # Examples
 ///
@@ -449,15 +488,14 @@ macro_rules! cvlr_predicate {
 ///     value: i32,
 /// }
 ///
-/// // Define predicates separately
-/// let positive_pred = cvlr_predicate! { | c : Counter | -> { c.value > 0 } };
-/// let bounded_pred = cvlr_predicate! { | c : Counter | -> { c.value < 100 } };
-///
-/// // Use them in a lemma with the expression syntax
+/// // Use inline predicates in a lemma with the expression syntax
 /// cvlr_lemma! {
 ///     CounterBoundedLemma for Counter {
-///         requires: cvlr_and!(positive_pred, bounded_pred),
-///         ensures: positive_pred,
+///         requires: cvlr_and!(
+///             cvlr_predicate! { | c : Counter | -> { c.value > 0 } },
+///             cvlr_predicate! { | c : Counter | -> { c.value < 100 } }
+///         ),
+///         ensures: cvlr_predicate! { | c : Counter | -> { c.value > 0 } },
 ///     }
 /// }
 ///
@@ -542,6 +580,40 @@ macro_rules! cvlr_lemma {
 /// * `spec` - An expression representing the specification (must implement [`CvlrSpec`](crate::spec::CvlrSpec))
 /// * `bases` - A list of function identifiers (if they start with `base_`, that prefix is stripped)
 ///
+/// # Providing `cvlr_impl_rule!`
+///
+/// CVLR does not define the rules itself. Each generated call is
+/// `cvlr_impl_rule!{rule_name, spec, base}`, resolved at the invocation site,
+/// so the calling crate must define or import a macro of that name. It
+/// receives the rule's identifier, the spec expression and the base function,
+/// and typically expands to a `#[rule]` function that sets up the inputs and
+/// calls the base function with the spec:
+///
+/// ```ignore
+/// macro_rules! cvlr_impl_rule {
+///     ($rule_name:ident, $spec:expr, $base:ident) => {
+///         #[cvlr::rule]
+///         pub fn $rule_name() {
+///             let accounts = cvlr_deserialize_nondet_accounts();
+///             $base(&accounts, $spec);
+///         }
+///     };
+/// }
+/// ```
+///
+/// where each base function assumes `spec`'s requires, runs one operation, and
+/// checks its ensures (see [`CvlrSpec`](crate::spec::CvlrSpec)). The spec
+/// expression is pasted into each generated rule, so it must not refer to
+/// local variables.
+///
+/// # Rule names
+///
+/// A rule's name is `<name>_<base>`: `name` is lowercased, every character
+/// other than a letter, digit or `_` becomes `_`, and runs of `_` are
+/// collapsed; a leading `base_` is removed from `base`. For example
+/// `name: "Solvency Check"` with `base_withdraw` gives
+/// `solvency_check_withdraw`.
+///
 /// # Expansion
 ///
 /// This macro expands to multiple calls to `cvlr_rule_for_spec!`, one for each base function:
@@ -568,16 +640,13 @@ macro_rules! cvlr_lemma {
 ///     value: i32,
 /// }
 ///
-/// // Create a spec
-/// let my_spec = cvlr_spec! {
-///     requires: cvlr_predicate! { | c : Counter | -> { c.value > 0 } },
-///     ensures: cvlr_predicate! { | c : Counter | -> { c.value >= 0 } }
-/// };
-///
 /// // Define rules for multiple functions
 /// cvlr_rules! {
 ///     name: "solvency",
-///     spec: my_spec,
+///     spec: cvlr_spec! {
+///         requires: cvlr_predicate! { | c : Counter | -> { c.value > 0 } },
+///         ensures: cvlr_predicate! { | c : Counter | -> { c.value >= 0 } }
+///     },
 ///     bases: [
 ///         base_update_counter,
 ///         base_reset_counter,
@@ -732,7 +801,7 @@ macro_rules! cvlr_invar_spec {
 
 /// Defines multiple rules for an invariant specification across multiple base functions.
 ///
-/// This macro is a convenience macro that combines [`cvlr_invar_spec!`] and [`cvlr_rules!`]
+/// This macro is a convenience macro that combines [`cvlr_invar_spec!`](crate::cvlr_invar_spec!) and [`cvlr_rules!`](crate::cvlr_rules)
 /// to create multiple rules with an invariant specification. It generates multiple rule definitions
 /// by creating an invariant spec from the assumption and invariant, then applying it to each
 /// base function in the list.
@@ -766,6 +835,11 @@ macro_rules! cvlr_invar_spec {
 ///   If omitted, [`cvlr_true`](crate::cvlr_true) is used for the same context as `invariant`.
 /// * `invariant` - A boolean expression representing an invariant that must hold before and after
 /// * `bases` - A list of function identifiers (if they start with `base_`, that prefix is stripped)
+///
+/// As with [`cvlr_rules!`], the calling crate must provide a
+/// `cvlr_impl_rule!` macro that turns each (rule name, spec, base) triple into
+/// a rule; see [`cvlr_rules!`](crate::cvlr_rules#providing-cvlr_impl_rule) for
+/// its contract and how rule names are formed.
 ///
 /// # Expansion
 ///
@@ -842,7 +916,7 @@ macro_rules! cvlr_invariant_rules {
 
 /// Creates a boolean expression representing the logical AND of two or more expressions.
 ///
-/// This macro is a convenience wrapper around [`cvlr_and`](crate::cvlr_and) that
+/// This macro is a convenience wrapper around [`cvlr_and`](fn@crate::cvlr_and) that
 /// provides flexible syntax for combining boolean expressions. It supports both identifiers
 /// and expressions as arguments, and can combine 2 to 6 expressions.
 ///
@@ -941,7 +1015,7 @@ macro_rules! cvlr_and {
 
 /// Creates a boolean expression representing the logical AND of two or more predicate functions.
 ///
-/// This macro is similar to [`cvlr_and!`], but it automatically converts predicate function names
+/// This macro is similar to [`cvlr_and!`](crate::cvlr_and!), but it automatically converts predicate function names
 /// (snake_case) to their corresponding struct names (PascalCase) using [`cvlr_pif!`](crate::__macro_support::cvlr_pif)
 /// before combining them. This is useful when working with predicates defined using the
 /// [`#[cvlr::predicate]`](crate::__macro_support::cvlr_predicate) attribute macro.
@@ -1089,7 +1163,7 @@ macro_rules! cvlr_pif_and {
 
 /// Creates a boolean expression representing logical implication (A → B).
 ///
-/// This macro is a convenience wrapper around [`cvlr_implies`](crate::cvlr_implies) that
+/// This macro is a convenience wrapper around [`cvlr_implies`](fn@crate::cvlr_implies) that
 /// provides flexible syntax for creating implications. It supports both identifiers and expressions
 /// as arguments.
 ///

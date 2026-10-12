@@ -2,26 +2,87 @@ use cvlr_log::{CvlrLog, CvlrLogger};
 use cvlr_mathint::NativeInt;
 use cvlr_nondet::{nondet, Nondet};
 
+/// A decimal number with `D` fractional digits, stored as a scaled
+/// [`NativeInt`].
+///
+/// The value represented is `raw / 10^D`, where `raw` is the wrapped
+/// [`NativeInt`] (see [`as_int`](Self::as_int)). This mirrors the common
+/// on-chain convention of storing token amounts as integers with a fixed number
+/// of decimals (e.g. `NativeDecimal<9>` for lamports as SOL, `NativeDecimal<6>`
+/// for USDC).
+///
+/// `D` affects only how the value is displayed in a counterexample; it does not
+/// change any arithmetic. Every constructor and operator works on `raw` and
+/// never multiplies or divides by `10^D`:
+///
+/// * [`new`](Self::new), [`as_decimal`](Self::as_decimal) and
+///   [`AsDecimal::as_decimal`] take the *raw* integer: with `D = 2`,
+///   `NativeDecimal::<2>::new(150.into())` is `1.50`, not `150.00`.
+/// * `a + b` for two decimals adds the raw values, which is the correct sum
+///   since both share `D`.
+/// * `a + n` and `n + a` with an integer `n` add `n` to the raw value, i.e. add
+///   `n * 10^-D`, not `n`.
+/// * `a * n` and `n * a` with an integer `n` multiply the raw value by `n`,
+///   which is the correct product.
+/// * There is no subtraction, division, or decimal-by-decimal multiplication.
+///   Use [`Deref`](core::ops::Deref) (`*a`) or [`as_int`](Self::as_int) to get
+///   the raw [`NativeInt`] and compute with its operations, then wrap the
+///   result with [`new`](Self::new).
+/// * `==`, `<`, `<=`, `>`, `>=` compare raw values, which is correct for equal
+///   `D`.
+///
+/// Arithmetic is [`NativeInt`] arithmetic: 256-bit, so it does not overflow
+/// for values in the range of on-chain integer types, but it wraps modulo
+/// `2^256` rather than failing.
+///
+/// [`Nondet`] produces an arbitrary [`NativeInt`] raw value.
+///
+/// [`CvlrLog`] shows the value in the counterexample as a decimal with `D`
+/// fractional digits. Logging converts the raw value to `u64` and therefore
+/// adds the assumption that it fits in a `u64`; do not log a value that may
+/// legitimately exceed `u64::MAX`, or executions where it does are dropped from
+/// the analysis.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct NativeDecimal<const D: u32> {
     val: NativeInt,
 }
 
 impl<const D: u32> NativeDecimal<D> {
+    /// The decimal whose raw (scaled) value is `val`, i.e. `val / 10^D`.
     pub fn new(val: NativeInt) -> Self {
         Self { val }
     }
 
+    /// The raw (scaled) value, i.e. `self * 10^D`.
     pub fn as_int(&self) -> NativeInt {
         self.val
     }
 
+    /// The decimal whose raw (scaled) value is `v`; the same as
+    /// [`new`](Self::new)`(v.into())`.
+    ///
+    /// `v` is not multiplied by `10^D`.
     pub fn as_decimal<T: Into<NativeInt>>(v: T) -> Self {
         Self::new(v.into())
     }
 }
 
+/// Reinterpret an integer as the raw (scaled) value of a [`NativeDecimal`].
+///
+/// Implemented for every `Copy` type that converts into [`NativeInt`], such as
+/// `u8`, `u16`, `u32`, `u64`, `u128`, `i32` and [`NativeInt`] itself. `D` is
+/// usually inferred from the expected type:
+///
+/// ```
+/// use cvlr_decimal::{AsDecimal, NativeDecimal};
+///
+/// let lamports: u64 = 1_500_000_000;
+/// let sol: NativeDecimal<9> = lamports.as_decimal(); // 1.5
+/// assert_eq!(sol.as_int(), lamports);
+/// ```
 pub trait AsDecimal<const D: u32> {
+    /// `NativeDecimal::<D>::as_decimal(*self)`: `self` is taken as the raw
+    /// value, not multiplied by `10^D`.
     fn as_decimal(&self) -> NativeDecimal<D>;
 }
 

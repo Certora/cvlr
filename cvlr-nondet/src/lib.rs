@@ -1,4 +1,12 @@
 #![no_std]
+//! Nondeterministic values for the Certora Prover.
+//!
+//! A nondeterministic value is one the Prover chooses freely, so a rule is
+//! checked for every possible choice. Draw one with [`nondet()`], constrain it
+//! with [`nondet_with`] or `cvlr_assume!`, and make your own types
+//! nondeterministic by implementing [`Nondet`] or deriving it with
+//! `#[derive(Nondet)]`. With the `std` feature (on by default), [`havoc`]
+//! allocates objects with arbitrary contents.
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -7,6 +15,8 @@ mod core;
 mod option;
 mod scalars;
 
+/// Heap objects with arbitrary contents, for types without a
+/// [`Nondet`] implementation.
 #[cfg(feature = "std")]
 pub mod havoc;
 

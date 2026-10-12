@@ -28,6 +28,11 @@ jobs:
       - name: Run Clippy
         if: success() || failure()
         run: cargo clippy -- --deny warnings
+      - name: Check documentation
+        if: success() || failure()
+        run: cargo doc --no-deps --workspace --all-features
+        env:
+          RUSTDOCFLAGS: "-D warnings -D missing_docs"
 
   testing:
     strategy:
@@ -42,6 +47,6 @@ jobs:
         with:
           toolchain: stable
       - name: Install cargo-expand
-        run: cargo install cargo-expand
+        run: cargo install cargo-expand --version 1.0.126 --locked
       - name: Run cargo test
         run: cargo test --verbose

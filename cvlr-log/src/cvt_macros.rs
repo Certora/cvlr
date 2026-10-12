@@ -1,5 +1,8 @@
 #![deprecated = "Replaced by cvlr::clog!"]
 
+/// Deprecated: use `clog!("message")`.
+///
+/// Intended to log the source text of `tag` as a message line.
 #[macro_export]
 macro_rules! cvt_cex_print_tag {
     ($tag: expr) => {
@@ -7,6 +10,11 @@ macro_rules! cvt_cex_print_tag {
     };
 }
 
+/// Deprecated: use `clog!`.
+///
+/// `cvt_cex_print_u64!(tag, v1, v2, ...)` logs the values, each cast with
+/// `as u64`, under the source text of `tag`, as consecutive entries of up to
+/// three values each.
 #[macro_export]
 macro_rules! cvt_cex_print_u64 {
     ($tag: expr $(,)?) => {};
@@ -25,6 +33,11 @@ macro_rules! cvt_cex_print_u64 {
     };
 }
 
+/// Deprecated: use `clog!`.
+///
+/// `cvt_cex_print_i64!(tag, v1, v2, ...)` logs the values, each cast with
+/// `as i64`, under the source text of `tag`, as consecutive entries of up to
+/// three values each.
 #[macro_export]
 macro_rules! cvt_cex_print_i64 {
     ($tag: expr $(,)?) => {};

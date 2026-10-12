@@ -3,6 +3,63 @@
 ///
 /// The magic is that symbolically an SBF word is mapped to 256 bit symbolic
 /// integer.
+///
+/// Exported as `NativeInt`, the name specs normally use.
+///
+/// # Semantics under the Prover
+///
+/// A `NativeInt` is an unsigned 256-bit integer. Every operation on it is
+/// interpreted by the Certora Prover directly rather than compiled to
+/// machine arithmetic, so values from any on-chain integer type (`u64`,
+/// `u128`, and products or sums of them) are represented exactly: `a * b` for
+/// two `u128` amounts neither overflows nor loses precision. This makes it the
+/// type to use for writing the mathematical intent of a computation (e.g.
+/// `shares * total_assets / total_shares`) and comparing it with what the code
+/// computes.
+///
+/// It is not unbounded: `+`, `-` and `*` wrap modulo `2^256`, and none of them
+/// ever fails or adds an assumption. In particular `a - b` with `a < b` does
+/// not underflow into an error; it produces `2^256 - (b - a)`. Guard
+/// subtractions (e.g. `if a >= b { a - b } else { ... }`) where the difference
+/// may be negative, or treat the result as signed (below).
+///
+/// Division (`/`, [`div_ceil`](Self::div_ceil), [`muldiv`](Self::muldiv),
+/// [`muldiv_ceil`](Self::muldiv_ceil)) by zero yields `0`.
+///
+/// ## Signed values
+///
+/// The same 256 bits can be read as a two's-complement signed integer. `-x`
+/// ([`Neg`](core::ops::Neg)), `From<i32>` and [`sext`](Self::sext) produce
+/// negative values in that encoding, `+`, `-` and `*` are correct for it, and
+/// [`slt`](Self::slt), [`sle`](Self::sle), [`sgt`](Self::sgt) and
+/// [`sge`](Self::sge) compare signed. The ordinary comparison operators and
+/// `/` are always unsigned, so a negative value compares greater than every
+/// non-negative one.
+///
+/// ## Conversions
+///
+/// * Into `NativeInt` (exact): `From` `u8`, `u16`, `u32`, `u64`, `u128`, `i32`,
+///   `&[u64; 2]` and `&[u64; 4]` (least significant word first), `&[u8; 32]`
+///   and `&[u8]` of length 32 (little-endian). The operators `+`, `*`, `/`,
+///   `==` and the comparisons also accept `u8`, `u16`, `u32`, `u64`, `u128` and
+///   `i32` directly on the right-hand side (`x + 1u64`, `x <= 100u64`); `-`
+///   requires a `NativeInt` on both sides.
+/// * Out of `NativeInt`: `u64::from(x)` and `u128::from(x)` (or `.into()`)
+///   *assume* the value fits in the target type (via `cvlr_assume!`), so
+///   executions where it does not are dropped from the analysis. Check the
+///   range with [`is_u64`](Self::is_u64) / [`is_u128`](Self::is_u128) first if
+///   it is not guaranteed.
+///
+/// [`Nondet`](cvlr_nondet::Nondet) produces any value in `[0, 2^256)`, and
+/// `CvlrLog` shows the full value in the counterexample.
+///
+/// # Run-time implementation
+///
+/// With the `rt` feature the operations execute natively on the `u64` for
+/// testing. That under-approximates the Prover semantics: it panics on `u64`
+/// overflow and underflow, and some operations
+/// ([`u128_max`](Self::u128_max), [`u256_max`](Self::u256_max)) are not
+/// supported at all.
 pub struct NativeIntU64(u64);
 
 /// Declaration for external library for mathematical integers
@@ -198,6 +255,10 @@ mod rt_impls {
 use rt_decls::*;
 
 impl NativeIntU64 {
+    /// Converts `v` to a `NativeInt`; the same as `NativeInt::from(v)`.
+    ///
+    /// Accepts any type with a `From` conversion into `NativeInt` (see the type
+    /// documentation), e.g. `NativeInt::new(amount)` for `amount: u64`.
     pub fn new<T>(v: T) -> Self
     where
         T: Into<NativeIntU64>,
@@ -205,101 +266,201 @@ impl NativeIntU64 {
         v.into()
     }
 
+    /// `self / rhs` rounded up (unsigned).
+    ///
+    /// Computed as `(self + rhs - 1) / rhs`, so it returns `0` if `rhs` is
+    /// zero, and wraps if `self + rhs - 1` exceeds `2^256`.
     pub fn div_ceil(self, rhs: Self) -> Self {
         unsafe { Self(CVT_nativeint_u64_div_ceil(self.0, rhs.0)) }
     }
 
+    /// `self * num / den`, rounded down (unsigned).
+    ///
+    /// Returns `0` if `den` is zero. The product is 256 bits, so it is exact
+    /// for operands that come from 128-bit or smaller integers; above `2^256`
+    /// it wraps before the division.
     pub fn muldiv(self, num: Self, den: Self) -> Self {
         unsafe { Self(CVT_nativeint_u64_muldiv(self.0, num.0, den.0)) }
     }
 
+    /// `self * num / den`, rounded up (unsigned).
+    ///
+    /// Returns `0` if `den` is zero; the same range caveat as
+    /// [`muldiv`](Self::muldiv) applies.
     pub fn muldiv_ceil(self, num: Self, den: Self) -> Self {
         unsafe { Self(CVT_nativeint_u64_muldiv_ceil(self.0, num.0, den.0)) }
     }
 
+    /// The integer `w1 * 2^64 + w0`: `w0` is the low 64 bits, `w1` the high 64
+    /// bits.
+    ///
+    /// This is what `From<u128>` uses. Use it when a `u128` is available as
+    /// two words (e.g. a `[u64; 2]` field in account data).
     pub fn from_u128(w0: u64, w1: u64) -> Self {
         unsafe { Self(CVT_nativeint_u64_from_u128(w0, w1)) }
     }
 
+    /// Converts to `u128`, *assuming* the value fits.
+    ///
+    /// Adds the assumption `self.is_u128()` (via `cvlr_assume!`), so executions
+    /// where the value is `2^128` or more are dropped from the analysis. The
+    /// same as `u128::from(self)`.
     pub fn into_u128(self) -> u128 {
         cvlr_asserts::cvlr_assume!(self.is_u128());
         unsafe { CVT_nativeint_u64_into_u128(self.0) }
     }
 
+    /// The integer `w3 * 2^192 + w2 * 2^128 + w1 * 2^64 + w0`, least
+    /// significant word first.
+    ///
+    /// This is what `From<&[u64; 4]>` and `From<&[u8; 32]>` use.
     pub fn from_u256(w0: u64, w1: u64, w2: u64, w3: u64) -> Self {
         unsafe { Self(CVT_nativeint_u64_from_u256(w0, w1, w2, w3)) }
     }
 
+    /// `u64::MAX` (`2^64 - 1`) as a `NativeInt`.
+    ///
+    /// Use it to state that a mathematically computed value fits in a `u64`
+    /// (`x <= NativeInt::u64_max()`, or equivalently [`is_u64`](Self::is_u64)),
+    /// e.g. to check that a `u64` computation in the code cannot overflow.
     pub fn u64_max() -> Self {
         unsafe { Self(CVT_nativeint_u64_u64_max()) }
     }
 
+    /// `u128::MAX` (`2^128 - 1`) as a `NativeInt`.
+    ///
+    /// Not supported by the `rt` run-time implementation (panics).
     pub fn u128_max() -> Self {
         unsafe { Self(CVT_nativeint_u64_u128_max()) }
     }
 
+    /// `2^256 - 1`, the largest `NativeInt`.
+    ///
+    /// Not supported by the `rt` run-time implementation (panics).
     pub fn u256_max() -> Self {
         unsafe { Self(CVT_nativeint_u64_u256_max()) }
     }
 
+    /// Whether the value fits in a `u8`, i.e. `self <= u8::MAX` (unsigned).
+    ///
+    /// Use it in an assertion to check that a mathematically computed value
+    /// cannot overflow a `u8`, or before converting to a narrower type.
     pub fn is_u8(self) -> bool {
         self <= Self::new(u8::MAX as u64)
     }
 
+    /// Whether the value fits in a `u16`, i.e. `self <= u16::MAX` (unsigned).
+    ///
+    /// Use it in an assertion to check that a mathematically computed value
+    /// cannot overflow a `u16`, or before converting to a narrower type.
     pub fn is_u16(self) -> bool {
         self <= Self::new(u16::MAX as u64)
     }
 
+    /// Whether the value fits in a `u32`, i.e. `self <= u32::MAX` (unsigned).
+    ///
+    /// Use it in an assertion to check that a mathematically computed value
+    /// cannot overflow a `u32`, or before converting to a narrower type.
     pub fn is_u32(self) -> bool {
         self <= Self::new(u32::MAX as u64)
     }
 
+    /// Whether the value fits in a `u64`, i.e. `self <= u64::MAX` (unsigned).
+    ///
+    /// Use it in an assertion to check that a mathematically computed value
+    /// cannot overflow a `u64`, or before converting to a narrower type.
     pub fn is_u64(self) -> bool {
         self <= Self::u64_max()
     }
 
+    /// Whether the value fits in a `u128`, i.e. `self <= u128::MAX` (unsigned).
+    ///
+    /// Use it in an assertion to check that a mathematically computed value
+    /// cannot overflow a `u128`, or before converting to a narrower type.
     pub fn is_u128(self) -> bool {
         self <= Self::u128_max()
     }
 
+    /// Always `true`: every `NativeInt` fits in 256 bits.
     pub fn is_u256(self) -> bool {
         // native ints are 256 bits
         true
     }
 
+    /// An arbitrary value in `[0, 2^256)`; the same as `nondet::<NativeInt>()`.
+    ///
+    /// Constrain it with `cvlr_assume!` (e.g. `x.is_u64()`) to model a value of
+    /// a narrower type, or draw a `u64`/`u128` with `nondet()` and convert it.
     pub fn nondet() -> Self {
         cvlr_nondet::nondet()
     }
 
+    /// `self - v`; exactly the same as the `-` operator.
+    ///
+    /// Despite the name, nothing is checked and no `Option` is returned: if
+    /// `v > self` the result wraps to `2^256 - (v - self)`, the
+    /// two's-complement encoding of the negative difference.
     pub fn checked_sub(&self, v: NativeIntU64) -> Self {
         *self - v
     }
 
+    /// Sign-extends the low `bits` bits of `self` to 256 bits.
+    ///
+    /// Takes `self` modulo `2^bits`, reads it as a `bits`-wide two's-complement
+    /// integer, and returns that signed value in 256-bit two's-complement
+    /// encoding (see "Signed values" on the type). For example, the bit pattern
+    /// of an `i64` value `-5` (`0xFFFF_FFFF_FFFF_FFFB`) becomes the `NativeInt`
+    /// `-5` with `sext(64)`.
+    ///
+    /// `bits` must be a compile-time constant and one of 8, 16, 32, 64 or 128;
+    /// any other width makes the Prover reject the program.
     pub fn sext(self, bits: u64) -> Self {
         unsafe { Self(CVT_nativeint_u64_sext(self.0, bits)) }
     }
 
+    /// `self < other`, comparing both as 256-bit two's-complement signed
+    /// integers.
+    ///
+    /// Use this (not `<`) when either operand may be negative.
     pub fn slt(self, other: Self) -> bool {
         unsafe { CVT_nativeint_u64_slt(self.0, other.0) != 0 }
     }
 
+    /// `self <= other`, comparing both as 256-bit two's-complement signed
+    /// integers.
     pub fn sle(self, other: Self) -> bool {
         unsafe { CVT_nativeint_u64_sle(self.0, other.0) != 0 }
     }
 
+    /// `self > other`, comparing both as 256-bit two's-complement signed
+    /// integers.
     pub fn sgt(self, other: Self) -> bool {
         unsafe { CVT_nativeint_u64_slt(other.0, self.0) != 0 }
     }
 
+    /// `self >= other`, comparing both as 256-bit two's-complement signed
+    /// integers.
     pub fn sge(self, other: Self) -> bool {
         unsafe { CVT_nativeint_u64_sle(other.0, self.0) != 0 }
     }
 
+    /// The low `bits` bits of `self`, i.e. `self mod 2^bits`.
+    ///
+    /// Models truncation to a machine integer: for example
+    /// `(a + b).mask(64)` equals the result of `a.wrapping_add(b)` on `u64`s.
+    ///
+    /// `bits` must be a compile-time constant and one of 8, 16, 32, 64 or 128;
+    /// any other width makes the Prover reject the program.
     pub fn mask(self, bits: u64) -> Self {
         unsafe { Self(CVT_nativeint_u64_mask(self.0, bits)) }
     }
 
-    // Expose internal representation. Internal use only.
+    /// The raw `u64` handle through which the Prover tracks this value.
+    ///
+    /// For CVLR's own integrations (e.g. passing a `NativeInt` to a logging
+    /// builtin); not for specs. The handle is not the value as a `u64`: under
+    /// the Prover it can hold a value of `2^64` or more. To convert to `u64`,
+    /// use `u64::from(x)`, which checks the range by assumption.
     pub fn as_internal(&self) -> u64 {
         self.0
     }
@@ -581,6 +742,12 @@ impl cvlr_nondet::Nondet for NativeIntU64 {
 
 macro_rules! impl_is_uint {
     ($name:ident, $uint:ty, $is_uint:ident) => {
+        #[doc = concat!("Whether `v` fits in a `", stringify!($uint), "`; always `true`.")]
+        ///
+        /// Takes a value that already has this type, so it cannot fail. It
+        /// exists as a uniform predicate, e.g. inside a macro that handles
+        /// several integer types. To test whether a computed value fits, use
+        /// the method of the same name on [`NativeInt`](crate::NativeInt).
         pub fn $name(v: $uint) -> bool {
             NativeIntU64::from(v).$is_uint()
         }
