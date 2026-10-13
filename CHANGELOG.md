@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.6.2] - 2026-10-13
+
+### Added
+  - Documentation for every public item in the workspace, with corrections to
+    existing docs where they disagreed with how the Prover models the item; CI
+    now fails on undocumented public items.
+  - `cvlr-nondet` exports `cvlr_nondet_u32` and `cvlr_nondet_u64`, for
+    `cvlr-soroban`'s generated sanity rules.
+
+### Changed
+  - On `wasm32-*-none` targets, the Prover intrinsics are imported from the
+    `env` wasm module, as Soroban contracts link them.
+  - `cvlr-spec` is `#![no_std]`, so `no_std` crates such as Soroban contracts
+    on recent `soroban-sdk` can use it.
+
 ## [0.6.1] - 2026-03-28
 
 # Changes
@@ -86,8 +101,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 <!-- next-url -->
-[Unreleased]: https://github.com/crate-ci/cargo-release/compare/cvlr-v0.6.1...HEAD
-[0.6.1]: https://github.com/crate-ci/cargo-release/compare/cvlr-v0.6.0...cvlr-v0.6.1
+[Unreleased]: https://github.com/Certora/cvlr/compare/cvlr-v0.6.2...HEAD
+[0.6.2]: https://github.com/Certora/cvlr/compare/cvlr-v0.6.1...cvlr-v0.6.2
+[0.6.1]: https://github.com/Certora/cvlr/compare/cvlr-v0.6.0...cvlr-v0.6.1
 [0.6.0]: https://github.com/Certora/cvlr/compare/cvlr-v0.5.0...cvlr-v0.6.0
 [0.5.0]: https://github.com/Certora/cvlr/compare/cvlr-v0.4.2...cvlr-v0.5.0
 [0.4.2]: https://github.com/Certora/cvlr/compare/v0.4.1...cvlr-v0.4.2
