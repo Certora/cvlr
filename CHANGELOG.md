@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Added
+- `#[rule]` records each compiled rule's name in the `.cvlr_rules` section of the program
+
 ## [0.6.1] - 2026-03-28
 
 # Changes

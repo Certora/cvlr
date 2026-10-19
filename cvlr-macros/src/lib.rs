@@ -6,7 +6,8 @@
 //! expansions refer to.
 
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
+use proc_macro2::Literal;
+use quote::{format_ident, quote, ToTokens};
 use syn::{parse_macro_input, parse_quote, Ident, ItemFn};
 
 mod assert_that;
@@ -27,6 +28,11 @@ mod rule_for_spec;
 /// * adds `#[no_mangle]`, so the function keeps its name in the compiled
 ///   program, which is the name the rule is selected and reported by. Rule
 ///   names must therefore be unique across the program.
+/// * records that name in the `.cvlr_rules` section, one record per rule that
+///   was compiled. A `#[rule]` removed by `cfg`, or written on `fn $name`
+///   inside a macro that is never invoked, contributes nothing. The record is
+///   a static item at the start of the body: it is not code, and the first
+///   statement that runs is still `cvlr_rule_location!()`.
 /// * inserts `cvlr_rule_location!()` as the first statement, recording the
 ///   rule's source location for the report.
 /// * appends `cvlr_vacuity_check!()` as the last statement, which lets the
@@ -51,17 +57,60 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut fn_ast = parse_macro_input!(item as ItemFn);
     // add #[no_mangle] attribute
     fn_ast.attrs.push(parse_quote! { #[no_mangle] });
-    // The first statement in rules is a call to the macro `cvlr_rule_location!`
-    // to automatically insert the location of the rule.
+    // Item, not a statement: `cvlr_rule_location!` stays the first thing that runs.
     fn_ast
         .block
         .stmts
-        .insert(0, parse_quote! { cvlr::log::cvlr_rule_location!(); });
+        .insert(0, rule_manifest_stmt(&fn_ast.sig.ident));
+    fn_ast
+        .block
+        .stmts
+        .insert(1, parse_quote! { cvlr::log::cvlr_rule_location!(); });
     fn_ast
         .block
         .stmts
         .push(parse_quote! { cvlr::cvlr_vacuity_check!(); });
     fn_ast.into_token_stream().into()
+}
+
+/// A tag-1 record of the `#[no_mangle]` name, in `.cvlr_rules`.
+///
+/// `Ident`'s display form keeps a raw-ident `r#` prefix. The export does not.
+fn rule_manifest_stmt(fn_name: &Ident) -> syn::Stmt {
+    let rendered = fn_name.to_string();
+    let rule_name = rendered.strip_prefix("r#").unwrap_or(&rendered);
+    let static_ident = format_ident!("CVLR_RULE_MANIFEST_{}", rule_name, span = fn_name.span());
+    let export_name = format!("cvlr_rule_manifest.{rule_name}");
+    let record = rule_manifest_record(rule_name);
+    let record_len = Literal::usize_unsuffixed(record.len());
+    let bytes: Vec<Literal> = record
+        .into_iter()
+        .enumerate()
+        .map(|(index, byte)| {
+            if index >= 5 && byte.is_ascii_graphic() && byte != b'\'' && byte != b'\\' {
+                Literal::byte_character(byte)
+            } else {
+                Literal::u8_unsuffixed(byte)
+            }
+        })
+        .collect();
+    parse_quote! {
+        #[allow(non_upper_case_globals, unused_attributes)]
+        #[used]
+        #[no_mangle]
+        #[export_name = #export_name]
+        #[link_section = ".cvlr_rules"]
+        static #static_ident: [u8; #record_len] = [#(#bytes),*];
+    }
+}
+
+fn rule_manifest_record(name: &str) -> Vec<u8> {
+    let len = u32::try_from(name.len()).expect("a rule name fits in a u32");
+    let mut record = Vec::with_capacity(5 + name.len());
+    record.push(1);
+    record.extend_from_slice(&len.to_le_bytes());
+    record.extend_from_slice(name.as_bytes());
+    record
 }
 
 /// Replace a function with a mock when a cargo feature is enabled.

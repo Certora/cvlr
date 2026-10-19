@@ -154,3 +154,14 @@ pub use prelude::*;
 pub use crate::mathint::{is_u128, is_u16, is_u32, is_u64, is_u8};
 pub use macros::cvlr_pif as pif;
 pub use macros::cvlr_predicate as predicate;
+
+// Tag 0, payload `CV1`. Present whenever this crate is linked, including a
+// binary that compiles no `#[rule]`, so a missing `.cvlr_rules` section is
+// distinct from a section that lists no rules. The export is not a rule:
+// rule exports are `cvlr_rule_manifest.<name>`, and a name cannot contain `.`.
+#[allow(unused_attributes)]
+#[used]
+#[no_mangle]
+#[export_name = "cvlr_rule_manifest_anchor"]
+#[link_section = ".cvlr_rules"]
+static CVLR_RULES_ANCHOR: [u8; 8] = [0, 3, 0, 0, 0, b'C', b'V', b'1'];

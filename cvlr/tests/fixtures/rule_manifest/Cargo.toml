@@ -1,0 +1,18 @@
+[package]
+name = "rule_manifest_fixture"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Not a member of the cvlr workspace. An empty table keeps `cargo
+# certora-sbf --manifest-path` this package from adopting the parent.
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+certora = []
+
+[dependencies]
+cvlr = { path = "../../../cvlr" }
