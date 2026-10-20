@@ -21,6 +21,7 @@ no-loc = []
 
 [dependencies]
 cvlr-mathint = { workspace = true, optional = true }
+cvlr-rule-manifest = { workspace = true }
 
 [dev-dependencies]
 cvlr = { path = "../cvlr", features = ["rt", "no-loc"] }

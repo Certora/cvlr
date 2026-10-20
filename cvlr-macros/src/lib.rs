@@ -5,10 +5,9 @@
 //! [`cvlr_pif!`]. Use them through the `cvlr` crate, whose paths the
 //! expansions refer to.
 
+use cvlr_rule_manifest::rule_static;
 use proc_macro::TokenStream;
-use proc_macro2::Literal;
-use quote::{format_ident, quote, ToTokens};
-use syn::ext::IdentExt;
+use quote::{quote, ToTokens};
 use syn::{parse_macro_input, parse_quote, Ident, ItemFn};
 
 mod assert_that;
@@ -33,7 +32,8 @@ mod rule_for_spec;
 ///   was compiled. A `#[rule]` removed by `cfg`, or written on `fn $name`
 ///   inside a macro that is never invoked, contributes nothing. Apple targets
 ///   omit the section: Mach-O rejects a bare ELF section name. The record is
-///   a static, the first statement of the body, and it does not run.
+///   a static, the first statement of the body, and it does not run. The
+///   format is defined by the `cvlr-rule-manifest` crate.
 /// * inserts `cvlr_rule_location!()` as the next statement, the first one that
 ///   runs, recording the rule's source location for the report.
 /// * appends `cvlr_vacuity_check!()` as the last statement, which lets the
@@ -62,7 +62,7 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
     fn_ast
         .block
         .stmts
-        .insert(0, rule_manifest_stmt(&fn_ast.sig.ident));
+        .insert(0, syn::Stmt::Item(rule_static(&fn_ast.sig.ident).into()));
     fn_ast
         .block
         .stmts
@@ -72,45 +72,6 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
         .stmts
         .push(parse_quote! { cvlr::cvlr_vacuity_check!(); });
     fn_ast.into_token_stream().into()
-}
-
-/// A tag-1 record of the `#[no_mangle]` name, in `.cvlr_rules`.
-///
-/// `unraw` drops a raw-ident `r#` prefix. The export does not keep it.
-/// Apple targets omit the section: Mach-O rejects a bare ELF section name.
-fn rule_manifest_stmt(fn_name: &Ident) -> syn::Stmt {
-    let rule_name = fn_name.unraw().to_string();
-    let static_ident = format_ident!("CVLR_RULE_MANIFEST_{}", rule_name, span = fn_name.span());
-    let export_name = format!("cvlr_rule_manifest.{rule_name}");
-    let record = rule_manifest_record(&rule_name);
-    let record_len = Literal::usize_unsuffixed(record.len());
-    let bytes: Vec<Literal> = record
-        .into_iter()
-        .enumerate()
-        .map(|(index, byte)| {
-            if index >= 5 && byte.is_ascii_graphic() && byte != b'\'' && byte != b'\\' {
-                Literal::byte_character(byte)
-            } else {
-                Literal::u8_unsuffixed(byte)
-            }
-        })
-        .collect();
-    parse_quote! {
-        #[allow(non_upper_case_globals)]
-        #[used]
-        #[export_name = #export_name]
-        #[cfg_attr(not(target_vendor = "apple"), link_section = ".cvlr_rules")]
-        static #static_ident: [u8; #record_len] = [#(#bytes),*];
-    }
-}
-
-fn rule_manifest_record(name: &str) -> Vec<u8> {
-    let len = u32::try_from(name.len()).expect("a rule name fits in a u32");
-    let mut record = Vec::with_capacity(5 + name.len());
-    record.push(1);
-    record.extend_from_slice(&len.to_le_bytes());
-    record.extend_from_slice(name.as_bytes());
-    record
 }
 
 /// Replace a function with a mock when a cargo feature is enabled.

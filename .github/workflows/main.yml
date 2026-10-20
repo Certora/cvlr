@@ -46,6 +46,7 @@ jobs:
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
+          targets: wasm32-unknown-unknown
       - name: Install cargo-expand
         run: cargo install cargo-expand --version 1.0.126 --locked
       - name: Install cargo-certora-sbf

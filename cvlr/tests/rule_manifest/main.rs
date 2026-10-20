@@ -1,4 +1,5 @@
-//! `#[rule]` writes `.cvlr_rules`, and `cargo certora-sbf` keeps the section.
+//! `#[rule]` writes `.cvlr_rules`, and `cargo certora-sbf` and a Wasm build keep
+//! the section.
 
 mod section;
 
@@ -9,7 +10,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Deserialize;
 
-use section::{rule_record, LoadKind, ReadError};
+use cvlr_rule_manifest::rule_record;
+use section::{LoadKind, ReadError};
 
 #[test]
 fn rule_record_is_in_the_host_object() {
@@ -111,25 +113,8 @@ fn rule_manifest_survives_certora_sbf() {
         return;
     }
 
-    let staged = Stage::new("sbf");
-    let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/rule_manifest");
-    copy_tree(&fixture, &staged.path);
+    let staged = stage_fixture("sbf");
     let manifest_path = staged.path.join("Cargo.toml");
-    let manifest = fs::read_to_string(&manifest_path).unwrap();
-    let cvlr = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let fixture_path = "\"../../../cvlr\"";
-    assert!(
-        manifest.contains(fixture_path),
-        "fixture manifest has no cvlr path to rewrite"
-    );
-    fs::write(
-        &manifest_path,
-        manifest.replace(
-            fixture_path,
-            &toml_basic_string(&cvlr.display().to_string()),
-        ),
-    )
-    .unwrap();
 
     // Inside the package so certora-sbf can report `executables` relative to
     // `project_directory`. A target dir outside that prefix makes it fail.
@@ -188,6 +173,90 @@ fn rule_manifest_survives_certora_sbf() {
         !rules.shares_text_segment,
         ".cvlr_rules shares the .text PT_LOAD: {rules:?}"
     );
+}
+
+#[test]
+fn rule_manifest_survives_wasm() {
+    if !wasm_target_installed() {
+        eprintln!("skipping rule_manifest_survives_wasm: {WASM_TARGET} is not installed");
+        return;
+    }
+
+    let staged = stage_fixture("wasm");
+    let target = staged.path.join("target");
+    let output = cargo(
+        &staged.path,
+        &[
+            "build",
+            "--release",
+            "--target",
+            WASM_TARGET,
+            "--manifest-path",
+            staged.path.join("Cargo.toml").to_str().unwrap(),
+            // The Prover supplies the intrinsics. Without it, `rt` stubs them.
+            "--features",
+            "certora,cvlr/rt",
+        ],
+        &target,
+    );
+    assert!(
+        output.status.success(),
+        "wasm build failed:\n{}",
+        tail(&output.stderr),
+    );
+    let artifact = target
+        .join(WASM_TARGET)
+        .join("release/rule_manifest_fixture.wasm");
+    let data = section::read_wasm_section(&artifact)
+        .unwrap_or_else(|err| panic!("reading {}: {err}", artifact.display()));
+    let (names, anchor_count) = section::parse_records(&data)
+        .unwrap_or_else(|err| panic!("reading {}: {err}", artifact.display()));
+    assert_eq!(
+        names.iter().map(String::as_str).collect::<Vec<_>>(),
+        ["rule_alpha", "rule_beta"],
+    );
+    assert_eq!(anchor_count, 1, "tag-0 CV1 anchor is absent or repeated");
+}
+
+const WASM_TARGET: &str = "wasm32-unknown-unknown";
+
+fn wasm_target_installed() -> bool {
+    let Ok(output) = Command::new("rustc")
+        .args(["--print", "sysroot"])
+        .stdin(Stdio::null())
+        .output()
+    else {
+        return false;
+    };
+    let sysroot = String::from_utf8_lossy(&output.stdout);
+    Path::new(sysroot.trim())
+        .join("lib/rustlib")
+        .join(WASM_TARGET)
+        .is_dir()
+}
+
+/// The fixture, copied to a scratch directory, depending on this `cvlr`.
+fn stage_fixture(label: &str) -> Stage {
+    let staged = Stage::new(label);
+    let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/rule_manifest");
+    copy_tree(&fixture, &staged.path);
+    let manifest_path = staged.path.join("Cargo.toml");
+    let manifest = fs::read_to_string(&manifest_path).unwrap();
+    let cvlr = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let fixture_path = "\"../../../cvlr\"";
+    assert!(
+        manifest.contains(fixture_path),
+        "fixture manifest has no cvlr path to rewrite"
+    );
+    fs::write(
+        &manifest_path,
+        manifest.replace(
+            fixture_path,
+            &toml_basic_string(&cvlr.display().to_string()),
+        ),
+    )
+    .unwrap();
+    staged
 }
 
 fn certora_sbf_on_path() -> bool {

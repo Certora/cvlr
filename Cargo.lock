@@ -16,6 +16,7 @@ dependencies = [
  "cvlr-macros",
  "cvlr-mathint",
  "cvlr-nondet",
+ "cvlr-rule-manifest",
  "cvlr-spec",
  "serde",
  "serde_json",
@@ -90,6 +91,7 @@ version = "0.6.1"
 dependencies = [
  "cvlr",
  "cvlr-mathint",
+ "cvlr-rule-manifest",
  "macrotest",
  "trybuild",
 ]
@@ -99,6 +101,7 @@ name = "cvlr-macros"
 version = "0.6.1"
 dependencies = [
  "cvlr",
+ "cvlr-rule-manifest",
  "darling",
  "macrotest",
  "proc-macro2",
@@ -121,6 +124,15 @@ name = "cvlr-nondet"
 version = "0.6.1"
 dependencies = [
  "cvlr-asserts",
+]
+
+[[package]]
+name = "cvlr-rule-manifest"
+version = "0.6.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

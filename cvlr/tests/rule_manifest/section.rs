@@ -1,4 +1,5 @@
-//! Reader for the `.cvlr_rules` section emitted by `#[rule]`.
+//! Reader for the `.cvlr_rules` section emitted by `#[rule]`, in an ELF object
+//! or a Wasm module.
 //!
 //! A record is a tag byte, a little-endian `u32` length, and that many payload
 //! bytes. Tag 0 with payload `CV1` is the anchor. Tag 1 is one rule name.
@@ -10,6 +11,10 @@ use std::fmt;
 use std::fs;
 use std::path::Path;
 
+use cvlr_rule_manifest::{
+    ANCHOR_PAYLOAD, ANCHOR_RECORD, HEADER_LEN, SECTION, TAG_ANCHOR, TAG_RULE,
+};
+
 const ELF_MAGIC: [u8; 4] = [0x7f, b'E', b'L', b'F'];
 const ELFCLASS64: u8 = 2;
 const ELFDATA2LSB: u8 = 1;
@@ -19,15 +24,13 @@ const PF_W: u32 = 2;
 const SHT_NOBITS: u32 = 8;
 const SHF_ALLOC: u64 = 0x2;
 
-const TAG_ANCHOR: u8 = 0;
-const TAG_RULE: u8 = 1;
-const ANCHOR: &[u8] = b"CV1";
-
 #[derive(Debug)]
 pub enum ReadError {
     Io(std::io::Error),
     /// Magic, class, or endian is not ELF64 little-endian.
     NotElf(&'static str),
+    /// The magic or version is not a Wasm 1 module.
+    NotWasm,
     /// The file is ELF64 little-endian, and a later field is not usable.
     Malformed(&'static str),
     MissingSection,
@@ -41,10 +44,11 @@ impl fmt::Display for ReadError {
         match self {
             ReadError::Io(err) => write!(f, "{err}"),
             ReadError::NotElf(why) => write!(f, "not an ELF64 little-endian file: {why}"),
+            ReadError::NotWasm => write!(f, "not a Wasm 1 module"),
             ReadError::Malformed(why) => write!(f, "{why}"),
-            ReadError::MissingSection => write!(f, "no .cvlr_rules section"),
+            ReadError::MissingSection => write!(f, "no {SECTION} section"),
             ReadError::Corrupt { offset } => {
-                write!(f, ".cvlr_rules is corrupt at offset {offset}")
+                write!(f, "{SECTION} is corrupt at offset {offset}")
             }
         }
     }
@@ -78,7 +82,7 @@ pub fn read_rules(path: &Path) -> Result<RulesInElf, ReadError> {
     let section = elf
         .sections
         .iter()
-        .find(|section| section.name == ".cvlr_rules")
+        .find(|section| section.name == SECTION)
         .ok_or(ReadError::MissingSection)?;
     if section.sh_type == SHT_NOBITS {
         return Err(ReadError::Malformed(".cvlr_rules is SHT_NOBITS"));
@@ -116,6 +120,65 @@ pub fn read_rules(path: &Path) -> Result<RulesInElf, ReadError> {
     })
 }
 
+/// The payload of the module's `.cvlr_rules` custom section.
+pub fn read_wasm_section(path: &Path) -> Result<Vec<u8>, ReadError> {
+    let bytes = fs::read(path).map_err(ReadError::Io)?;
+    wasm_section(&bytes).map(<[u8]>::to_vec)
+}
+
+fn wasm_section(bytes: &[u8]) -> Result<&[u8], ReadError> {
+    const WASM_HEADER: [u8; 8] = [0, b'a', b's', b'm', 1, 0, 0, 0];
+    const CUSTOM_SECTION: u8 = 0;
+    if bytes.get(..WASM_HEADER.len()) != Some(&WASM_HEADER[..]) {
+        return Err(ReadError::NotWasm);
+    }
+    let mut found = None;
+    let mut offset = WASM_HEADER.len();
+    while offset < bytes.len() {
+        let id = bytes[offset];
+        let (size, body_at) = read_leb_u32(bytes, offset + 1)?;
+        let body = slice_at(
+            bytes,
+            body_at as u64,
+            size as u64,
+            "Wasm section extends past the file",
+        )?;
+        offset = body_at + body.len();
+        if id != CUSTOM_SECTION {
+            continue;
+        }
+        let (name_len, name_at) = read_leb_u32(body, 0)?;
+        let name = slice_at(
+            body,
+            name_at as u64,
+            name_len as u64,
+            "Wasm custom section name is cut short",
+        )?;
+        if name != SECTION.as_bytes() {
+            continue;
+        }
+        if found.is_some() {
+            return Err(ReadError::Malformed(
+                "more than one .cvlr_rules custom section",
+            ));
+        }
+        found = Some(&body[name_at + name_len as usize..]);
+    }
+    found.ok_or(ReadError::MissingSection)
+}
+
+/// A LEB128 `u32` at `offset`, and the offset just past it.
+fn read_leb_u32(bytes: &[u8], offset: usize) -> Result<(u32, usize), ReadError> {
+    let mut value = 0u32;
+    for (index, byte) in bytes.iter().skip(offset).take(5).enumerate() {
+        value |= u32::from(byte & 0x7f) << (7 * index);
+        if byte & 0x80 == 0 {
+            return Ok((value, offset + index + 1));
+        }
+    }
+    Err(ReadError::Malformed("LEB128 integer is cut short"))
+}
+
 fn same_load(left: &Load, right: &Load) -> bool {
     left.flags == right.flags && left.vaddr == right.vaddr && left.memsz == right.memsz
 }
@@ -126,12 +189,13 @@ pub fn parse_records(data: &[u8]) -> Result<(BTreeSet<String>, usize), ReadError
     let mut offset = 0;
     while offset < data.len() {
         let start = offset;
-        if data.len() - offset < 5 {
+        if data.len() - offset < HEADER_LEN {
             return Err(ReadError::Corrupt { offset: start });
         }
         let tag = data[offset];
-        let len = u32::from_le_bytes(data[offset + 1..offset + 5].try_into().unwrap()) as usize;
-        offset += 5;
+        let len =
+            u32::from_le_bytes(data[offset + 1..offset + HEADER_LEN].try_into().unwrap()) as usize;
+        offset += HEADER_LEN;
         if data.len() - offset < len {
             return Err(ReadError::Corrupt { offset: start });
         }
@@ -139,7 +203,7 @@ pub fn parse_records(data: &[u8]) -> Result<(BTreeSet<String>, usize), ReadError
         offset += len;
         match tag {
             TAG_ANCHOR => {
-                if payload != ANCHOR {
+                if payload != ANCHOR_PAYLOAD {
                     return Err(ReadError::Corrupt { offset: start });
                 }
                 anchor_count += 1;
@@ -156,14 +220,6 @@ pub fn parse_records(data: &[u8]) -> Result<(BTreeSet<String>, usize), ReadError
         }
     }
     Ok((names, anchor_count))
-}
-
-pub fn rule_record(name: &str) -> Vec<u8> {
-    let mut record = Vec::with_capacity(5 + name.len());
-    record.push(TAG_RULE);
-    record.extend_from_slice(&(name.len() as u32).to_le_bytes());
-    record.extend_from_slice(name.as_bytes());
-    record
 }
 
 struct ElfFile {
@@ -362,6 +418,7 @@ fn cstr_at(bytes: &[u8], offset: usize) -> Result<String, ReadError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cvlr_rule_manifest::rule_record;
 
     fn names(data: &[u8]) -> BTreeSet<String> {
         parse_records(data).unwrap().0
@@ -371,7 +428,7 @@ mod tests {
     fn two_names_and_an_anchor() {
         let mut data = Vec::new();
         data.extend(rule_record("rule_beta"));
-        data.extend([TAG_ANCHOR, 3, 0, 0, 0, b'C', b'V', b'1']);
+        data.extend(ANCHOR_RECORD);
         data.extend(rule_record("rule_alpha"));
         let (parsed, anchors) = parse_records(&data).unwrap();
         assert_eq!(
@@ -451,5 +508,42 @@ mod tests {
             Err(err) => err,
         };
         assert_eq!(err.to_string(), "section headers do not parse");
+    }
+
+    fn wasm_module(custom: &[(&[u8], &[u8])]) -> Vec<u8> {
+        let mut module = vec![0, b'a', b's', b'm', 1, 0, 0, 0];
+        for (name, payload) in custom {
+            let size = 1 + name.len() + payload.len();
+            assert!(
+                size < 0x80 && name.len() < 0x80,
+                "one-byte LEB128 lengths only"
+            );
+            module.extend([0, size as u8, name.len() as u8]);
+            module.extend(*name);
+            module.extend(*payload);
+        }
+        module
+    }
+
+    #[test]
+    fn wasm_custom_section_is_found_by_name() {
+        let record = rule_record("rule_alpha");
+        let module = wasm_module(&[(b"name", b"xyz"), (SECTION.as_bytes(), &record)]);
+        assert_eq!(wasm_section(&module).unwrap(), &record[..]);
+    }
+
+    #[test]
+    fn wasm_without_the_section_is_missing_and_repeats_are_malformed() {
+        let module = wasm_module(&[(b"name", b"xyz")]);
+        assert!(matches!(
+            wasm_section(&module),
+            Err(ReadError::MissingSection)
+        ));
+        let module = wasm_module(&[(SECTION.as_bytes(), b""), (SECTION.as_bytes(), b"")]);
+        assert!(matches!(
+            wasm_section(&module),
+            Err(ReadError::Malformed(_))
+        ));
+        assert!(matches!(wasm_section(b"\x7fELF"), Err(ReadError::NotWasm)));
     }
 }
