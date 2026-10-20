@@ -31,7 +31,8 @@ mod rule_for_spec;
 ///   names must therefore be unique across the program.
 /// * records that name in the `.cvlr_rules` section, one record per rule that
 ///   was compiled. A `#[rule]` removed by `cfg`, or written on `fn $name`
-///   inside a macro that is never invoked, contributes nothing. The record is
+///   inside a macro that is never invoked, contributes nothing. Apple targets
+///   omit the section: Mach-O rejects a bare ELF section name. The record is
 ///   a static, the first statement of the body, and it does not run.
 /// * inserts `cvlr_rule_location!()` as the next statement, the first one that
 ///   runs, recording the rule's source location for the report.
@@ -76,6 +77,7 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// A tag-1 record of the `#[no_mangle]` name, in `.cvlr_rules`.
 ///
 /// `unraw` drops a raw-ident `r#` prefix. The export does not keep it.
+/// Apple targets omit the section: Mach-O rejects a bare ELF section name.
 fn rule_manifest_stmt(fn_name: &Ident) -> syn::Stmt {
     let rule_name = fn_name.unraw().to_string();
     let static_ident = format_ident!("CVLR_RULE_MANIFEST_{}", rule_name, span = fn_name.span());
@@ -97,7 +99,7 @@ fn rule_manifest_stmt(fn_name: &Ident) -> syn::Stmt {
         #[allow(non_upper_case_globals)]
         #[used]
         #[export_name = #export_name]
-        #[link_section = ".cvlr_rules"]
+        #[cfg_attr(not(target_vendor = "apple"), link_section = ".cvlr_rules")]
         static #static_ident: [u8; #record_len] = [#(#bytes),*];
     }
 }
