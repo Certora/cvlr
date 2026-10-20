@@ -8,6 +8,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::Literal;
 use quote::{format_ident, quote, ToTokens};
+use syn::ext::IdentExt;
 use syn::{parse_macro_input, parse_quote, Ident, ItemFn};
 
 mod assert_that;
@@ -31,10 +32,9 @@ mod rule_for_spec;
 /// * records that name in the `.cvlr_rules` section, one record per rule that
 ///   was compiled. A `#[rule]` removed by `cfg`, or written on `fn $name`
 ///   inside a macro that is never invoked, contributes nothing. The record is
-///   a static item at the start of the body: it is not code, and the first
-///   statement that runs is still `cvlr_rule_location!()`.
-/// * inserts `cvlr_rule_location!()` as the first statement, recording the
-///   rule's source location for the report.
+///   a static, the first statement of the body, and it does not run.
+/// * inserts `cvlr_rule_location!()` as the next statement, the first one that
+///   runs, recording the rule's source location for the report.
 /// * appends `cvlr_vacuity_check!()` as the last statement, which lets the
 ///   Prover's rule-sanity check report a rule whose end is unreachable, i.e.
 ///   one that passes vacuously (see `cvlr_vacuity_check!`).
@@ -57,7 +57,7 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut fn_ast = parse_macro_input!(item as ItemFn);
     // add #[no_mangle] attribute
     fn_ast.attrs.push(parse_quote! { #[no_mangle] });
-    // Item, not a statement: `cvlr_rule_location!` stays the first thing that runs.
+    // The static is the first statement. `cvlr_rule_location!` is the first one that runs.
     fn_ast
         .block
         .stmts
@@ -75,13 +75,12 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
 /// A tag-1 record of the `#[no_mangle]` name, in `.cvlr_rules`.
 ///
-/// `Ident`'s display form keeps a raw-ident `r#` prefix. The export does not.
+/// `unraw` drops a raw-ident `r#` prefix. The export does not keep it.
 fn rule_manifest_stmt(fn_name: &Ident) -> syn::Stmt {
-    let rendered = fn_name.to_string();
-    let rule_name = rendered.strip_prefix("r#").unwrap_or(&rendered);
+    let rule_name = fn_name.unraw().to_string();
     let static_ident = format_ident!("CVLR_RULE_MANIFEST_{}", rule_name, span = fn_name.span());
     let export_name = format!("cvlr_rule_manifest.{rule_name}");
-    let record = rule_manifest_record(rule_name);
+    let record = rule_manifest_record(&rule_name);
     let record_len = Literal::usize_unsuffixed(record.len());
     let bytes: Vec<Literal> = record
         .into_iter()
@@ -95,9 +94,8 @@ fn rule_manifest_stmt(fn_name: &Ident) -> syn::Stmt {
         })
         .collect();
     parse_quote! {
-        #[allow(non_upper_case_globals, unused_attributes)]
+        #[allow(non_upper_case_globals)]
         #[used]
-        #[no_mangle]
         #[export_name = #export_name]
         #[link_section = ".cvlr_rules"]
         static #static_ident: [u8; #record_len] = [#(#bytes),*];

@@ -48,5 +48,11 @@ jobs:
           toolchain: stable
       - name: Install cargo-expand
         run: cargo install cargo-expand --version 1.0.126 --locked
+      - name: Install cargo-certora-sbf
+        if: runner.os == 'Linux'
+        run: cargo install cargo-certora-sbf --version 0.3.5 --locked
+      - name: Install Certora platform tools v1.43
+        if: runner.os == 'Linux'
+        run: cargo certora-sbf --no-build --no-rustup --tools-version v1.43
       - name: Run cargo test
         run: cargo test --verbose

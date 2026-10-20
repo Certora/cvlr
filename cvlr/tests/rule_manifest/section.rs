@@ -26,9 +26,14 @@ const ANCHOR: &[u8] = b"CV1";
 #[derive(Debug)]
 pub enum ReadError {
     Io(std::io::Error),
+    /// Magic, class, or endian is not ELF64 little-endian.
     NotElf(&'static str),
+    /// The file is ELF64 little-endian, and a later field is not usable.
+    Malformed(&'static str),
     MissingSection,
-    Corrupt { offset: usize },
+    Corrupt {
+        offset: usize,
+    },
 }
 
 impl fmt::Display for ReadError {
@@ -36,6 +41,7 @@ impl fmt::Display for ReadError {
         match self {
             ReadError::Io(err) => write!(f, "{err}"),
             ReadError::NotElf(why) => write!(f, "not an ELF64 little-endian file: {why}"),
+            ReadError::Malformed(why) => write!(f, "{why}"),
             ReadError::MissingSection => write!(f, "no .cvlr_rules section"),
             ReadError::Corrupt { offset } => {
                 write!(f, ".cvlr_rules is corrupt at offset {offset}")
@@ -75,7 +81,7 @@ pub fn read_rules(path: &Path) -> Result<RulesInElf, ReadError> {
         .find(|section| section.name == ".cvlr_rules")
         .ok_or(ReadError::MissingSection)?;
     if section.sh_type == SHT_NOBITS {
-        return Err(ReadError::NotElf(".cvlr_rules is SHT_NOBITS"));
+        return Err(ReadError::Malformed(".cvlr_rules is SHT_NOBITS"));
     }
     let data = slice_at(
         &bytes,
@@ -201,7 +207,7 @@ fn parse_elf(bytes: &[u8]) -> Result<ElfFile, ReadError> {
     let shnum = read_u16(bytes, 60)? as usize;
     let shstrndx = read_u16(bytes, 62)? as usize;
     if shentsize < 64 || shnum == 0 || shstrndx >= shnum {
-        return Err(ReadError::NotElf("section headers do not parse"));
+        return Err(ReadError::Malformed("section headers do not parse"));
     }
     let shstr = section_header(bytes, shoff, shentsize, shstrndx)?;
     let shstrtab = slice_at(
@@ -226,19 +232,19 @@ fn parse_elf(bytes: &[u8]) -> Result<ElfFile, ReadError> {
     let mut loads = Vec::new();
     if phnum > 0 {
         if phentsize < 56 {
-            return Err(ReadError::NotElf("program headers do not parse"));
+            return Err(ReadError::Malformed("program headers do not parse"));
         }
         for index in 0..phnum {
             let start = (phoff as usize)
                 .checked_add(
                     index
                         .checked_mul(phentsize)
-                        .ok_or(ReadError::NotElf("program header index overflow"))?,
+                        .ok_or(ReadError::Malformed("program header index overflow"))?,
                 )
-                .ok_or(ReadError::NotElf("program header offset overflow"))?;
+                .ok_or(ReadError::Malformed("program header offset overflow"))?;
             let header = bytes
                 .get(start..start + 56)
-                .ok_or(ReadError::NotElf("program header extends past the file"))?;
+                .ok_or(ReadError::Malformed("program header extends past the file"))?;
             let kind = u32::from_le_bytes(header[0..4].try_into().unwrap());
             if kind != PT_LOAD {
                 continue;
@@ -272,12 +278,12 @@ fn section_header(
         .checked_add(
             index
                 .checked_mul(entsize)
-                .ok_or(ReadError::NotElf("section header index overflow"))?,
+                .ok_or(ReadError::Malformed("section header index overflow"))?,
         )
-        .ok_or(ReadError::NotElf("section header offset overflow"))?;
+        .ok_or(ReadError::Malformed("section header offset overflow"))?;
     let header = bytes
         .get(start..start + 64)
-        .ok_or(ReadError::NotElf("section header extends past the file"))?;
+        .ok_or(ReadError::Malformed("section header extends past the file"))?;
     Ok(SectionHeader {
         name_off: u32::from_le_bytes(header[0..4].try_into().unwrap()),
         sh_type: u32::from_le_bytes(header[4..8].try_into().unwrap()),
@@ -317,14 +323,14 @@ fn load_kind(loads: &[&Load]) -> LoadKind {
 fn read_u16(bytes: &[u8], offset: usize) -> Result<u16, ReadError> {
     let slice = bytes
         .get(offset..offset + 2)
-        .ok_or(ReadError::NotElf("truncated header field"))?;
+        .ok_or(ReadError::Malformed("truncated header field"))?;
     Ok(u16::from_le_bytes(slice.try_into().unwrap()))
 }
 
 fn read_u64(bytes: &[u8], offset: usize) -> Result<u64, ReadError> {
     let slice = bytes
         .get(offset..offset + 8)
-        .ok_or(ReadError::NotElf("truncated header field"))?;
+        .ok_or(ReadError::Malformed("truncated header field"))?;
     Ok(u64::from_le_bytes(slice.try_into().unwrap()))
 }
 
@@ -334,22 +340,22 @@ fn slice_at<'a>(
     size: u64,
     why: &'static str,
 ) -> Result<&'a [u8], ReadError> {
-    let start = usize::try_from(offset).map_err(|_| ReadError::NotElf(why))?;
-    let len = usize::try_from(size).map_err(|_| ReadError::NotElf(why))?;
-    let end = start.checked_add(len).ok_or(ReadError::NotElf(why))?;
-    bytes.get(start..end).ok_or(ReadError::NotElf(why))
+    let start = usize::try_from(offset).map_err(|_| ReadError::Malformed(why))?;
+    let len = usize::try_from(size).map_err(|_| ReadError::Malformed(why))?;
+    let end = start.checked_add(len).ok_or(ReadError::Malformed(why))?;
+    bytes.get(start..end).ok_or(ReadError::Malformed(why))
 }
 
 fn cstr_at(bytes: &[u8], offset: usize) -> Result<String, ReadError> {
-    let rest = bytes
-        .get(offset..)
-        .ok_or(ReadError::NotElf("section name is past the string table"))?;
+    let rest = bytes.get(offset..).ok_or(ReadError::Malformed(
+        "section name is past the string table",
+    ))?;
     let end = rest
         .iter()
         .position(|byte| *byte == 0)
-        .ok_or(ReadError::NotElf("section name is not terminated"))?;
+        .ok_or(ReadError::Malformed("section name is not terminated"))?;
     let name = std::str::from_utf8(&rest[..end])
-        .map_err(|_| ReadError::NotElf("section name is not UTF-8"))?;
+        .map_err(|_| ReadError::Malformed("section name is not UTF-8"))?;
     Ok(name.to_string())
 }
 
@@ -423,5 +429,27 @@ mod tests {
     fn bad_utf8_is_corrupt() {
         let err = parse_records(&[1, 1, 0, 0, 0, 0xff]).unwrap_err();
         assert!(matches!(err, ReadError::Corrupt { offset: 0 }));
+    }
+
+    #[test]
+    fn short_file_is_not_elf_and_bad_section_headers_are_malformed() {
+        let err = match parse_elf(&[0, 1, 2]) {
+            Ok(_) => panic!("short file parsed as ELF"),
+            Err(err) => err,
+        };
+        assert_eq!(
+            err.to_string(),
+            "not an ELF64 little-endian file: shorter than an ELF header"
+        );
+
+        let mut header = vec![0; 64];
+        header[0..4].copy_from_slice(&[0x7f, b'E', b'L', b'F']);
+        header[4] = ELFCLASS64;
+        header[5] = ELFDATA2LSB;
+        let err = match parse_elf(&header) {
+            Ok(_) => panic!("header with no section table parsed as ELF"),
+            Err(err) => err,
+        };
+        assert_eq!(err.to_string(), "section headers do not parse");
     }
 }

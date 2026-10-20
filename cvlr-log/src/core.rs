@@ -429,9 +429,10 @@ expose_log_fn! {add_loc, u32}
 /// Declares the location of the macro call as the current rule's source
 /// location; see [`CvlrLogger::log_rule_location`].
 ///
-/// `#[rule]` inserts this as the first statement of every rule, so specs do
-/// not need to call it. With the `no-loc` feature the file and line are
-/// placeholders, so expansion snapshots do not depend on the source path.
+/// `#[rule]` inserts this after the manifest static. It is the first statement
+/// that runs, so specs do not need to call it. With the `no-loc` feature the
+/// file and line are placeholders, so expansion snapshots do not depend on the
+/// source path.
 #[macro_export]
 macro_rules! cvlr_rule_location {
     () => {{

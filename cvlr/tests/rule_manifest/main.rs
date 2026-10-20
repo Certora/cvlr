@@ -7,6 +7,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde::Deserialize;
+
 use section::{rule_record, LoadKind, ReadError};
 
 #[test]
@@ -26,9 +28,9 @@ publish = false
 [workspace]
 
 [dependencies]
-cvlr = {{ path = "{cvlr}" }}
+cvlr = {{ path = {cvlr} }}
 "#,
-            cvlr = cvlr.display(),
+            cvlr = toml_basic_string(&cvlr.display().to_string()),
         ),
     )
     .unwrap();
@@ -65,12 +67,22 @@ cvlr = {{ path = "{cvlr}" }}
         "rule_manifest_host",
     );
     let mut hits = Vec::new();
+    let mut saw_elf = false;
+    let mut saw_non_elf = false;
     for object in &objects {
         match section::read_rules(object) {
-            Ok(rules) => hits.push((object.clone(), rules)),
-            Err(ReadError::MissingSection) => {}
+            Ok(rules) => {
+                saw_elf = true;
+                hits.push((object.clone(), rules));
+            }
+            Err(ReadError::MissingSection) => saw_elf = true,
+            Err(ReadError::NotElf(_)) => saw_non_elf = true,
             Err(err) => panic!("reading {}: {err}", object.display()),
         }
+    }
+    if hits.is_empty() && !saw_elf && saw_non_elf {
+        eprintln!("skipping rule_record_is_in_the_host_object: host rustc emitted no ELF object");
+        return;
     }
     assert_eq!(
         hits.len(),
@@ -105,9 +117,17 @@ fn rule_manifest_survives_certora_sbf() {
     let manifest_path = staged.path.join("Cargo.toml");
     let manifest = fs::read_to_string(&manifest_path).unwrap();
     let cvlr = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let fixture_path = "\"../../../cvlr\"";
+    assert!(
+        manifest.contains(fixture_path),
+        "fixture manifest has no cvlr path to rewrite"
+    );
     fs::write(
         &manifest_path,
-        manifest.replace("../../../cvlr", &cvlr.display().to_string()),
+        manifest.replace(
+            fixture_path,
+            &toml_basic_string(&cvlr.display().to_string()),
+        ),
     )
     .unwrap();
 
@@ -137,16 +157,13 @@ fn rule_manifest_survives_certora_sbf() {
         tail(&output.stderr),
         stdout,
     );
-    let project = json_string(&stdout, "project_directory")
-        .unwrap_or_else(|| panic!("build JSON has no project_directory:\n{stdout}"));
-    let executables = json_string(&stdout, "executables")
-        .unwrap_or_else(|| panic!("build JSON has no executables:\n{stdout}"));
+    let summary = certora_summary(&stdout);
     let artifact = {
-        let path = PathBuf::from(&executables);
+        let path = PathBuf::from(&summary.executables);
         if path.is_absolute() {
             path
         } else {
-            PathBuf::from(project).join(path)
+            PathBuf::from(summary.project_directory).join(path)
         }
     };
     let rules = section::read_rules(&artifact)
@@ -220,15 +237,19 @@ fn cargo(dir: &Path, args: &[&str], target_dir: &Path) -> Output {
 fn object_files(stdout: &str, package: &str) -> Vec<PathBuf> {
     let mut objects = Vec::new();
     for line in stdout.lines() {
-        if !line.contains("\"compiler-artifact\"") || !line.contains(package) {
+        if line.trim().is_empty() {
             continue;
         }
-        let Some(names) = json_string_array(line, "filenames") else {
+        let message: CargoMessage = serde_json::from_str(line)
+            .unwrap_or_else(|err| panic!("cargo JSON line does not match: {err}\n{line}"));
+        let CargoMessage::CompilerArtifact { target, filenames } = message else {
             continue;
         };
-        for name in names {
-            let path = PathBuf::from(&name);
-            if name.ends_with(".o") {
+        if target.name != package {
+            continue;
+        }
+        for path in filenames {
+            if path.extension().is_some_and(|ext| ext == "o") {
                 objects.push(path);
                 continue;
             }
@@ -242,6 +263,23 @@ fn object_files(stdout: &str, package: &str) -> Vec<PathBuf> {
     objects
 }
 
+#[derive(Deserialize)]
+#[serde(tag = "reason")]
+enum CargoMessage {
+    #[serde(rename = "compiler-artifact")]
+    CompilerArtifact {
+        target: CargoTarget,
+        filenames: Vec<PathBuf>,
+    },
+    #[serde(other)]
+    Other,
+}
+
+#[derive(Deserialize)]
+struct CargoTarget {
+    name: String,
+}
+
 fn object_beside_rmeta(path: &Path) -> Option<PathBuf> {
     let name = path.file_name()?.to_str()?;
     let stem = name.strip_prefix("lib")?.strip_suffix(".rmeta")?;
@@ -249,58 +287,34 @@ fn object_beside_rmeta(path: &Path) -> Option<PathBuf> {
     object.is_file().then_some(object)
 }
 
-fn json_string(json: &str, key: &str) -> Option<String> {
-    let key_pat = format!("\"{key}\"");
-    let idx = json.find(&key_pat)?;
-    let after = json[idx + key_pat.len()..].trim_start();
-    let after = after.strip_prefix(':')?.trim_start();
-    parse_json_string(after).map(|(value, _)| value)
+fn certora_summary(stdout: &str) -> CertoraSummary {
+    serde_json::from_str(stdout)
+        .unwrap_or_else(|err| panic!("certora-sbf JSON summary does not match: {err}\n{stdout}"))
 }
 
-fn json_string_array(json: &str, key: &str) -> Option<Vec<String>> {
-    let key_pat = format!("\"{key}\"");
-    let idx = json.find(&key_pat)?;
-    let after = json[idx + key_pat.len()..].trim_start();
-    let mut rest = after.strip_prefix(':')?.trim_start().strip_prefix('[')?;
-    let mut values = Vec::new();
-    loop {
-        rest = rest.trim_start();
-        if rest.starts_with(']') {
-            return Some(values);
-        }
-        if let Some(next) = rest.strip_prefix(',') {
-            rest = next;
-            continue;
-        }
-        let (value, next) = parse_json_string(rest)?;
-        values.push(value);
-        rest = next;
-    }
+#[derive(Deserialize)]
+struct CertoraSummary {
+    project_directory: String,
+    executables: String,
 }
 
-fn parse_json_string(input: &str) -> Option<(String, &str)> {
-    let rest = input.strip_prefix('"')?;
-    let mut out = String::new();
-    let mut chars = rest.char_indices();
-    while let Some((index, ch)) = chars.next() {
+fn toml_basic_string(value: &str) -> String {
+    let mut out = String::from("\"");
+    for ch in value.chars() {
         match ch {
-            '\\' => {
-                let (_, escaped) = chars.next()?;
-                match escaped {
-                    '"' => out.push('"'),
-                    '\\' => out.push('\\'),
-                    '/' => out.push('/'),
-                    'n' => out.push('\n'),
-                    'r' => out.push('\r'),
-                    't' => out.push('\t'),
-                    _ => return None,
-                }
-            }
-            '"' => return Some((out, &rest[index + 1..])),
-            other => out.push(other),
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\u{0008}' => out.push_str("\\b"),
+            '\t' => out.push_str("\\t"),
+            '\n' => out.push_str("\\n"),
+            '\u{000c}' => out.push_str("\\f"),
+            '\r' => out.push_str("\\r"),
+            ch if ch.is_control() => out.push_str(&format!("\\u{:04X}", u32::from(ch))),
+            ch => out.push(ch),
         }
     }
-    None
+    out.push('"');
+    out
 }
 
 fn copy_tree(src: &Path, dst: &Path) {
@@ -322,8 +336,59 @@ fn copy_tree(src: &Path, dst: &Path) {
 
 fn tail(bytes: &[u8]) -> String {
     let text = String::from_utf8_lossy(bytes);
-    let start = text.len().saturating_sub(8_000);
+    let mut start = text.len().saturating_sub(8_000);
+    while start > 0 && !text.is_char_boundary(start) {
+        start -= 1;
+    }
     text[start..].to_string()
+}
+
+#[test]
+fn certora_summary_reads_pretty_json() {
+    let stdout = r#"{
+  "project_directory": "/work/pkg",
+  "executables": "target/deploy/rule_manifest.so",
+  "sources": [],
+  "success": true,
+  "return_code": 0
+}"#;
+    let summary = certora_summary(stdout);
+    assert_eq!(summary.project_directory, "/work/pkg");
+    assert_eq!(summary.executables, "target/deploy/rule_manifest.so");
+}
+
+#[test]
+fn object_files_uses_the_target_name() {
+    let stdout = r#"{"reason":"compiler-artifact","target":{"name":"other"},"filenames":["/tmp/rule_manifest_host/other.o"]}
+{"reason":"compiler-artifact","target":{"name":"rule_manifest_host"},"filenames":["/tmp/out/rule_manifest_host.o"]}
+{"reason":"build-finished","success":true}
+"#;
+    let objects = object_files(stdout, "rule_manifest_host");
+    assert_eq!(
+        objects,
+        vec![PathBuf::from("/tmp/out/rule_manifest_host.o")]
+    );
+}
+
+#[test]
+#[should_panic(expected = "filenames")]
+fn object_files_rejects_a_compiler_artifact_without_filenames() {
+    let stdout = r#"{"reason":"compiler-artifact","target":{"name":"rule_manifest_host"}}"#;
+    object_files(stdout, "rule_manifest_host");
+}
+
+#[test]
+fn toml_basic_string_escapes_quotes_and_backslashes() {
+    assert_eq!(toml_basic_string("a\"b\\c"), r#""a\"b\\c""#);
+    assert_eq!(toml_basic_string("a\nb"), r#""a\nb""#);
+}
+
+#[test]
+fn tail_cuts_on_a_char_boundary() {
+    let text = format!("{}é{}", "b".repeat(10), "a".repeat(7_999));
+    let got = tail(text.as_bytes());
+    assert_eq!(got, &text[10..]);
+    assert!(got.starts_with('é'));
 }
 
 struct Stage {
