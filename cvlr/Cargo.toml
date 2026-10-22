@@ -41,3 +41,8 @@ cvlr-decimal = { workspace = true }
 cvlr-fixed = { workspace = true }
 cvlr-spec = { workspace = true }
 
+[dev-dependencies]
+cvlr-rule-manifest = { workspace = true, features = ["tokens"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+

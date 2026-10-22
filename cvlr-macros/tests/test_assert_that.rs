@@ -2,7 +2,12 @@
 
 #[test]
 fn test_cvlr_assert_that_macro_expansion() {
-    macrotest::expand("tests/expand/*.rs");
+    // `cargo expand` applies `cfg_attr` for the host. The manifest snapshot is
+    // the ELF form, where `.cvlr_rules` is present. Apple hosts drop it.
+    macrotest::expand("tests/expand/test_cvlr_*.rs");
+    if cfg!(not(target_vendor = "apple")) {
+        macrotest::expand("tests/expand/test_rule_manifest.rs");
+    }
 }
 
 #[test]
@@ -20,4 +25,5 @@ fn test_cvlr_assert_that_compiles() {
     t.pass("tests/expand/test_cvlr_eval_all.rs");
     t.pass("tests/expand/test_cvlr_rule_for_spec.rs");
     t.pass("tests/expand/test_cvlr_predicate.rs");
+    t.pass("tests/expand/test_rule_manifest.rs");
 }

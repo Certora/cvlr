@@ -5,6 +5,7 @@
 //! [`cvlr_pif!`]. Use them through the `cvlr` crate, whose paths the
 //! expansions refer to.
 
+use cvlr_rule_manifest::rule_static;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, parse_quote, Ident, ItemFn};
@@ -27,8 +28,14 @@ mod rule_for_spec;
 /// * adds `#[no_mangle]`, so the function keeps its name in the compiled
 ///   program, which is the name the rule is selected and reported by. Rule
 ///   names must therefore be unique across the program.
-/// * inserts `cvlr_rule_location!()` as the first statement, recording the
-///   rule's source location for the report.
+/// * records that name in the `.cvlr_rules` section, one record per rule that
+///   was compiled. A `#[rule]` removed by `cfg`, or written on `fn $name`
+///   inside a macro that is never invoked, contributes nothing. Apple targets
+///   omit the section: Mach-O rejects a bare ELF section name. The record is
+///   a static, the first statement of the body, and it does not run. The
+///   format is defined by the `cvlr-rule-manifest` crate.
+/// * inserts `cvlr_rule_location!()` as the next statement, the first one that
+///   runs, recording the rule's source location for the report.
 /// * appends `cvlr_vacuity_check!()` as the last statement, which lets the
 ///   Prover's rule-sanity check report a rule whose end is unreachable, i.e.
 ///   one that passes vacuously (see `cvlr_vacuity_check!`).
@@ -51,12 +58,15 @@ pub fn rule(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut fn_ast = parse_macro_input!(item as ItemFn);
     // add #[no_mangle] attribute
     fn_ast.attrs.push(parse_quote! { #[no_mangle] });
-    // The first statement in rules is a call to the macro `cvlr_rule_location!`
-    // to automatically insert the location of the rule.
+    // The static is the first statement. `cvlr_rule_location!` is the first one that runs.
     fn_ast
         .block
         .stmts
-        .insert(0, parse_quote! { cvlr::log::cvlr_rule_location!(); });
+        .insert(0, syn::Stmt::Item(rule_static(&fn_ast.sig.ident).into()));
+    fn_ast
+        .block
+        .stmts
+        .insert(1, parse_quote! { cvlr::log::cvlr_rule_location!(); });
     fn_ast
         .block
         .stmts

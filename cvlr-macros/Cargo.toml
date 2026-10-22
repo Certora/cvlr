@@ -20,6 +20,7 @@ proc-macro2 = { workspace = true}
 quote = { workspace = true }
 syn = { workspace = true }
 darling = "0.20" 
+cvlr-rule-manifest = { workspace = true, features = ["tokens"] }
 
 [dev-dependencies]
 # path-dependency to break cyclic dev dependency on crates

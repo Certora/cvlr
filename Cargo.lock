@@ -16,7 +16,10 @@ dependencies = [
  "cvlr-macros",
  "cvlr-mathint",
  "cvlr-nondet",
+ "cvlr-rule-manifest",
  "cvlr-spec",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -88,6 +91,7 @@ version = "0.6.1"
 dependencies = [
  "cvlr",
  "cvlr-mathint",
+ "cvlr-rule-manifest",
  "macrotest",
  "trybuild",
 ]
@@ -97,6 +101,7 @@ name = "cvlr-macros"
 version = "0.6.1"
 dependencies = [
  "cvlr",
+ "cvlr-rule-manifest",
  "darling",
  "macrotest",
  "proc-macro2",
@@ -119,6 +124,15 @@ name = "cvlr-nondet"
 version = "0.6.1"
 dependencies = [
  "cvlr-asserts",
+]
+
+[[package]]
+name = "cvlr-rule-manifest"
+version = "0.6.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -291,6 +305,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e"
 dependencies = [
  "serde_core",
+ "serde_derive",
 ]
 
 [[package]]

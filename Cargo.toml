@@ -13,6 +13,7 @@ members = [
     "cvlr-derive",
     "cvlr-decimal",
     "cvlr-spec",
+    "cvlr-rule-manifest",
 ]
 
 [workspace.package]
@@ -63,3 +64,4 @@ cvlr-fixed = { path = "cvlr-fixed", version = "=0.6.1" }
 cvlr-decimal = { path = "cvlr-decimal", version = "=0.6.1" }
 cvlr-derive = { path = "cvlr-derive", version = "=0.6.1" }
 cvlr-spec = { path = "cvlr-spec", version = "=0.6.1" }
+cvlr-rule-manifest = { path = "cvlr-rule-manifest", version = "=0.6.1" }

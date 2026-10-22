@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Added
+- `#[rule]` records each compiled rule's name in the `.cvlr_rules` section of the program
+- `cvlr-rule-manifest` crate: the `.cvlr_rules` format, its anchor record, and the record static a rule macro emits, for reuse by other chains' `#[rule]`
+
 ## [0.6.1] - 2026-03-28
 
 # Changes
