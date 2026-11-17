@@ -15,9 +15,15 @@ repository.workspace = true
 
 [features]
 rt = ["cvlr-mathint/rt", "cvlr-nondet/rt", "cvlr-asserts/rt", "cvlr-log/rt"]
+## `narrow`: a verification-only 64-bit stand-in for a 128-bit `fixed` type.
+fixed = ["dep:fixed"]
 
 [dependencies]
 cvlr-nondet = { workspace = true, default-features = false }
 cvlr-asserts = { workspace = true }
 cvlr-mathint = { workspace = true }
 cvlr-log = { workspace = true }
+fixed = { version = "1.23", optional = true, default-features = false }
+
+[dev-dependencies]
+cvlr-fixed = { path = ".", features = ["rt", "fixed"] }
