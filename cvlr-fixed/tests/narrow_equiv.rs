@@ -9,7 +9,7 @@
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
 use cvlr_fixed::narrow::NarrowFixedU128;
-use fixed::types::extra::{LeEqU128, LeEqU64, U14, U20, U60};
+use fixed::types::extra::{LeEqU128, LeEqU64, U0, U127, U14, U20, U60, U63, U64};
 use fixed::FixedU128;
 
 struct Rng(u64);
@@ -246,9 +246,10 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> Check<Frac, NFrac> {
         let mut rng = Rng(seed);
         for _ in 0..CASES {
             let n = rng.spread();
-            Self::value("from_num", n, 0, FixedU128::<Frac>::from_num(n), || {
-                NarrowFixedU128::from_num(n)
-            });
+            if let Some(w) = FixedU128::<Frac>::checked_from_num(n) {
+                Self::value("from_num", n, 0, w, || NarrowFixedU128::from_num(n));
+                Self::value("from", n, 0, w, || NarrowFixedU128::from(n));
+            }
             Self::option(
                 "checked_from_num",
                 n,
@@ -257,13 +258,13 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> Check<Frac, NFrac> {
                 || NarrowFixedU128::checked_from_num(n),
             );
 
-            Self::value("from", n, 0, FixedU128::<Frac>::from_num(n), || {
-                NarrowFixedU128::from(n)
-            });
-
             let bits = ((rng.next() as u128) << 64) | rng.next() as u128;
             let bits = bits >> (rng.next() % 128);
             let from_bits = NarrowFixedU128::<Frac, NFrac>::from_bits(bits);
+            assert_eq!(
+                NarrowFixedU128::<Frac, NFrac>::const_from_bits(bits),
+                from_bits
+            );
             match Self::truncate(FixedU128::from_bits(bits)) {
                 Some(expected) => assert_eq!(from_bits.to_bits(), expected),
                 None => assert_eq!(from_bits, NarrowFixedU128::MAX),
@@ -295,6 +296,11 @@ fn constants() {
         (W::const_from_int(3).unwrapped_div_int(10_000).to_bits() >> 46) << 46
     );
     assert_eq!(N::lit("0.75").to_bits(), W::lit("0.75").to_bits());
+    assert_eq!(cvlr_fixed::narrow_lit!(N, 0.75), N::lit("0.75"));
+    assert_eq!(
+        cvlr_fixed::narrow_lit!(N, 10_000),
+        N::const_from_int(10_000)
+    );
     assert_eq!(
         "2.5".parse::<N>().unwrap().to_bits(),
         W::lit("2.5").to_bits()
@@ -337,4 +343,25 @@ fn conversions_u60_u14() {
 #[test]
 fn conversions_same_scale() {
     Check::<U14, U14>::conversions(0xbb67_ae85_84ca_a73b);
+}
+
+#[test]
+fn edges_whole_word_shift() {
+    Check::<U64, U0>::arithmetic(0x3c6e_f372_fe94_f82b);
+    Check::<U64, U0>::rounding(0xa54f_f53a_5f1d_36f1);
+    Check::<U64, U0>::conversions(0x510e_527f_ade6_82d1);
+}
+
+#[test]
+fn edges_no_fraction() {
+    Check::<U14, U0>::arithmetic(0x9b05_688c_2b3e_6c1f);
+    Check::<U14, U0>::rounding(0x1f83_d9ab_fb41_bd6b);
+    Check::<U14, U0>::conversions(0x5be0_cd19_137e_2179);
+}
+
+#[test]
+fn edges_widest_narrow() {
+    Check::<U127, U63>::arithmetic(0xcbbb_9d5d_c105_9ed8);
+    Check::<U127, U63>::rounding(0x629a_292a_367c_d507);
+    Check::<U127, U63>::conversions(0x9159_015a_3070_dd17);
 }
