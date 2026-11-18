@@ -111,10 +111,11 @@
 //! The Prover models a bitwise or of two non-constant values only by bounds,
 //! and on SBF a `u128` shift by a constant, the overflow flag of a checked
 //! `u128` product and the reassembly of a `u128` division's operands all
-//! compile to one. So range checks here compare with constants, and the
-//! narrowing quotient, multiplication by an integer and fixed-point division
-//! are computed with `cvlr-mathint`'s native integers, which the Prover models
-//! exactly. Native integers are 64 bits wide on the host, so with the `rt`
+//! compile to one. A `u128` product's two words also take a trip through the
+//! stack that its pointer analysis can lose track of. So range checks here
+//! compare with constants, and the narrowing quotient, fixed-point
+//! multiplication and division, and multiplication by an integer are computed
+//! with `cvlr-mathint`'s native integers, which the Prover models exactly. Native integers are 64 bits wide on the host, so with the `rt`
 //! feature those operations use `u128` arithmetic with the same results.
 //!
 //! # Layout
@@ -168,7 +169,9 @@ fn div_to_u64(x: u128, d: u128) -> u64 {
 enum Exact {
     /// In narrow units.
     Units(u128),
-    /// In narrow units times `2^NFrac`: the product of two narrow values.
+    /// In narrow units times `2^NFrac`: the product of two narrow values, on
+    /// the host.
+    #[cfg(feature = "rt")]
     Product(u128),
     /// A wide encoding: narrow units times `2^(Frac - NFrac)`.
     Wide(u128),
@@ -228,13 +231,16 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
         }
     }
 
+    #[cfg(feature = "rt")]
     const PRODUCT_WIDE_MAX: u128 = Self::scaled_limit(Self::WIDE_MAX_NARROW, Self::PRODUCT_SCALE);
+    #[cfg(feature = "rt")]
     const PRODUCT_NARROW_MAX: u128 = Self::scaled_limit(Self::NARROW_MAX, Self::PRODUCT_SCALE);
     const WIDE_NARROW_MAX: u128 = Self::scaled_limit(Self::NARROW_MAX, Self::WIDE_SCALE);
 
     /// The wide type wraps modulo `2^128` of its encoding: in narrow units,
     /// modulo `2^(128 - Frac + NFrac)`, which is `WIDE_MAX_NARROW + 1`.
     /// Products wrap modulo that times `2^NFrac`.
+    #[cfg(feature = "rt")]
     const PRODUCT_WRAP_MASK: u128 = Self::scaled_limit(Self::WIDE_MAX_NARROW, Self::PRODUCT_SCALE);
 
     /// The number of integer bits of the wide type.
@@ -340,6 +346,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     fn fits_wide(r: Exact) -> bool {
         match r {
             Exact::Units(x) => x <= Self::WIDE_MAX_NARROW,
+            #[cfg(feature = "rt")]
             Exact::Product(x) => x <= Self::PRODUCT_WIDE_MAX,
             Exact::Wide(_) => true,
             #[cfg(not(feature = "rt"))]
@@ -352,6 +359,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     fn fits_narrow(r: Exact) -> bool {
         match r {
             Exact::Units(x) => x <= Self::NARROW_MAX,
+            #[cfg(feature = "rt")]
             Exact::Product(x) => x <= Self::PRODUCT_NARROW_MAX,
             Exact::Wide(x) => x <= Self::WIDE_NARROW_MAX,
             #[cfg(not(feature = "rt"))]
@@ -365,6 +373,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     fn quotient(r: Exact) -> u64 {
         match r {
             Exact::Units(x) => x as u64,
+            #[cfg(feature = "rt")]
             Exact::Product(x) => div_to_u64(x, Self::PRODUCT_SCALE),
             Exact::Wide(x) => div_to_u64(x, Self::WIDE_SCALE),
             #[cfg(not(feature = "rt"))]
@@ -377,6 +386,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     fn wrapped(r: Exact) -> Exact {
         match r {
             Exact::Units(x) => Exact::Units(x & Self::WIDE_MAX_NARROW),
+            #[cfg(feature = "rt")]
             Exact::Product(x) => Exact::Product(x & Self::PRODUCT_WRAP_MASK),
             Exact::Wide(x) => Exact::Wide(x),
             #[cfg(not(feature = "rt"))]
@@ -444,6 +454,20 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
             .map(Exact::Units)
     }
 
+    /// `self * rhs` in narrow units, rounded down, as one native multiply and
+    /// divide. As a `u128` product its two words take a trip through the
+    /// stack (`__multi3`) that the Prover's pointer analysis can lose track
+    /// of, leaving the high word unconstrained.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn mul_narrow(self, rhs: Self) -> Exact {
+        Exact::Native(NativeInt::from(self.narrow).muldiv(
+            NativeInt::from(rhs.narrow),
+            NativeInt::from(Self::PRODUCT_SCALE),
+        ))
+    }
+
+    #[cfg(feature = "rt")]
     #[inline(always)]
     fn mul_narrow(self, rhs: Self) -> Exact {
         Exact::Product((self.narrow as u128) * (rhs.narrow as u128))

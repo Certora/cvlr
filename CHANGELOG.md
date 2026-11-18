@@ -17,8 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     result is the wide result rounded down to the narrow grid, and results
     that fit only the wide type are assumed away. Range checks compare with
     constants, and the operations the Prover would otherwise see as 128-bit
-    shifts, an integer product's overflow flag or a 128-bit division (the
-    narrowing quotient, multiplication by an integer, fixed-point division)
+    shifts, 128-bit products or a 128-bit division (the narrowing quotient,
+    fixed-point multiplication and division, multiplication by an integer)
     are native integers, which it models exactly.
   - `cvlr_fixed::narrow_lit!`, a compile-time literal of such a type, the
     stand-in for `fixed_macro`'s literal macros.
