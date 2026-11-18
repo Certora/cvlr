@@ -426,8 +426,24 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     fn saturating(r: Option<Exact>) -> Self {
         match r {
             Some(r) if Self::fits_narrow(r) => Self::from_narrow(Self::quotient(r)),
-            _ => Self::MAX,
+            _ => Self::saturated(),
         }
+    }
+
+    /// [`MAX`](Self::MAX), as a run-time result.
+    ///
+    /// LLVM materializes `u64::MAX` as the immediate `-1`, which the Prover
+    /// reads as `2^256 - 1`; the native integer's maximum is exact.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn saturated() -> Self {
+        Self::from_narrow(u64::from(NativeInt::u64_max()))
+    }
+
+    #[cfg(feature = "rt")]
+    #[inline(always)]
+    fn saturated() -> Self {
+        Self::MAX
     }
 
     #[inline(always)]
