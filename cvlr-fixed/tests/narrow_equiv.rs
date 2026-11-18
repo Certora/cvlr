@@ -10,8 +10,9 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 
 use cvlr_fixed::narrow::NarrowFixedU128;
 use fixed::traits::FromFixed;
-use fixed::types::extra::{LeEqU128, LeEqU64, U0, U127, U14, U20, U32, U60, U63, U64};
-use fixed::{FixedU128, FixedU64};
+use fixed::traits::ToFixed;
+use fixed::types::extra::{LeEqU128, LeEqU64, U0, U127, U14, U20, U32, U48, U60, U63, U64};
+use fixed::{FixedI128, FixedU128, FixedU64};
 
 struct Rng(u64);
 
@@ -179,7 +180,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> Check<Frac, NFrac> {
                 na.saturating_sub(nb).to_bits(),
                 wa.saturating_sub(wb).to_bits()
             );
-            for (what, s, w) in [
+            let mut saturating = vec![
                 (
                     "saturating_add",
                     na.saturating_add(nb),
@@ -190,7 +191,20 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> Check<Frac, NFrac> {
                     na.saturating_mul(nb),
                     wa.saturating_mul(wb),
                 ),
-            ] {
+                (
+                    "saturating_mul_int",
+                    na.saturating_mul_int(int),
+                    wa.saturating_mul_int(int),
+                ),
+            ];
+            if b != 0 {
+                saturating.push((
+                    "saturating_div",
+                    na.saturating_div(nb),
+                    wa.saturating_div(wb),
+                ));
+            }
+            for (what, s, w) in saturating {
                 let expected =
                     Self::truncate(w).unwrap_or(NarrowFixedU128::<Frac, NFrac>::MAX.to_bits());
                 assert_eq!(s.to_bits(), expected, "{what}({a:#x}, {b:#x})");
@@ -243,6 +257,18 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> Check<Frac, NFrac> {
         }
     }
 
+    /// Compares conversions from a source that may be negative, which the
+    /// wide type rejects or saturates to zero.
+    fn signed(what: &str, src: impl ToFixed + Copy) {
+        Self::option(what, 0, 0, FixedU128::<Frac>::checked_from_num(src), || {
+            NarrowFixedU128::checked_from_num(src)
+        });
+        let saturated = NarrowFixedU128::<Frac, NFrac>::saturating_from_num(src);
+        let expected = Self::truncate(FixedU128::<Frac>::saturating_from_num(src))
+            .unwrap_or(NarrowFixedU128::<Frac, NFrac>::MAX.to_bits());
+        assert_eq!(saturated.to_bits(), expected, "saturating_from_num({what})");
+    }
+
     fn conversions(seed: u64) {
         let mut rng = Rng(seed);
         for _ in 0..CASES {
@@ -279,6 +305,19 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> Check<Frac, NFrac> {
                 Some(expected) => assert_eq!(saturated.to_bits(), expected),
                 None => assert_eq!(saturated, NarrowFixedU128::MAX),
             }
+
+            // Signed sources, half of them negative: an integer and a signed
+            // fixed-point value.
+            let magnitude = rng.spread() >> 1;
+            let signed = if rng.next() & 1 == 0 {
+                magnitude as i64
+            } else {
+                -(magnitude as i64)
+            };
+            Self::signed("i64", signed);
+            let signed_fixed =
+                FixedI128::<U48>::from_bits(((signed as i128) << 64) | rng.next() as i128);
+            Self::signed("I80F48", signed_fixed);
 
             let bits = ((rng.next() as u128) << 64) | rng.next() as u128;
             let bits = bits >> (rng.next() % 128);

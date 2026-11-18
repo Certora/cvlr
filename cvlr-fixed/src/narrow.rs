@@ -42,6 +42,20 @@
 //! type can say nothing about rounding or precision, and every verdict that
 //! depends on it holds under this modeling choice only.
 //!
+//! A value below `2^-NFrac` is zero. With `NFrac = 14` that is anything below
+//! about `6.1e-5`: a 5% annual rate per slot (about `7.9e-10`) is exactly
+//! zero, and so is everything it multiplies. Interest accrual, fees and other
+//! small per-step factors can vanish, and a rule about them then holds
+//! trivially. Check with `cvlr_satisfy!` that the small factors a rule depends
+//! on are non-zero on the paths of interest, or choose a larger `NFrac`.
+//!
+//! Conversions from floats (`from_num`, `checked_from_num`,
+//! `saturating_from_num`) are the exception to rounding down: `fixed` rounds a
+//! float to nearest, and this type does so at the narrow precision, so the
+//! result can be one `2^-NFrac` above the wide result rounded down
+//! (`from_num(0.99999f64)` is exactly one with `NFrac = 14`). Integer and
+//! fixed-point sources round down as described.
+//!
 //! # What it keeps
 //!
 //! * **The stored encoding.** [`to_bits`](NarrowFixedU128::to_bits) and
@@ -59,12 +73,20 @@
 //! # What it assumes
 //!
 //! A result that fits the wide type but not the narrow one has no faithful
-//! narrow value. Operations add a Prover assumption (`cvlr_assume!`) that this
-//! does not happen, so executions where it would are dropped from the analysis.
+//! narrow value. What an operation does with one depends on its family:
+//!
+//! * `checked_*`, `wrapping_*`, `unwrapped_*`, the operators, `from_num` and
+//!   [`from_wide`](NarrowFixedU128::from_wide) add a Prover assumption
+//!   (`cvlr_assume!`) that it does not happen, so executions where it would
+//!   are dropped from the analysis. On the host (the `rt` feature) such an
+//!   assumption panics.
+//! * `saturating_*` operations and [`from_bits`](NarrowFixedU128::from_bits)
+//!   clamp it to the narrow [`MAX`](NarrowFixedU128::MAX), where the wide type
+//!   would return the exact value.
+//!
 //! In effect every value a rule reaches is below `2^(64 - NFrac)`; choose
 //! `NFrac` so that the amounts the property is about fit, and confirm with
-//! `cvlr_satisfy!` that the paths of interest stay reachable. On the host (the
-//! `rt` feature) such an assumption panics.
+//! `cvlr_satisfy!` that the paths of interest stay reachable.
 //!
 //! [`from_bits`](NarrowFixedU128::from_bits) is not a `const fn`, unlike the
 //! wide type's: it computes through the Prover's native integers, which model
@@ -89,6 +111,9 @@
 //! narrow type's, not the wide type's: the wide maximum has no narrow
 //! representation, and its `to_bits()` is not `u128::MAX`. Saturating
 //! operations saturate at the narrow maximum.
+//!
+//! A rule or program that uses [`MAX`](NarrowFixedU128::MAX) needs
+//! `-solanaTACSoundSignedMath`: see its documentation.
 //!
 //! # Operators
 //!
@@ -115,8 +140,12 @@
 //! stack that its pointer analysis can lose track of. So range checks here
 //! compare with constants, and the narrowing quotient, fixed-point
 //! multiplication and division, and multiplication by an integer are computed
-//! with `cvlr-mathint`'s native integers, which the Prover models exactly. Native integers are 64 bits wide on the host, so with the `rt`
-//! feature those operations use `u128` arithmetic with the same results.
+//! with `cvlr-mathint`'s native integers, which the Prover models exactly.
+//! The constants those computations use are built so that none is `2^63` or
+//! more, which LLVM would encode as a negative immediate; so the type's own
+//! results are exact with or without `-solanaTACSoundSignedMath`. Native
+//! integers are 64 bits wide on the host, so with the `rt` feature those
+//! operations use `u128` arithmetic with the same results.
 //!
 //! # Layout
 //!
@@ -140,8 +169,23 @@ use fixed::{FixedU128, FixedU64, ParseFixedError};
 #[cfg(not(feature = "rt"))]
 use cvlr_mathint::NativeInt;
 
-/// `x / d` rounded down, where the caller has established that the quotient
-/// fits in a `u64`, and `d` is a constant power of two.
+/// `2^k` for a constant `k <= 128`, as a product of factors below `2^63`.
+///
+/// LLVM encodes a constant of `2^63` or more, such as `u64::MAX` or the low
+/// word of `u128::MAX >> k`, as a negative immediate, which the Prover reads
+/// as a 256-bit value unless `-solanaTACSoundSignedMath` is on. Native
+/// integers built from these factors are exact in either mode.
+#[cfg(not(feature = "rt"))]
+#[inline(always)]
+fn native_pow2(k: u32) -> NativeInt {
+    let a = k / 3;
+    let b = (k - a) / 2;
+    let c = k - a - b;
+    NativeInt::from(1u64 << a) * NativeInt::from(1u64 << b) * NativeInt::from(1u64 << c)
+}
+
+/// `x / 2^k` rounded down, where the caller has established that the
+/// quotient fits in a `u64`, and `k <= 64` is a constant.
 ///
 /// On SBF a `u128` shift by a constant compiles to two 64-bit halves joined by
 /// a bitwise or, and the Prover models an or of two non-constant values only
@@ -149,17 +193,17 @@ use cvlr_mathint::NativeInt;
 /// returning a `u64` spares the split back into two halves.
 #[cfg(not(feature = "rt"))]
 #[inline(always)]
-fn div_to_u64(x: u128, d: u128) -> u64 {
-    u64::from(NativeInt::from(x) / NativeInt::from(d))
+fn shr_to_u64(x: u128, k: u32) -> u64 {
+    u64::from(NativeInt::from(x) / native_pow2(k))
 }
 
-/// `x / d` rounded down, where the caller has established that the quotient
-/// fits in a `u64`. On the host, where native integers are 64 bits wide, a
-/// plain division.
+/// `x / 2^k` rounded down, where the caller has established that the
+/// quotient fits in a `u64`. On the host, where native integers are 64 bits
+/// wide, a plain shift.
 #[cfg(feature = "rt")]
 #[inline(always)]
-fn div_to_u64(x: u128, d: u128) -> u64 {
-    (x / d) as u64
+fn shr_to_u64(x: u128, k: u32) -> u64 {
+    (x >> k) as u64
 }
 
 /// An exact result in narrow units. The variant fixes the scale the value is
@@ -218,8 +262,10 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     /// The narrow type's largest value, in narrow units.
     const NARROW_MAX: u128 = u64::MAX as u128;
 
-    /// The scales of [`Exact::Product`] and [`Exact::Wide`].
+    /// The scale of [`Exact::Product`].
+    #[cfg(feature = "rt")]
     const PRODUCT_SCALE: u128 = 1 << NFrac::U32;
+    /// The scale of [`Exact::Wide`].
     const WIDE_SCALE: u128 = 1 << Self::SHIFT;
 
     /// The largest value, held at `scale`, whose quotient is at most `limit`.
@@ -260,6 +306,13 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     pub const MIN: Self = Self::ZERO;
     /// The largest value, `2^(64 - NFrac) - 2^-NFrac`: the narrow type's, not
     /// the wide type's.
+    ///
+    /// Its narrow word is `u64::MAX`, which LLVM encodes as the immediate
+    /// `-1`. Without `-solanaTACSoundSignedMath` the Prover reads that as
+    /// `2^256 - 1`, so a rule or program that compares with `MAX`, for example
+    /// `x.saturating_add(y) == MAX` as a saturation sentinel, is modelled
+    /// wrongly: run it with the flag on. Results this type computes, a
+    /// saturated one included, are exact in either mode.
     pub const MAX: Self = Self::from_narrow(u64::MAX);
 
     const fn from_narrow(narrow: u64) -> Self {
@@ -350,7 +403,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
             Exact::Product(x) => x <= Self::PRODUCT_WIDE_MAX,
             Exact::Wide(_) => true,
             #[cfg(not(feature = "rt"))]
-            Exact::Native(n) => n <= Self::WIDE_MAX_NARROW,
+            Exact::Native(n) => n < Self::native_wide_limit(),
         }
     }
 
@@ -363,7 +416,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
             Exact::Product(x) => x <= Self::PRODUCT_NARROW_MAX,
             Exact::Wide(x) => x <= Self::WIDE_NARROW_MAX,
             #[cfg(not(feature = "rt"))]
-            Exact::Native(n) => n <= Self::NARROW_MAX,
+            Exact::Native(n) => n.is_u64(),
         }
     }
 
@@ -374,8 +427,8 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
         match r {
             Exact::Units(x) => x as u64,
             #[cfg(feature = "rt")]
-            Exact::Product(x) => div_to_u64(x, Self::PRODUCT_SCALE),
-            Exact::Wide(x) => div_to_u64(x, Self::WIDE_SCALE),
+            Exact::Product(x) => shr_to_u64(x, NFrac::U32),
+            Exact::Wide(x) => shr_to_u64(x, Self::SHIFT),
             #[cfg(not(feature = "rt"))]
             Exact::Native(n) => u64::from(n),
         }
@@ -391,10 +444,24 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
             Exact::Wide(x) => Exact::Wide(x),
             #[cfg(not(feature = "rt"))]
             Exact::Native(n) => {
-                let modulus = NativeInt::from(Self::WIDE_MAX_NARROW) + 1u64;
+                let modulus = Self::native_wide_limit();
                 Exact::Native(n - n / modulus * modulus)
             }
         }
+    }
+
+    /// `WIDE_MAX_NARROW + 1`, the wide range in narrow units.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn native_wide_limit() -> NativeInt {
+        native_pow2(128 - Self::SHIFT)
+    }
+
+    /// One in narrow units.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn native_one() -> NativeInt {
+        native_pow2(NFrac::U32)
     }
 
     #[inline(always)]
@@ -433,7 +500,8 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     /// [`MAX`](Self::MAX), as a run-time result.
     ///
     /// LLVM materializes `u64::MAX` as the immediate `-1`, which the Prover
-    /// reads as `2^256 - 1`; the native integer's maximum is exact.
+    /// reads as `2^256 - 1` unless `-solanaTACSoundSignedMath` is on; the
+    /// native integer's maximum is exact in either mode.
     #[cfg(not(feature = "rt"))]
     #[inline(always)]
     fn saturated() -> Self {
@@ -458,9 +526,35 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
 
     // Exact results in narrow units; `None` when they exceed `u128`.
 
+    /// `self + rhs`, as a native sum. As a `u128` sum its carry is a
+    /// comparison of an unmasked 64-bit sum, which the Prover models soundly
+    /// only with `-solanaTACSoundSignedMath`.
+    #[cfg(not(feature = "rt"))]
     #[inline(always)]
-    fn add_narrow(self, rhs: Self) -> Option<Exact> {
-        Some(Exact::Units(self.narrow as u128 + rhs.narrow as u128))
+    fn add_narrow(self, rhs: Self) -> Exact {
+        Exact::Native(NativeInt::from(self.narrow) + NativeInt::from(rhs.narrow))
+    }
+
+    #[cfg(feature = "rt")]
+    #[inline(always)]
+    fn add_narrow(self, rhs: Self) -> Exact {
+        Exact::Units(self.narrow as u128 + rhs.narrow as u128)
+    }
+
+    /// `self - rhs` wrapped as the wide type wraps, before the wrap: the
+    /// difference plus the wide range, as a native integer.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn wrapping_sub_narrow(self, rhs: Self) -> Exact {
+        Exact::Native(
+            NativeInt::from(self.narrow) + Self::native_wide_limit() - NativeInt::from(rhs.narrow),
+        )
+    }
+
+    #[cfg(feature = "rt")]
+    #[inline(always)]
+    fn wrapping_sub_narrow(self, rhs: Self) -> Exact {
+        Exact::Units((self.narrow as u128).wrapping_sub(rhs.narrow as u128))
     }
 
     #[inline(always)]
@@ -477,10 +571,9 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     #[cfg(not(feature = "rt"))]
     #[inline(always)]
     fn mul_narrow(self, rhs: Self) -> Exact {
-        Exact::Native(NativeInt::from(self.narrow).muldiv(
-            NativeInt::from(rhs.narrow),
-            NativeInt::from(Self::PRODUCT_SCALE),
-        ))
+        Exact::Native(
+            NativeInt::from(self.narrow).muldiv(NativeInt::from(rhs.narrow), Self::native_one()),
+        )
     }
 
     #[cfg(feature = "rt")]
@@ -495,10 +588,10 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     #[inline(always)]
     fn div_narrow(self, rhs: Self) -> Option<Exact> {
         (rhs.narrow != 0).then(|| {
-            Exact::Native(NativeInt::from(self.narrow).muldiv(
-                NativeInt::from(Self::PRODUCT_SCALE),
-                NativeInt::from(rhs.narrow),
-            ))
+            Exact::Native(
+                NativeInt::from(self.narrow)
+                    .muldiv(Self::native_one(), NativeInt::from(rhs.narrow)),
+            )
         })
     }
 
@@ -545,20 +638,19 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     ///
     /// The sum is a native integer. As a `u64` or `u128` sum, LLVM folds the
     /// range check into a comparison of `int` with a constant near `2^64`,
-    /// which it encodes as a negative immediate that the Prover reads as a
-    /// 256-bit value.
+    /// which it encodes as a negative immediate.
     #[cfg(not(feature = "rt"))]
     #[inline(always)]
     fn int_plus_one(int: Self) -> Option<Self> {
         Self::checked(Some(Exact::Native(
-            NativeInt::from(int.narrow) + Self::ONE.narrow,
+            NativeInt::from(int.narrow) + Self::native_one(),
         )))
     }
 
     #[cfg(feature = "rt")]
     #[inline(always)]
     fn int_plus_one(int: Self) -> Option<Self> {
-        Self::checked(int.add_narrow(Self::ONE))
+        Self::checked(Some(int.add_narrow(Self::ONE)))
     }
 
     /// The narrow units of a value converted at the narrow precision but with
@@ -596,12 +688,15 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     }
 
     // Conversions into the type convert at the narrow precision, with 128
-    // bits of range: the value rounds down as it does into the wide type, and
-    // the result is in narrow units without a wide shift.
+    // bits of range: an integer or fixed-point value rounds down as it does
+    // into the wide type, and the result is in narrow units without a wide
+    // shift. A float rounds to nearest at the narrow precision instead; see
+    // the module documentation.
 
     /// Converts as the wide type's `from_num` does, then rounds down onto the
     /// narrow grid, assuming the result fits. A value outside the wide range
-    /// wraps as the wide type's does in a release build.
+    /// wraps as the wide type's does in a release build. A float source
+    /// rounds to the nearest narrow value instead.
     pub fn from_num<Src: ToFixed>(src: Src) -> Self {
         let (units, overflow) = src.overflowing_to_fixed::<FixedU128<NFrac>>();
         let r = Exact::Units(units.to_bits());
@@ -613,14 +708,17 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     }
 
     /// Converts as the wide type's `checked_from_num` does: `None` when the
-    /// value does not fit the wide type.
+    /// value does not fit the wide type. A float source rounds to the nearest
+    /// narrow value.
     pub fn checked_from_num<Src: ToFixed>(src: Src) -> Option<Self> {
         Self::checked(Self::from_units(src.overflowing_to_fixed()))
     }
 
-    /// Converts, saturating at [`MAX`](Self::MAX).
+    /// Converts, saturating at zero and at [`MAX`](Self::MAX). A float source
+    /// rounds to the nearest narrow value.
     pub fn saturating_from_num<Src: ToFixed>(src: Src) -> Self {
-        Self::saturating(Self::from_units(src.overflowing_to_fixed()))
+        let units = src.saturating_to_fixed::<FixedU128<NFrac>>();
+        Self::saturating(Some(Exact::Units(units.to_bits())))
     }
 
     // Conversions out of the type depend only on the value, which the narrow
@@ -716,7 +814,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
 
     /// `self + rhs`, `None` on wide overflow.
     pub fn checked_add(self, rhs: Self) -> Option<Self> {
-        Self::checked(self.add_narrow(rhs))
+        Self::checked(Some(self.add_narrow(rhs)))
     }
 
     /// `self - rhs`, `None` when `rhs > self`.
@@ -747,7 +845,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
 
     /// `self + rhs`, saturating at [`MAX`](Self::MAX).
     pub fn saturating_add(self, rhs: Self) -> Self {
-        Self::saturating(self.add_narrow(rhs))
+        Self::saturating(Some(self.add_narrow(rhs)))
     }
 
     /// `self - rhs`, saturating at zero.
@@ -773,14 +871,12 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
 
     /// `self + rhs`, wrapping as the wide type does.
     pub fn wrapping_add(self, rhs: Self) -> Self {
-        Self::wrapping(Exact::Units(self.narrow as u128 + rhs.narrow as u128))
+        Self::wrapping(self.add_narrow(rhs))
     }
 
     /// `self - rhs`, wrapping as the wide type does.
     pub fn wrapping_sub(self, rhs: Self) -> Self {
-        Self::wrapping(Exact::Units(
-            (self.narrow as u128).wrapping_sub(rhs.narrow as u128),
-        ))
+        Self::wrapping(self.wrapping_sub_narrow(rhs))
     }
 
     /// `self * rhs` rounded down, wrapping as the wide type does.
@@ -806,7 +902,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
 
     /// `self + rhs`, panicking on wide overflow.
     pub fn unwrapped_add(self, rhs: Self) -> Self {
-        Self::unwrapped(self.add_narrow(rhs))
+        Self::unwrapped(Some(self.add_narrow(rhs)))
     }
 
     /// `self - rhs`, panicking when `rhs > self`.

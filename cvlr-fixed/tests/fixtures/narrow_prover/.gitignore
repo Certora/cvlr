@@ -2,3 +2,4 @@ target/
 .certora_internal/
 build.log
 Cargo.lock
+emv-*/
