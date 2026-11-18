@@ -106,6 +106,17 @@
 //! its fixed-point type does not compile against this one, and needs those
 //! uses rewritten under the verification feature.
 //!
+//! # What the Prover sees
+//!
+//! The Prover models a bitwise or of two non-constant values only by bounds,
+//! and on SBF a `u128` shift by a constant, the overflow flag of a checked
+//! `u128` product and the reassembly of a `u128` division's operands all
+//! compile to one. So range checks here compare with constants, and the
+//! narrowing quotient, multiplication by an integer and fixed-point division
+//! are computed with `cvlr-mathint`'s native integers, which the Prover models
+//! exactly. Native integers are 64 bits wide on the host, so with the `rt`
+//! feature those operations use `u128` arithmetic with the same results.
+//!
 //! # Layout
 //!
 //! The value is a `u64`: 8 bytes, aligned to 8, where the wide type is 16
@@ -125,8 +136,11 @@ use fixed::traits::{Fixed, FromFixed, ToFixed};
 use fixed::types::extra::{LeEqU128, LeEqU64};
 use fixed::{FixedU128, FixedU64, ParseFixedError};
 
-/// `x / 2^k`, rounded down, for `k <= 64`, where the caller has established
-/// that the quotient fits in a `u64`.
+#[cfg(not(feature = "rt"))]
+use cvlr_mathint::NativeInt;
+
+/// `x / d` rounded down, where the caller has established that the quotient
+/// fits in a `u64`, and `d` is a constant power of two.
 ///
 /// On SBF a `u128` shift by a constant compiles to two 64-bit halves joined by
 /// a bitwise or, and the Prover models an or of two non-constant values only
@@ -134,61 +148,34 @@ use fixed::{FixedU128, FixedU64, ParseFixedError};
 /// returning a `u64` spares the split back into two halves.
 #[cfg(not(feature = "rt"))]
 #[inline(always)]
-fn shr_to_u64(x: u128, k: u32) -> u64 {
-    use cvlr_mathint::NativeInt;
-    u64::from(NativeInt::from(x) / NativeInt::from(1u128 << k))
+fn div_to_u64(x: u128, d: u128) -> u64 {
+    u64::from(NativeInt::from(x) / NativeInt::from(d))
 }
 
-/// `x / 2^k`, rounded down, for `k <= 64`, where the caller has established
-/// that the quotient fits in a `u64`. On the host, where native integers are
-/// 64 bits wide, a plain shift.
+/// `x / d` rounded down, where the caller has established that the quotient
+/// fits in a `u64`. On the host, where native integers are 64 bits wide, a
+/// plain division.
 #[cfg(feature = "rt")]
 #[inline(always)]
-fn shr_to_u64(x: u128, k: u32) -> u64 {
-    (x >> k) as u64
+fn div_to_u64(x: u128, d: u128) -> u64 {
+    (x / d) as u64
 }
 
-/// An exact result in narrow units, `x / 2^k` rounded down, kept unshifted so
-/// that range checks compare `x` with constants and only an in-range quotient
-/// is computed.
+/// An exact result in narrow units. The variant fixes the scale the value is
+/// held at, so that range checks compare it with constants and only an
+/// in-range quotient is computed.
 #[derive(Clone, Copy)]
-struct Scaled {
-    x: u128,
-    k: u32,
-}
-
-impl Scaled {
-    const fn exact(x: u128) -> Self {
-        Self { x, k: 0 }
-    }
-
-    /// Whether the quotient is at most `limit`.
-    fn at_most(self, limit: u128) -> bool {
-        limit >= u128::MAX >> self.k || self.x < (limit + 1) << self.k
-    }
-
-    /// The quotient, which the caller has established is at most `u64::MAX`.
-    fn quotient(self) -> u64 {
-        if self.k == 0 {
-            self.x as u64
-        } else {
-            shr_to_u64(self.x, self.k)
-        }
-    }
-
-    /// The quotient modulo `2^m`, for `m <= 128`.
-    fn wrapped(self, m: u32) -> Self {
-        let bits = m + self.k;
-        let mask = if bits >= 128 {
-            u128::MAX
-        } else {
-            (1 << bits) - 1
-        };
-        Self {
-            x: self.x & mask,
-            k: self.k,
-        }
-    }
+enum Exact {
+    /// In narrow units.
+    Units(u128),
+    /// In narrow units times `2^NFrac`: the product of two narrow values.
+    Product(u128),
+    /// A wide encoding: narrow units times `2^(Frac - NFrac)`.
+    Wide(u128),
+    /// In narrow units, as a native integer, for results that need more than
+    /// 128 bits or a division the Prover should see whole.
+    #[cfg(not(feature = "rt"))]
+    Native(NativeInt),
 }
 
 /// A [`FixedU128<Frac>`] stand-in that computes as a [`FixedU64<NFrac>`].
@@ -206,7 +193,7 @@ enum Outcome {
     WideOverflow,
 }
 
-impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> NarrowFixedU128<Frac, NFrac> {
     const VALID: () = assert!(
         NFrac::U32 < 64 && NFrac::U32 <= Frac::U32 && Frac::U32 - NFrac::U32 <= 64,
         "NarrowFixedU128 needs NFrac < 64 and NFrac <= Frac <= NFrac + 64"
@@ -227,6 +214,28 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
 
     /// The narrow type's largest value, in narrow units.
     const NARROW_MAX: u128 = u64::MAX as u128;
+
+    /// The scales of [`Exact::Product`] and [`Exact::Wide`].
+    const PRODUCT_SCALE: u128 = 1 << NFrac::U32;
+    const WIDE_SCALE: u128 = 1 << Self::SHIFT;
+
+    /// The largest value, held at `scale`, whose quotient is at most `limit`.
+    const fn scaled_limit(limit: u128, scale: u128) -> u128 {
+        if limit >= u128::MAX / scale {
+            u128::MAX
+        } else {
+            (limit + 1) * scale - 1
+        }
+    }
+
+    const PRODUCT_WIDE_MAX: u128 = Self::scaled_limit(Self::WIDE_MAX_NARROW, Self::PRODUCT_SCALE);
+    const PRODUCT_NARROW_MAX: u128 = Self::scaled_limit(Self::NARROW_MAX, Self::PRODUCT_SCALE);
+    const WIDE_NARROW_MAX: u128 = Self::scaled_limit(Self::NARROW_MAX, Self::WIDE_SCALE);
+
+    /// The wide type wraps modulo `2^128` of its encoding: in narrow units,
+    /// modulo `2^(128 - Frac + NFrac)`, which is `WIDE_MAX_NARROW + 1`.
+    /// Products wrap modulo that times `2^NFrac`.
+    const PRODUCT_WRAP_MASK: u128 = Self::scaled_limit(Self::WIDE_MAX_NARROW, Self::PRODUCT_SCALE);
 
     /// The number of integer bits of the wide type.
     pub const INT_NBITS: u32 = 128 - Frac::U32;
@@ -263,7 +272,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
     /// Prover can model it exactly; in a constant, use
     /// [`const_from_bits`](Self::const_from_bits).
     pub fn from_bits(bits: u128) -> Self {
-        Self::saturating(Some(Self::wide_bits(bits)))
+        Self::saturating(Some(Exact::Wide(bits)))
     }
 
     /// [`from_bits`](Self::from_bits) for constants.
@@ -313,7 +322,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
     /// The wide value `wide`, rounded down onto the narrow grid, assuming it
     /// is within the narrow range.
     pub fn from_wide(wide: FixedU128<Frac>) -> Self {
-        Self::assume_fits(Self::wide_bits(wide.to_bits()))
+        Self::assume_fits(Exact::Wide(wide.to_bits()))
     }
 
     /// The equal value of the narrow type.
@@ -326,87 +335,199 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
         Self::from_narrow(narrow.to_bits())
     }
 
-    /// A wide encoding, in narrow units.
-    const fn wide_bits(bits: u128) -> Scaled {
-        Scaled {
-            x: bits,
-            k: Self::SHIFT,
+    /// Whether `r` is within the wide range.
+    #[inline(always)]
+    fn fits_wide(r: Exact) -> bool {
+        match r {
+            Exact::Units(x) => x <= Self::WIDE_MAX_NARROW,
+            Exact::Product(x) => x <= Self::PRODUCT_WIDE_MAX,
+            Exact::Wide(_) => true,
+            #[cfg(not(feature = "rt"))]
+            Exact::Native(n) => n <= Self::WIDE_MAX_NARROW,
         }
     }
 
-    fn assume_fits(r: Scaled) -> Self {
-        cvlr_assume!(r.at_most(Self::NARROW_MAX));
-        Self::from_narrow(r.quotient())
+    /// Whether `r` is within the narrow range.
+    #[inline(always)]
+    fn fits_narrow(r: Exact) -> bool {
+        match r {
+            Exact::Units(x) => x <= Self::NARROW_MAX,
+            Exact::Product(x) => x <= Self::PRODUCT_NARROW_MAX,
+            Exact::Wide(x) => x <= Self::WIDE_NARROW_MAX,
+            #[cfg(not(feature = "rt"))]
+            Exact::Native(n) => n <= Self::NARROW_MAX,
+        }
+    }
+
+    /// `r` in narrow units, which the caller has established fits the narrow
+    /// range.
+    #[inline(always)]
+    fn quotient(r: Exact) -> u64 {
+        match r {
+            Exact::Units(x) => x as u64,
+            Exact::Product(x) => div_to_u64(x, Self::PRODUCT_SCALE),
+            Exact::Wide(x) => div_to_u64(x, Self::WIDE_SCALE),
+            #[cfg(not(feature = "rt"))]
+            Exact::Native(n) => u64::from(n),
+        }
+    }
+
+    /// `r` wrapped as the wide type wraps.
+    #[inline(always)]
+    fn wrapped(r: Exact) -> Exact {
+        match r {
+            Exact::Units(x) => Exact::Units(x & Self::WIDE_MAX_NARROW),
+            Exact::Product(x) => Exact::Product(x & Self::PRODUCT_WRAP_MASK),
+            Exact::Wide(x) => Exact::Wide(x),
+            #[cfg(not(feature = "rt"))]
+            Exact::Native(n) => {
+                let modulus = NativeInt::from(Self::WIDE_MAX_NARROW) + 1u64;
+                Exact::Native(n - n / modulus * modulus)
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn assume_fits(r: Exact) -> Self {
+        cvlr_assume!(Self::fits_narrow(r));
+        Self::from_narrow(Self::quotient(r))
     }
 
     /// Classifies an exact result `r`: a wide overflow, or a narrow value under
     /// the assumption that it fits. `None` is a result beyond `u128`, which is
     /// always a wide overflow.
-    fn settle(r: Option<Scaled>) -> Outcome {
+    #[inline(always)]
+    fn settle(r: Option<Exact>) -> Outcome {
         match r {
-            Some(r) if r.at_most(Self::WIDE_MAX_NARROW) => {
-                cvlr_assume!(r.at_most(Self::NARROW_MAX));
-                Outcome::Fits(r.quotient())
-            }
+            Some(r) if Self::fits_wide(r) => Outcome::Fits(Self::assume_fits(r).narrow),
             _ => Outcome::WideOverflow,
         }
     }
 
-    fn checked(r: Option<Scaled>) -> Option<Self> {
+    #[inline(always)]
+    fn checked(r: Option<Exact>) -> Option<Self> {
         match Self::settle(r) {
             Outcome::Fits(n) => Some(Self::from_narrow(n)),
             Outcome::WideOverflow => None,
         }
     }
 
-    fn saturating(r: Option<Scaled>) -> Self {
+    #[inline(always)]
+    fn saturating(r: Option<Exact>) -> Self {
         match r {
-            Some(r) if r.at_most(Self::NARROW_MAX) => Self::from_narrow(r.quotient()),
+            Some(r) if Self::fits_narrow(r) => Self::from_narrow(Self::quotient(r)),
             _ => Self::MAX,
         }
     }
 
-    /// The wide result wrapped modulo `2^128` of its encoding: in narrow units,
-    /// modulo `2^(128 - Frac + NFrac)`.
-    fn wrapping(r: Scaled) -> Self {
-        Self::assume_fits(r.wrapped(128 - Self::SHIFT))
+    #[inline(always)]
+    fn wrapping(r: Exact) -> Self {
+        Self::assume_fits(Self::wrapped(r))
     }
 
-    fn unwrapped(r: Option<Scaled>) -> Self {
+    #[inline(always)]
+    fn unwrapped(r: Option<Exact>) -> Self {
         Self::checked(r).expect("overflow")
     }
 
     // Exact results in narrow units; `None` when they exceed `u128`.
 
-    fn add_narrow(self, rhs: Self) -> Option<Scaled> {
-        Some(Scaled::exact(self.narrow as u128 + rhs.narrow as u128))
+    #[inline(always)]
+    fn add_narrow(self, rhs: Self) -> Option<Exact> {
+        Some(Exact::Units(self.narrow as u128 + rhs.narrow as u128))
     }
 
-    fn sub_narrow(self, rhs: Self) -> Option<Scaled> {
+    #[inline(always)]
+    fn sub_narrow(self, rhs: Self) -> Option<Exact> {
         (self.narrow as u128)
             .checked_sub(rhs.narrow as u128)
-            .map(Scaled::exact)
+            .map(Exact::Units)
     }
 
-    fn mul_narrow(self, rhs: Self) -> Scaled {
-        Scaled {
-            x: (self.narrow as u128) * (rhs.narrow as u128),
-            k: NFrac::U32,
-        }
+    #[inline(always)]
+    fn mul_narrow(self, rhs: Self) -> Exact {
+        Exact::Product((self.narrow as u128) * (rhs.narrow as u128))
     }
 
-    fn div_narrow(self, rhs: Self) -> Option<Scaled> {
-        if rhs.narrow == 0 {
-            None
-        } else {
-            Some(Scaled::exact(
-                ((self.narrow as u128) << NFrac::U32) / rhs.narrow as u128,
+    /// `(self << NFrac) / rhs`, as one native division: as a `u128` division
+    /// it is a call whose operands the Prover reassembles from 64-bit halves.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn div_narrow(self, rhs: Self) -> Option<Exact> {
+        (rhs.narrow != 0).then(|| {
+            Exact::Native(NativeInt::from(self.narrow).muldiv(
+                NativeInt::from(Self::PRODUCT_SCALE),
+                NativeInt::from(rhs.narrow),
             ))
-        }
+        })
     }
 
-    fn mul_int_narrow(self, rhs: u128) -> Option<Scaled> {
-        (self.narrow as u128).checked_mul(rhs).map(Scaled::exact)
+    #[cfg(feature = "rt")]
+    #[inline(always)]
+    fn div_narrow(self, rhs: Self) -> Option<Exact> {
+        (rhs.narrow != 0)
+            .then(|| Exact::Units(((self.narrow as u128) << NFrac::U32) / rhs.narrow as u128))
+    }
+
+    /// `self * rhs`, as a native product: as a checked `u128` product its
+    /// overflow flag is a bitwise or of two flags, which the Prover models
+    /// only by bounds.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn mul_int_narrow(self, rhs: u128) -> Option<Exact> {
+        Some(Exact::Native(
+            NativeInt::from(self.narrow) * NativeInt::from(rhs),
+        ))
+    }
+
+    #[cfg(feature = "rt")]
+    #[inline(always)]
+    fn mul_int_narrow(self, rhs: u128) -> Option<Exact> {
+        (self.narrow as u128).checked_mul(rhs).map(Exact::Units)
+    }
+
+    /// `self * rhs` wrapped as the wide type wraps.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn wrapping_mul_int_narrow(self, rhs: u128) -> Exact {
+        Self::wrapped(Exact::Native(
+            NativeInt::from(self.narrow) * NativeInt::from(rhs),
+        ))
+    }
+
+    #[cfg(feature = "rt")]
+    #[inline(always)]
+    fn wrapping_mul_int_narrow(self, rhs: u128) -> Exact {
+        Self::wrapped(Exact::Units((self.narrow as u128).wrapping_mul(rhs)))
+    }
+
+    /// The integer value `int` plus one, `None` on wide overflow.
+    ///
+    /// The sum is a native integer. As a `u64` or `u128` sum, LLVM folds the
+    /// range check into a comparison of `int` with a constant near `2^64`,
+    /// which it encodes as a negative immediate that the Prover reads as a
+    /// 256-bit value.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn int_plus_one(int: Self) -> Option<Self> {
+        Self::checked(Some(Exact::Native(
+            NativeInt::from(int.narrow) + Self::ONE.narrow,
+        )))
+    }
+
+    #[cfg(feature = "rt")]
+    #[inline(always)]
+    fn int_plus_one(int: Self) -> Option<Self> {
+        Self::checked(int.add_narrow(Self::ONE))
+    }
+
+    /// The narrow units of a value converted at the narrow precision but with
+    /// 128 bits of range, and whether that conversion overflowed: the
+    /// conversion rounds as the wide type's does, and overflows only beyond
+    /// the wide range.
+    #[inline(always)]
+    fn from_units((units, overflow): (FixedU128<NFrac>, bool)) -> Option<Exact> {
+        (!overflow).then(|| Exact::Units(units.to_bits()))
     }
 
     /// The integer `src`. Panics, at compile time in a constant, if it does not
@@ -434,22 +555,32 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
         Self::from_narrow(narrow as u64)
     }
 
+    // Conversions into the type convert at the narrow precision, with 128
+    // bits of range: the value rounds down as it does into the wide type, and
+    // the result is in narrow units without a wide shift.
+
     /// Converts as the wide type's `from_num` does, then rounds down onto the
-    /// narrow grid, assuming the result fits.
+    /// narrow grid, assuming the result fits. A value outside the wide range
+    /// wraps as the wide type's does in a release build.
     pub fn from_num<Src: ToFixed>(src: Src) -> Self {
-        Self::from_wide(FixedU128::<Frac>::from_num(src))
+        let (units, overflow) = src.overflowing_to_fixed::<FixedU128<NFrac>>();
+        let r = Exact::Units(units.to_bits());
+        if !overflow && Self::fits_wide(r) {
+            Self::assume_fits(r)
+        } else {
+            Self::wrapping(r)
+        }
     }
 
     /// Converts as the wide type's `checked_from_num` does: `None` when the
     /// value does not fit the wide type.
     pub fn checked_from_num<Src: ToFixed>(src: Src) -> Option<Self> {
-        FixedU128::<Frac>::checked_from_num(src).map(Self::from_wide)
+        Self::checked(Self::from_units(src.overflowing_to_fixed()))
     }
 
     /// Converts, saturating at [`MAX`](Self::MAX).
     pub fn saturating_from_num<Src: ToFixed>(src: Src) -> Self {
-        let wide = FixedU128::<Frac>::saturating_from_num(src);
-        Self::saturating(Some(Self::wide_bits(wide.to_bits())))
+        Self::saturating(Self::from_units(src.overflowing_to_fixed()))
     }
 
     // Conversions out of the type depend only on the value, which the narrow
@@ -507,7 +638,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
         if self.narrow == int.narrow {
             Some(self)
         } else {
-            Self::checked(int.add_narrow(Self::ONE))
+            Self::int_plus_one(int)
         }
     }
 
@@ -523,7 +654,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
         if NFrac::U32 == 0 || self.frac().narrow < half {
             Some(self.int())
         } else {
-            Self::checked(self.int().add_narrow(Self::ONE))
+            Self::int_plus_one(self.int())
         }
     }
 
@@ -571,7 +702,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
 
     /// `self / rhs` rounded down, `None` when `rhs` is zero.
     pub fn checked_div_int(self, rhs: u128) -> Option<Self> {
-        (rhs != 0).then(|| Self::from_narrow((self.narrow as u128 / rhs) as u64))
+        (rhs != 0).then(|| self.unwrapped_div_int(rhs))
     }
 
     /// `self + rhs`, saturating at [`MAX`](Self::MAX).
@@ -602,12 +733,12 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
 
     /// `self + rhs`, wrapping as the wide type does.
     pub fn wrapping_add(self, rhs: Self) -> Self {
-        Self::wrapping(Scaled::exact(self.narrow as u128 + rhs.narrow as u128))
+        Self::wrapping(Exact::Units(self.narrow as u128 + rhs.narrow as u128))
     }
 
     /// `self - rhs`, wrapping as the wide type does.
     pub fn wrapping_sub(self, rhs: Self) -> Self {
-        Self::wrapping(Scaled::exact(
+        Self::wrapping(Exact::Units(
             (self.narrow as u128).wrapping_sub(rhs.narrow as u128),
         ))
     }
@@ -625,7 +756,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
 
     /// `self * rhs`, wrapping as the wide type does.
     pub fn wrapping_mul_int(self, rhs: u128) -> Self {
-        Self::wrapping(Scaled::exact((self.narrow as u128).wrapping_mul(rhs)))
+        Self::wrapping(self.wrapping_mul_int_narrow(rhs))
     }
 
     /// `self / rhs` rounded down. Panics when `rhs` is zero.
@@ -661,7 +792,12 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> NarrowFixedU128<Frac, NFrac> {
 
     /// `self / rhs` rounded down. Panics when `rhs` is zero.
     pub const fn unwrapped_div_int(self, rhs: u128) -> Self {
-        Self::from_narrow((self.narrow as u128 / rhs) as u64)
+        // A 64-bit division: a divisor beyond `u64` gives zero either way.
+        if rhs > u64::MAX as u128 {
+            Self::ZERO
+        } else {
+            Self::from_narrow(self.narrow / rhs as u64)
+        }
     }
 }
 
@@ -673,7 +809,7 @@ impl<Frac, NFrac> Clone for NarrowFixedU128<Frac, NFrac> {
 
 impl<Frac, NFrac> Copy for NarrowFixedU128<Frac, NFrac> {}
 
-impl<Frac: LeEqU128, NFrac: LeEqU64> Default for NarrowFixedU128<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> Default for NarrowFixedU128<Frac, NFrac> {
     fn default() -> Self {
         Self::ZERO
     }
@@ -705,26 +841,29 @@ impl<Frac, NFrac> Hash for NarrowFixedU128<Frac, NFrac> {
     }
 }
 
-impl<Frac: LeEqU128, NFrac: LeEqU64> fmt::Debug for NarrowFixedU128<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> fmt::Debug for NarrowFixedU128<Frac, NFrac> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.to_wide(), f)
     }
 }
 
-impl<Frac: LeEqU128, NFrac: LeEqU64> fmt::Display for NarrowFixedU128<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> fmt::Display for NarrowFixedU128<Frac, NFrac> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.to_wide(), f)
     }
 }
 
 // `fixed` converts these losslessly into every wide type with enough integer
-// bits; the narrow value assumes the integer fits its range.
+// bits; the narrow value assumes the integer fits its range, and is the
+// integer shifted by a 64-bit shift.
 macro_rules! from_int {
     ($($Int:ty),*) => { $(
-        impl<Frac: LeEqU128, NFrac: LeEqU64> From<$Int> for NarrowFixedU128<Frac, NFrac> {
-            #[inline]
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> From<$Int> for NarrowFixedU128<Frac, NFrac> {
+            #[inline(always)]
             fn from(src: $Int) -> Self {
-                Self::from_num(src)
+                let src = u64::from(src);
+                cvlr_assume!(src <= u64::MAX >> NFrac::U32);
+                Self::from_narrow(src << NFrac::U32)
             }
         }
     )* };
@@ -736,28 +875,28 @@ from_int!(bool, u8, u16, u32, u64);
 // provides them, made through the equal narrow value.
 macro_rules! cmp_int {
     ($($Int:ty),*) => { $(
-        impl<Frac: LeEqU128, NFrac: LeEqU64> PartialEq<$Int> for NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> PartialEq<$Int> for NarrowFixedU128<Frac, NFrac> {
             #[inline]
             fn eq(&self, rhs: &$Int) -> bool {
                 self.to_narrow() == *rhs
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> PartialEq<NarrowFixedU128<Frac, NFrac>> for $Int {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> PartialEq<NarrowFixedU128<Frac, NFrac>> for $Int {
             #[inline]
             fn eq(&self, rhs: &NarrowFixedU128<Frac, NFrac>) -> bool {
                 *self == rhs.to_narrow()
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> PartialOrd<$Int> for NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> PartialOrd<$Int> for NarrowFixedU128<Frac, NFrac> {
             #[inline]
             fn partial_cmp(&self, rhs: &$Int) -> Option<Ordering> {
                 self.to_narrow().partial_cmp(rhs)
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> PartialOrd<NarrowFixedU128<Frac, NFrac>> for $Int {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> PartialOrd<NarrowFixedU128<Frac, NFrac>> for $Int {
             #[inline]
             fn partial_cmp(&self, rhs: &NarrowFixedU128<Frac, NFrac>) -> Option<Ordering> {
                 self.partial_cmp(&rhs.to_narrow())
@@ -770,7 +909,7 @@ cmp_int!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
 
 /// Parses as the wide type does, then rounds down onto the narrow grid,
 /// assuming the result fits.
-impl<Frac: LeEqU128, NFrac: LeEqU64> FromStr for NarrowFixedU128<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> FromStr for NarrowFixedU128<Frac, NFrac> {
     type Err = ParseFixedError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -778,13 +917,15 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> FromStr for NarrowFixedU128<Frac, NFrac> {
     }
 }
 
-impl<Frac: LeEqU128, NFrac: LeEqU64> cvlr_nondet::Nondet for NarrowFixedU128<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> cvlr_nondet::Nondet
+    for NarrowFixedU128<Frac, NFrac>
+{
     fn nondet() -> Self {
         Self::from_narrow(cvlr_nondet::nondet())
     }
 }
 
-impl<Frac: LeEqU128, NFrac: LeEqU64> cvlr_log::CvlrLog for NarrowFixedU128<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> cvlr_log::CvlrLog for NarrowFixedU128<Frac, NFrac> {
     #[inline(always)]
     fn log(&self, tag: &str, logger: &mut cvlr_log::CvlrLogger) {
         logger.log_u64_as_fp(tag, self.narrow, NFrac::U64);
@@ -792,7 +933,7 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> cvlr_log::CvlrLog for NarrowFixedU128<Frac,
 }
 
 /// Converts through the equal narrow value.
-impl<Frac: LeEqU128, NFrac: LeEqU64> ToFixed for NarrowFixedU128<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> ToFixed for NarrowFixedU128<Frac, NFrac> {
     fn to_fixed<F: Fixed>(self) -> F {
         self.to_narrow().to_fixed()
     }
@@ -814,35 +955,35 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> ToFixed for NarrowFixedU128<Frac, NFrac> {
     }
 }
 
-/// Converts through the wide type, then rounds down onto the narrow grid,
+/// Converts as the wide type does, then rounds down onto the narrow grid,
 /// assuming the result fits.
-impl<Frac: LeEqU128, NFrac: LeEqU64> FromFixed for NarrowFixedU128<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> FromFixed for NarrowFixedU128<Frac, NFrac> {
     fn from_fixed<F: Fixed>(src: F) -> Self {
-        Self::from_wide(FixedU128::from_fixed(src))
+        Self::from_num(src)
     }
 
     fn checked_from_fixed<F: Fixed>(src: F) -> Option<Self> {
-        FixedU128::checked_from_fixed(src).map(Self::from_wide)
+        Self::checked_from_num(src)
     }
 
     fn saturating_from_fixed<F: Fixed>(src: F) -> Self {
-        let wide = FixedU128::<Frac>::saturating_from_fixed(src);
-        Self::saturating(Some(Self::wide_bits(wide.to_bits())))
+        Self::saturating_from_num(src)
     }
 
     fn wrapping_from_fixed<F: Fixed>(src: F) -> Self {
-        Self::from_wide(FixedU128::wrapping_from_fixed(src))
+        Self::overflowing_from_fixed(src).0
     }
 
     fn overflowing_from_fixed<F: Fixed>(src: F) -> (Self, bool) {
-        let (wide, overflow) = FixedU128::overflowing_from_fixed(src);
-        (Self::from_wide(wide), overflow)
+        let (units, overflow) = src.overflowing_to_fixed::<FixedU128<NFrac>>();
+        let r = Exact::Units(units.to_bits());
+        (Self::wrapping(r), overflow || !Self::fits_wide(r))
     }
 }
 
 macro_rules! binary_op {
     ($Imp:ident, $method:ident, $Assign:ident, $assign:ident, $op:ident) => {
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Imp for NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Imp for NarrowFixedU128<Frac, NFrac> {
             type Output = Self;
             #[inline]
             fn $method(self, rhs: Self) -> Self {
@@ -850,7 +991,9 @@ macro_rules! binary_op {
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Imp<&Self> for NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Imp<&Self>
+            for NarrowFixedU128<Frac, NFrac>
+        {
             type Output = Self;
             #[inline]
             fn $method(self, rhs: &Self) -> Self {
@@ -858,7 +1001,7 @@ macro_rules! binary_op {
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Imp<NarrowFixedU128<Frac, NFrac>>
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Imp<NarrowFixedU128<Frac, NFrac>>
             for &NarrowFixedU128<Frac, NFrac>
         {
             type Output = NarrowFixedU128<Frac, NFrac>;
@@ -868,7 +1011,7 @@ macro_rules! binary_op {
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Imp<&NarrowFixedU128<Frac, NFrac>>
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Imp<&NarrowFixedU128<Frac, NFrac>>
             for &NarrowFixedU128<Frac, NFrac>
         {
             type Output = NarrowFixedU128<Frac, NFrac>;
@@ -878,14 +1021,16 @@ macro_rules! binary_op {
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Assign for NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Assign for NarrowFixedU128<Frac, NFrac> {
             #[inline]
             fn $assign(&mut self, rhs: Self) {
                 *self = (*self).$op(rhs)
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Assign<&Self> for NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Assign<&Self>
+            for NarrowFixedU128<Frac, NFrac>
+        {
             #[inline]
             fn $assign(&mut self, rhs: &Self) {
                 *self = (*self).$op(*rhs)
@@ -901,7 +1046,9 @@ binary_op!(Div, div, DivAssign, div_assign, wrapping_div);
 
 macro_rules! int_op {
     ($Imp:ident, $method:ident, $Assign:ident, $assign:ident, $op:ident) => {
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Imp<u128> for NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Imp<u128>
+            for NarrowFixedU128<Frac, NFrac>
+        {
             type Output = Self;
             #[inline]
             fn $method(self, rhs: u128) -> Self {
@@ -909,7 +1056,9 @@ macro_rules! int_op {
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Imp<&u128> for NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Imp<&u128>
+            for NarrowFixedU128<Frac, NFrac>
+        {
             type Output = Self;
             #[inline]
             fn $method(self, rhs: &u128) -> Self {
@@ -917,7 +1066,9 @@ macro_rules! int_op {
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Imp<u128> for &NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Imp<u128>
+            for &NarrowFixedU128<Frac, NFrac>
+        {
             type Output = NarrowFixedU128<Frac, NFrac>;
             #[inline]
             fn $method(self, rhs: u128) -> Self::Output {
@@ -925,7 +1076,9 @@ macro_rules! int_op {
             }
         }
 
-        impl<Frac: LeEqU128, NFrac: LeEqU64> $Assign<u128> for NarrowFixedU128<Frac, NFrac> {
+        impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> $Assign<u128>
+            for NarrowFixedU128<Frac, NFrac>
+        {
             #[inline]
             fn $assign(&mut self, rhs: u128) {
                 *self = (*self).$op(rhs)
@@ -937,7 +1090,7 @@ macro_rules! int_op {
 int_op!(Mul, mul, MulAssign, mul_assign, unwrapped_mul_int);
 int_op!(Div, div, DivAssign, div_assign, unwrapped_div_int);
 
-impl<Frac: LeEqU128, NFrac: LeEqU64> Mul<NarrowFixedU128<Frac, NFrac>> for u128 {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> Mul<NarrowFixedU128<Frac, NFrac>> for u128 {
     type Output = NarrowFixedU128<Frac, NFrac>;
     #[inline]
     fn mul(self, rhs: NarrowFixedU128<Frac, NFrac>) -> Self::Output {

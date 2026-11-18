@@ -9,8 +9,9 @@
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
 use cvlr_fixed::narrow::NarrowFixedU128;
-use fixed::types::extra::{LeEqU128, LeEqU64, U0, U127, U14, U20, U60, U63, U64};
-use fixed::FixedU128;
+use fixed::traits::FromFixed;
+use fixed::types::extra::{LeEqU128, LeEqU64, U0, U127, U14, U20, U32, U60, U63, U64};
+use fixed::{FixedU128, FixedU64};
 
 struct Rng(u64);
 
@@ -42,7 +43,7 @@ fn panics<T>(f: impl FnOnce() -> T) -> bool {
 
 struct Check<Frac, NFrac>(core::marker::PhantomData<(Frac, NFrac)>);
 
-impl<Frac: LeEqU128, NFrac: LeEqU64> Check<Frac, NFrac> {
+impl<Frac: LeEqU128, NFrac: LeEqU64 + LeEqU128> Check<Frac, NFrac> {
     const SHIFT: u32 = Frac::U32 - NFrac::U32;
 
     fn narrow(bits: u64) -> NarrowFixedU128<Frac, NFrac> {
@@ -257,6 +258,27 @@ impl<Frac: LeEqU128, NFrac: LeEqU64> Check<Frac, NFrac> {
                 FixedU128::<Frac>::checked_from_num(n),
                 || NarrowFixedU128::checked_from_num(n),
             );
+
+            // From another fixed-point type, through every overflow mode.
+            let other = FixedU64::<U32>::from_bits(rng.spread());
+            Self::option(
+                "checked_from_fixed",
+                other.to_bits(),
+                0,
+                FixedU128::<Frac>::checked_from_fixed(other),
+                || NarrowFixedU128::checked_from_fixed(other),
+            );
+            let (wide, wide_overflow) = FixedU128::<Frac>::overflowing_from_fixed(other);
+            if !wide_overflow {
+                Self::value("from_fixed", other.to_bits(), 0, wide, || {
+                    NarrowFixedU128::from_fixed(other)
+                });
+            }
+            let saturated = NarrowFixedU128::<Frac, NFrac>::saturating_from_num(other);
+            match FixedU128::<Frac>::checked_from_fixed(other).and_then(Self::truncate) {
+                Some(expected) => assert_eq!(saturated.to_bits(), expected),
+                None => assert_eq!(saturated, NarrowFixedU128::MAX),
+            }
 
             let bits = ((rng.next() as u128) << 64) | rng.next() as u128;
             let bits = bits >> (rng.next() % 128);
