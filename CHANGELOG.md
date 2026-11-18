@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Added
+  - `cvlr-fixed`'s `narrow` module, behind a new `fixed` feature:
+    `NarrowFixedU128<Frac, NFrac>`, a verification-only stand-in for a
+    program's 128-bit `fixed::FixedU128<Frac>` that computes at 64 bits with
+    `NFrac` fractional bits. It keeps the wide type's `u128` bit encoding, its
+    overflow behavior and the parts of its API programs commonly use; every
+    result is the wide result rounded down to the narrow grid, and results
+    that fit only the wide type are assumed away. Range checks compare with
+    constants, and the operations the Prover would otherwise see as 128-bit
+    shifts, 128-bit products or a 128-bit division (the narrowing quotient,
+    fixed-point multiplication and division, multiplication by an integer)
+    are native integers, which it models exactly.
+  - `cvlr_fixed::narrow_lit!`, a compile-time literal of such a type, the
+    stand-in for `fixed_macro`'s literal macros.
+
 ## [0.6.2] - 2026-10-27
 
 ### Added

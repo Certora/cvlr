@@ -27,7 +27,7 @@ jobs:
         run: cargo fmt -- --check
       - name: Run Clippy
         if: success() || failure()
-        run: cargo clippy -- --deny warnings
+        run: cargo clippy --features cvlr-fixed/fixed -- --deny warnings
       - name: Check documentation
         if: success() || failure()
         run: cargo doc --no-deps --workspace --all-features
