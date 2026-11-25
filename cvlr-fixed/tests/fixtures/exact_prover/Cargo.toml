@@ -1,0 +1,29 @@
+[package]
+name = "exact_prover_fixture"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Not a member of the cvlr workspace. An empty table keeps `cargo
+# certora-sbf --manifest-path` this package from adopting the parent.
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+certora = []
+
+[dependencies]
+cvlr = { path = "../../../../cvlr" }
+cvlr-fixed = { path = "../../..", features = ["fixed"] }
+fixed = "=1.23.1"
+
+[profile.release]
+overflow-checks = true
+
+# As many Solana programs do: `fixed`'s `debug_assert!`s on in release, so its
+# fixed-point `*` and `/` panic on overflow rather than wrap.
+[profile.release.package.fixed]
+debug-assertions = true
+overflow-checks = true
