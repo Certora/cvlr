@@ -40,11 +40,19 @@
 //! every constant of the program keeps its value, and a struct holding the
 //! type has the wide type's layout.
 //!
-//! Fixed-point `*` and `/`, and their `checked_`, `saturating_`, `wrapping_`,
-//! `unwrapped_` and `overflowing_` forms, compute `floor(a * b / 2^Frac)` and
-//! `floor(a * 2^Frac / b)` on the encodings, as `fixed` does, and wrap modulo
-//! `2^128` where `fixed` wraps. Division by zero panics with "division by
-//! zero" in every form but `checked_div`, which returns `None`.
+//! Some operations are computed on native integers instead of with the wide
+//! type's code:
+//!
+//! * fixed-point `*` and `/`, and their `checked_`, `saturating_`,
+//!   `wrapping_`, `unwrapped_` and `overflowing_` forms: `floor(a * b /
+//!   2^Frac)` and `floor(a * 2^Frac / b)` on the encodings, wrapping modulo
+//!   `2^128` where `fixed` wraps. Division by zero panics with "division by
+//!   zero" in every form but `checked_div`, which returns `None`;
+//! * rounding: `int`, `frac`, `floor`, `round_to_zero`, and `ceil` and `round`
+//!   in their plain, `checked_` and `overflowing_` forms;
+//! * comparisons with primitive integers, and `From` a primitive integer.
+//!
+//! Unlike the wide type's, the rounding methods are not `const fn`s.
 //!
 //! # Operators
 //!
@@ -55,7 +63,8 @@
 //! debug-assertions = true`). This type's operators make the same choice:
 //! on an overflow they evaluate the wide type's own `*` on two constants whose
 //! product overflows, so its `debug_assert!`, compiled with `fixed`'s profile,
-//! decides between the panic and the wrapped result.
+//! decides between the panic and the wrapped result. `ceil` and `round` do the
+//! same with the wide type's `MAX.ceil()` and `MAX.round()`.
 //!
 //! Every other operator, and every method not listed above, is the wide type's
 //! own code.
@@ -63,15 +72,42 @@
 //! Only the operations listed on [`ExactFixedU128`] are provided. A program
 //! that uses another method of its fixed-point type (`sqrt`, `recip`,
 //! `mul_add`, `%`, shifts, bitwise operators, comparisons with floats) does not
-//! compile against this one.
+//! compile against this one. Neither does one that multiplies by a value with
+//! a different number of fractional bits: `fixed`'s `*=` accepts any
+//! `FixedU128<RhsFrac>` on the right, this type's `*` and `*=` only its own
+//! `Frac`.
 //!
 //! # What the Prover sees
 //!
 //! A product or quotient is one native-integer `muldiv` and two range checks
 //! against constants, where the wide type's is a 256-bit computation of a few
-//! hundred instructions with a long-division loop. The rest of the arithmetic
-//! is unchanged. On the host (the `rt` feature), where native integers are 64
-//! bits wide, every operation is the wide type's.
+//! hundred instructions with a long-division loop. The operands are `u128`
+//! encodings, so the 256-bit product never wraps and the result is exact
+//! whatever the Prover's options. The rules in `tests/fixtures/exact_prover`
+//! run with `-solanaTACMathInt true` and `-solanaTACOptimize 2`, and the cost
+//! comparison above is for those options.
+//!
+//! The operations that remain the wide type's code (`from_num`, `to_num` and
+//! the other conversions, `abs_diff`, the `_int` arithmetic, formatting) are
+//! modelled with the Prover's approximation of their bitwise operations, as
+//! the wide type's are. A counterexample through one of them can be
+//! spurious: `checked_from_num` on `U127` gets one.
+//!
+//! Each native result reaches the program as a `u128` through
+//! `NativeInt::into_u128`. The Prover writes that `u128` only when it can find
+//! the stack slot that receives it, and otherwise logs "Cannot determine the
+//! returned low and high bits" and leaves the result unconstrained. The
+//! methods that call it are `#[inline(always)]` so that the slot is in the
+//! caller's frame; a run that logs that warning still cannot be trusted.
+//!
+//! The constants that the operators, `ceil` and `round` evaluate on an
+//! overflow are folded by rustc, leaving at most `fixed`'s panic. If they are
+//! not folded, the Prover meets the wide type's 256-bit code on constant
+//! operands, with the approximation above.
+//!
+//! On the host (the `rt` feature), where native integers are 64 bits wide,
+//! every operation is the wide type's, except that rounding goes through the
+//! same steps as under the Prover from the wide type's `int` and `frac`.
 
 use core::cmp::Ordering;
 use core::fmt;
@@ -97,12 +133,18 @@ fn native_pow2(k: u32) -> NativeInt {
     NativeInt::from(1u64 << a) * NativeInt::from(1u64 << b) * NativeInt::from(1u64 << c)
 }
 
+/// `x` modulo `2^128`, and whether `x` is `2^128` or more.
+#[cfg(not(feature = "rt"))]
+#[inline(always)]
+fn native_wrap(x: NativeInt) -> (u128, bool) {
+    (x.mask(128).into_u128(), !x.is_u128())
+}
+
 /// `floor(x * y / z)` modulo `2^128`, and whether it is `2^128` or more.
 #[cfg(not(feature = "rt"))]
 #[inline(always)]
 fn native_muldiv(x: NativeInt, y: NativeInt, z: NativeInt) -> (u128, bool) {
-    let q = x.muldiv(y, z);
-    (q.mask(128).into_u128(), !q.is_u128())
+    native_wrap(x.muldiv(y, z))
 }
 
 /// A [`FixedU128<Frac>`] whose fixed-point multiplication and division the
@@ -198,49 +240,199 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
     }
 
     /// The integer part.
-    pub const fn int(self) -> Self {
-        Self(self.0.int())
+    #[inline(always)]
+    pub fn int(self) -> Self {
+        Self::from_bits(self.split().0)
     }
 
     /// The fractional part.
-    pub const fn frac(self) -> Self {
-        Self(self.0.frac())
+    #[inline(always)]
+    pub fn frac(self) -> Self {
+        Self::from_bits(self.split().1)
     }
 
     /// Rounds down to an integer.
-    pub const fn floor(self) -> Self {
-        Self(self.0.floor())
+    #[inline(always)]
+    pub fn floor(self) -> Self {
+        self.int()
     }
 
     /// Rounds toward zero to an integer.
-    pub const fn round_to_zero(self) -> Self {
-        Self(self.0.round_to_zero())
+    #[inline(always)]
+    pub fn round_to_zero(self) -> Self {
+        self.int()
+    }
+
+    /// Rounds up to an integer, wrapping, and whether it overflowed.
+    #[inline(always)]
+    pub fn overflowing_ceil(self) -> (Self, bool) {
+        match self.split() {
+            (int, 0) => (Self::from_bits(int), false),
+            (int, _) => Self::next_int(int),
+        }
     }
 
     /// Rounds up to an integer, `None` on overflow.
-    pub const fn checked_ceil(self) -> Option<Self> {
-        match self.0.checked_ceil() {
-            Some(v) => Some(Self(v)),
-            None => None,
+    #[inline(always)]
+    pub fn checked_ceil(self) -> Option<Self> {
+        match self.overflowing_ceil() {
+            (v, false) => Some(v),
+            (_, true) => None,
         }
     }
 
-    /// Rounds up to an integer, as the wide type's `ceil` does.
-    pub const fn ceil(self) -> Self {
-        Self(self.0.ceil())
+    /// Rounds up to an integer, as the wide type's `ceil` does: on overflow
+    /// it panics or wraps as `fixed`'s `debug_assert!` decides.
+    #[inline(always)]
+    pub fn ceil(self) -> Self {
+        let (v, overflow) = self.overflowing_ceil();
+        if overflow {
+            let _ = FixedU128::<Frac>::MAX.ceil();
+        }
+        v
+    }
+
+    /// Rounds to the nearest integer, ties away from zero, wrapping, and
+    /// whether it overflowed.
+    #[inline(always)]
+    pub fn overflowing_round(self) -> (Self, bool) {
+        let (int, frac) = self.split();
+        if Self::half_or_more(frac) {
+            Self::next_int(int)
+        } else {
+            (Self::from_bits(int), false)
+        }
     }
 
     /// Rounds to the nearest integer, ties away from zero; `None` on overflow.
-    pub const fn checked_round(self) -> Option<Self> {
-        match self.0.checked_round() {
-            Some(v) => Some(Self(v)),
-            None => None,
+    #[inline(always)]
+    pub fn checked_round(self) -> Option<Self> {
+        match self.overflowing_round() {
+            (v, false) => Some(v),
+            (_, true) => None,
         }
     }
 
-    /// Rounds to the nearest integer, as the wide type's `round` does.
-    pub const fn round(self) -> Self {
-        Self(self.0.round())
+    /// Rounds to the nearest integer, as the wide type's `round` does: on
+    /// overflow it panics or wraps as `fixed`'s `debug_assert!` decides.
+    #[inline(always)]
+    pub fn round(self) -> Self {
+        let (v, overflow) = self.overflowing_round();
+        if overflow {
+            let _ = FixedU128::<Frac>::MAX.round();
+        }
+        v
+    }
+
+    /// The encodings of the integer and fractional parts.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn split(self) -> (u128, u128) {
+        let bits = NativeInt::from(self.to_bits());
+        let scale = native_pow2(Frac::U32);
+        let int = bits / scale * scale;
+        (int.into_u128(), (bits - int).into_u128())
+    }
+
+    /// The encodings of the integer and fractional parts.
+    #[cfg(feature = "rt")]
+    fn split(self) -> (u128, u128) {
+        (self.0.int().to_bits(), self.0.frac().to_bits())
+    }
+
+    /// `int + 1` for the encoding `int` of an integer, wrapping, and whether
+    /// it overflowed.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn next_int(int: u128) -> (Self, bool) {
+        let (bits, overflow) = native_wrap(NativeInt::from(int) + native_pow2(Frac::U32));
+        (Self::from_bits(bits), overflow)
+    }
+
+    /// `int + 1` for the encoding `int` of an integer, wrapping, and whether
+    /// it overflowed.
+    #[cfg(feature = "rt")]
+    fn next_int(int: u128) -> (Self, bool) {
+        match 1u128.checked_shl(Frac::U32) {
+            Some(one) => {
+                let (bits, overflow) = int.overflowing_add(one);
+                (Self::from_bits(bits), overflow)
+            }
+            None => (Self::ZERO, true),
+        }
+    }
+
+    /// Whether the encoding `frac` of a fractional part is at least one half.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn half_or_more(frac: u128) -> bool {
+        Frac::U32 > 0 && NativeInt::from(frac) >= native_pow2(Frac::U32 - 1)
+    }
+
+    /// Whether the encoding `frac` of a fractional part is at least one half.
+    #[cfg(feature = "rt")]
+    fn half_or_more(frac: u128) -> bool {
+        Frac::U32 > 0 && frac >> (Frac::U32 - 1) != 0
+    }
+
+    /// `self` compared with the integer `rhs`.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn cmp_int<Int>(self, rhs: Int) -> Option<Ordering>
+    where
+        u128: TryFrom<Int>,
+        FixedU128<Frac>: PartialOrd<Int>,
+    {
+        Some(match Self::native_int(rhs) {
+            Some(rhs) => NativeInt::from(self.to_bits()).cmp(&rhs),
+            None => Ordering::Greater,
+        })
+    }
+
+    /// The integer `lhs` compared with `rhs`.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn int_cmp<Int>(lhs: Int, rhs: Self) -> Option<Ordering>
+    where
+        u128: TryFrom<Int>,
+        Int: PartialOrd<FixedU128<Frac>>,
+    {
+        Some(match Self::native_int(lhs) {
+            Some(lhs) => lhs.cmp(&NativeInt::from(rhs.to_bits())),
+            None => Ordering::Less,
+        })
+    }
+
+    /// The encoding of the integer `v`, `None` when `v` is negative.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn native_int<Int>(v: Int) -> Option<NativeInt>
+    where
+        u128: TryFrom<Int>,
+    {
+        u128::try_from(v)
+            .ok()
+            .map(|v| NativeInt::from(v) * native_pow2(Frac::U32))
+    }
+
+    /// `self` compared with the integer `rhs`.
+    #[cfg(feature = "rt")]
+    fn cmp_int<Int>(self, rhs: Int) -> Option<Ordering>
+    where
+        u128: TryFrom<Int>,
+        FixedU128<Frac>: PartialOrd<Int>,
+    {
+        self.0.partial_cmp(&rhs)
+    }
+
+    /// The integer `lhs` compared with `rhs`.
+    #[cfg(feature = "rt")]
+    fn int_cmp<Int>(lhs: Int, rhs: Self) -> Option<Ordering>
+    where
+        u128: TryFrom<Int>,
+        Int: PartialOrd<FixedU128<Frac>>,
+    {
+        lhs.partial_cmp(&rhs.0)
     }
 
     /// `|self - rhs|`.
@@ -342,6 +534,7 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
 
     /// `self * rhs` rounded down, wrapping, and whether it overflowed.
     #[cfg(not(feature = "rt"))]
+    #[inline(always)]
     pub fn overflowing_mul(self, rhs: Self) -> (Self, bool) {
         let (bits, overflow) = native_muldiv(
             NativeInt::from(self.to_bits()),
@@ -361,6 +554,7 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
     /// `self / rhs` rounded down, wrapping, and whether it overflowed. Panics
     /// when `rhs` is zero.
     #[cfg(not(feature = "rt"))]
+    #[inline(always)]
     pub fn overflowing_div(self, rhs: Self) -> (Self, bool) {
         if rhs.is_zero() {
             panic!("division by zero");
@@ -533,7 +727,7 @@ macro_rules! from_int {
         {
             #[inline(always)]
             fn from(src: $Int) -> Self {
-                Self(FixedU128::from(src))
+                Self::from_int(u128::from(src))
             }
         }
     )* };
@@ -541,33 +735,48 @@ macro_rules! from_int {
 
 from_int!(bool, u8, u16, u32, u64);
 
+impl<Frac: LeEqU128> ExactFixedU128<Frac> {
+    /// The integer `src`, which the caller knows fits.
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn from_int(src: u128) -> Self {
+        Self::from_bits((NativeInt::from(src) * native_pow2(Frac::U32)).into_u128())
+    }
+
+    /// The integer `src`, which the caller knows fits.
+    #[cfg(feature = "rt")]
+    fn from_int(src: u128) -> Self {
+        Self(FixedU128::from_num(src))
+    }
+}
+
 macro_rules! cmp_int {
     ($($Int:ty),*) => { $(
         impl<Frac: LeEqU128> PartialEq<$Int> for ExactFixedU128<Frac> {
             #[inline]
             fn eq(&self, rhs: &$Int) -> bool {
-                self.0 == *rhs
+                self.cmp_int(*rhs) == Some(Ordering::Equal)
             }
         }
 
         impl<Frac: LeEqU128> PartialEq<ExactFixedU128<Frac>> for $Int {
             #[inline]
             fn eq(&self, rhs: &ExactFixedU128<Frac>) -> bool {
-                *self == rhs.0
+                ExactFixedU128::int_cmp(*self, *rhs) == Some(Ordering::Equal)
             }
         }
 
         impl<Frac: LeEqU128> PartialOrd<$Int> for ExactFixedU128<Frac> {
             #[inline]
             fn partial_cmp(&self, rhs: &$Int) -> Option<Ordering> {
-                self.0.partial_cmp(rhs)
+                self.cmp_int(*rhs)
             }
         }
 
         impl<Frac: LeEqU128> PartialOrd<ExactFixedU128<Frac>> for $Int {
             #[inline]
             fn partial_cmp(&self, rhs: &ExactFixedU128<Frac>) -> Option<Ordering> {
-                self.partial_cmp(&rhs.0)
+                ExactFixedU128::int_cmp(*self, *rhs)
             }
         }
     )* };
@@ -589,7 +798,19 @@ impl<Frac: LeEqU128> cvlr_nondet::Nondet for ExactFixedU128<Frac> {
     }
 }
 
+/// Under the Prover, shown as `bits/2^Frac`, as `NativeFixedU128` is.
 impl<Frac: LeEqU128> cvlr_log::CvlrLog for ExactFixedU128<Frac> {
+    #[cfg(not(feature = "rt"))]
+    #[inline(always)]
+    fn log(&self, tag: &str, logger: &mut cvlr_log::CvlrLogger) {
+        logger.log_u64_as_fp(
+            tag,
+            NativeInt::from(self.to_bits()).as_internal(),
+            Frac::U64,
+        );
+    }
+
+    #[cfg(feature = "rt")]
     #[inline(always)]
     fn log(&self, tag: &str, logger: &mut cvlr_log::CvlrLogger) {
         logger.log_u128(tag, self.to_bits());

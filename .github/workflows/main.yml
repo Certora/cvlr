@@ -57,3 +57,12 @@ jobs:
         run: cargo certora-sbf --no-build --no-rustup --tools-version v1.43
       - name: Run cargo test
         run: cargo test --verbose
+      # The fixtures' rules run on the Prover by hand (see each conf's header);
+      # this keeps them building. Their dependencies need a newer rustc than
+      # the v1.43 tools ship, and their confs read v1.53's output directory.
+      - name: Build Prover fixtures
+        if: runner.os == 'Linux'
+        run: |
+          for manifest in cvlr-fixed/tests/fixtures/*/Cargo.toml; do
+            cargo certora-sbf --tools-version v1.53 --manifest-path "$manifest" --features certora
+          done
