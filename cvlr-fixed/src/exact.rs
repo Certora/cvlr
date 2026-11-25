@@ -692,10 +692,18 @@ macro_rules! binary_op {
     };
 }
 
-binary_op!(Add, add, AddAssign, add_assign, |a, b| ExactFixedU128(a.0 + b.0));
-binary_op!(Sub, sub, SubAssign, sub_assign, |a, b| ExactFixedU128(a.0 - b.0));
-binary_op!(Mul, mul, MulAssign, mul_assign, |a, b| Self::operator_result(a.overflowing_mul(b)));
-binary_op!(Div, div, DivAssign, div_assign, |a, b| Self::operator_result(a.overflowing_div(b)));
+binary_op!(Add, add, AddAssign, add_assign, |a, b| ExactFixedU128(
+    a.0 + b.0
+));
+binary_op!(Sub, sub, SubAssign, sub_assign, |a, b| ExactFixedU128(
+    a.0 - b.0
+));
+binary_op!(Mul, mul, MulAssign, mul_assign, |a, b| {
+    Self::operator_result(a.overflowing_mul(b))
+});
+binary_op!(Div, div, DivAssign, div_assign, |a, b| {
+    Self::operator_result(a.overflowing_div(b))
+});
 
 macro_rules! int_op {
     ($Imp:ident, $method:ident, $Assign:ident, $assign:ident) => {
