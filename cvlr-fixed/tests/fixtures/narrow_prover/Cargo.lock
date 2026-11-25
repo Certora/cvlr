@@ -28,7 +28,7 @@ checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
 
 [[package]]
 name = "cvlr"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "cvlr-asserts",
  "cvlr-decimal",
@@ -45,11 +45,11 @@ dependencies = [
 
 [[package]]
 name = "cvlr-asserts"
-version = "0.6.3"
+version = "0.6.4"
 
 [[package]]
 name = "cvlr-decimal"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "cvlr-asserts",
  "cvlr-log",
@@ -59,7 +59,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-derive"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -68,7 +68,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-early-panic"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -77,7 +77,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-fixed"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "cvlr-asserts",
  "cvlr-log",
@@ -88,7 +88,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-hook"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "quote",
  "syn",
@@ -96,7 +96,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-log"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "cvlr-mathint",
  "cvlr-rule-manifest",
@@ -104,7 +104,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-macros"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "cvlr-rule-manifest",
  "darling",
@@ -115,7 +115,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-mathint"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "cvlr-asserts",
  "cvlr-nondet",
@@ -123,14 +123,14 @@ dependencies = [
 
 [[package]]
 name = "cvlr-nondet"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "cvlr-asserts",
 ]
 
 [[package]]
 name = "cvlr-rule-manifest"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -139,7 +139,7 @@ dependencies = [
 
 [[package]]
 name = "cvlr-spec"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "cvlr-asserts",
  "cvlr-log",
