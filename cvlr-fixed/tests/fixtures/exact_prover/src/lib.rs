@@ -5,9 +5,11 @@
 //! `int` and `frac`). `spec_to_num` and `spec_from_num` check two of the
 //! conversions that remain `fixed`'s code.
 //!
-//! The rules are generic over the type and instantiated for three fractional
-//! widths: `U60`, a typical one; `U0`, with no fraction; and `U127`, the
-//! widest that has a one.
+//! The rules are generic over the type and instantiated for four fractional
+//! widths: `U60`, a typical one; `U0`, with no fraction; `U127`, the widest
+//! that has a one; and `U128`, with no integer bits, for the paths only that
+//! width takes (a scale of `2^128`, `ceil` wrapping to zero, the operators'
+//! overflow check through `/`).
 //!
 //! Each `spec_*` rule states an operation's result in native integers,
 //! characterised rather than computed the way the implementation computes it:
@@ -34,16 +36,17 @@
 //! `Ordering::reverse`, which negates an `i8`, so the implementation compares
 //! an integer with a fixed-point value without it.
 //!
-//! Run with `exact_prover.conf`; see its header.
+//! Run with `exact_prover.conf` and `exact_prover_sound_signed.conf`; see the
+//! former's header.
 
 use core::marker::PhantomData;
 
 use cvlr::mathint::NativeInt;
 use cvlr::prelude::*;
 use cvlr_fixed::exact::ExactFixedU128;
-use fixed::types::extra::{LeEqU128, U0, U127, U60};
+use fixed::types::extra::{LeEqU128, U0, U127, U128, U60};
 
-/// `2^k` for `k <= 256`, as a product of factors of at most `2^62`.
+/// `2^k` for `k < 256`, as a product of factors of at most `2^62`.
 fn pow2(k: u32) -> NativeInt {
     let factor = |n: u32| NativeInt::from(1u64 << n);
     let a = k.min(62);
@@ -84,16 +87,14 @@ impl<Frac: LeEqU128> Rules<Frac> {
 
     /// The exact product's floor quotient, and whether it overflows.
     fn product(a: u128, b: u128) -> (NativeInt, bool) {
-        let ab = native(a) * native(b);
-        let q = ab / Self::scale();
-        (q, ab >= pow2(128) * Self::scale())
+        let q = native(a) * native(b) / Self::scale();
+        (q, q >= pow2(128))
     }
 
     /// The exact quotient's floor, and whether it overflows; `b` non-zero.
     fn quotient(a: u128, b: u128) -> (NativeInt, bool) {
-        let num = native(a) * Self::scale();
-        let q = num / native(b);
-        (q, num >= pow2(128) * native(b))
+        let q = native(a) * Self::scale() / native(b);
+        (q, q >= pow2(128))
     }
 
     pub fn spec_mul() {
@@ -214,6 +215,43 @@ impl<Frac: LeEqU128> Rules<Frac> {
         cvlr_assert!((v < x) == (scaled < n));
     }
 
+    /// Comparisons with a signed integer, both ways round: a negative one is
+    /// below every value, a non-negative one compares as its encoding.
+    pub fn spec_cmp_i64() {
+        let (a, v): (u128, i64) = (nondet(), nondet());
+        clog!(a, v);
+        let x = Self::value(a);
+        if v < 0 {
+            cvlr_assert!(x > v && v < x);
+            cvlr_assert!(x != v && v != x);
+        } else {
+            let (n, scaled) = (native(a), native_u64(v as u64) * Self::scale());
+            cvlr_assert!((x < v) == (n < scaled));
+            cvlr_assert!((x == v) == (n == scaled));
+            cvlr_assert!((v == x) == (n == scaled));
+            cvlr_assert!((v < x) == (scaled < n));
+        }
+    }
+
+    /// Each sign of `v` reaches the comparison `spec_cmp_i64` makes of it.
+    pub fn reach_cmp_i64_negative() {
+        let (a, v): (u128, i64) = (nondet(), nondet());
+        let x = Self::value(a);
+        cvlr_satisfy!(v < 0 && x > v);
+    }
+
+    pub fn reach_cmp_i64_zero() {
+        let (a, v): (u128, i64) = (nondet(), nondet());
+        let x = Self::value(a);
+        cvlr_satisfy!(v == 0 && x == v);
+    }
+
+    pub fn reach_cmp_i64_positive_equal() {
+        let (a, v): (u128, i64) = (nondet(), nondet());
+        let x = Self::value(a);
+        cvlr_satisfy!(v > 0 && x == v);
+    }
+
     pub fn spec_rounding() {
         let a: u128 = nondet();
         clog!(a);
@@ -267,6 +305,18 @@ impl<Frac: LeEqU128> Rules<Frac> {
         cvlr_assert!(native(x.to_bits()) == native_u64(v) * Self::scale());
     }
 
+    /// `checked_ceil` and `checked_round` can return `None`, so the
+    /// `*_overflow_panics` rules for them are not vacuous before the call.
+    pub fn reach_ceil_overflows() {
+        let x = Self::value(nondet());
+        cvlr_satisfy!(x.checked_ceil().is_none());
+    }
+
+    pub fn reach_round_overflows() {
+        let x = Self::value(nondet());
+        cvlr_satisfy!(x.checked_round().is_none());
+    }
+
     pub fn reach_mul_fits_large() {
         let (a, b) = Self::pair();
         let (r, overflow) = Self::value(a).overflowing_mul(Self::value(b));
@@ -305,16 +355,23 @@ macro_rules! instantiate {
     };
 }
 
+// No `spec_to_num`: `to_num` is `fixed`'s own code, and at this width the
+// Prover reports an imprecise bitwise `or` in it and a spurious counterexample.
 instantiate!(U60 {
     spec_mul_u60 => spec_mul,
-    spec_to_num_u60 => spec_to_num,
     spec_from_num_u60 => spec_from_num,
     spec_from_u64_u60 => spec_from_u64,
     spec_cmp_u64_u60 => spec_cmp_u64,
     spec_cmp_u128_u60 => spec_cmp_u128,
+    spec_cmp_i64_u60 => spec_cmp_i64,
+    reach_cmp_i64_negative_u60 => reach_cmp_i64_negative,
+    reach_cmp_i64_zero_u60 => reach_cmp_i64_zero,
+    reach_cmp_i64_positive_equal_u60 => reach_cmp_i64_positive_equal,
     spec_rounding_u60 => spec_rounding,
     spec_ceil_overflow_panics_u60 => spec_ceil_overflow_panics,
     spec_round_overflow_panics_u60 => spec_round_overflow_panics,
+    reach_ceil_overflows_u60 => reach_ceil_overflows,
+    reach_round_overflows_u60 => reach_round_overflows,
     spec_div_u60 => spec_div,
     spec_mul_forms_u60 => spec_mul_forms,
     spec_div_forms_u60 => spec_div_forms,
@@ -338,6 +395,10 @@ instantiate!(U0 {
     spec_from_u64_u0 => spec_from_u64,
     spec_cmp_u64_u0 => spec_cmp_u64,
     spec_cmp_u128_u0 => spec_cmp_u128,
+    spec_cmp_i64_u0 => spec_cmp_i64,
+    reach_cmp_i64_negative_u0 => reach_cmp_i64_negative,
+    reach_cmp_i64_zero_u0 => reach_cmp_i64_zero,
+    reach_cmp_i64_positive_equal_u0 => reach_cmp_i64_positive_equal,
     spec_rounding_u0 => spec_rounding,
     spec_div_u0 => spec_div,
     spec_mul_forms_u0 => spec_mul_forms,
@@ -359,9 +420,15 @@ instantiate!(U127 {
     spec_to_num_u127 => spec_to_num,
     spec_cmp_u64_u127 => spec_cmp_u64,
     spec_cmp_u128_u127 => spec_cmp_u128,
+    spec_cmp_i64_u127 => spec_cmp_i64,
+    reach_cmp_i64_negative_u127 => reach_cmp_i64_negative,
+    reach_cmp_i64_zero_u127 => reach_cmp_i64_zero,
+    reach_cmp_i64_positive_equal_u127 => reach_cmp_i64_positive_equal,
     spec_rounding_u127 => spec_rounding,
     spec_ceil_overflow_panics_u127 => spec_ceil_overflow_panics,
     spec_round_overflow_panics_u127 => spec_round_overflow_panics,
+    reach_ceil_overflows_u127 => reach_ceil_overflows,
+    reach_round_overflows_u127 => reach_round_overflows,
     spec_div_u127 => spec_div,
     spec_mul_forms_u127 => spec_mul_forms,
     spec_div_forms_u127 => spec_div_forms,
@@ -374,4 +441,24 @@ instantiate!(U127 {
     reach_mul_overflows_u127 => reach_mul_overflows,
     reach_div_fits_large_u127 => reach_div_fits_large,
     reach_div_overflows_u127 => reach_div_overflows,
+});
+
+// The paths only a width with no integer bits takes: a scale of `2^128`,
+// `ceil` and `round` wrapping to zero, and the operators' overflow check
+// through `fixed`'s `/`, as `*` never overflows here.
+instantiate!(U128 {
+    spec_mul_u128 => spec_mul,
+    spec_div_u128 => spec_div,
+    spec_mul_operator_u128 => spec_mul_operator,
+    spec_div_operator_u128 => spec_div_operator,
+    spec_div_operator_overflow_panics_u128 => spec_div_operator_overflow_panics,
+    spec_cmp_u64_u128 => spec_cmp_u64,
+    spec_cmp_i64_u128 => spec_cmp_i64,
+    spec_rounding_u128 => spec_rounding,
+    spec_ceil_overflow_panics_u128 => spec_ceil_overflow_panics,
+    spec_round_overflow_panics_u128 => spec_round_overflow_panics,
+    reach_ceil_overflows_u128 => reach_ceil_overflows,
+    reach_round_overflows_u128 => reach_round_overflows,
+    reach_div_fits_large_u128 => reach_div_fits_large,
+    reach_div_overflows_u128 => reach_div_overflows,
 });

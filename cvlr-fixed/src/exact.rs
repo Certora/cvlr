@@ -75,7 +75,8 @@
 //! compile against this one. Neither does one that multiplies by a value with
 //! a different number of fractional bits: `fixed`'s `*=` accepts any
 //! `FixedU128<RhsFrac>` on the right, this type's `*` and `*=` only its own
-//! `Frac`.
+//! `Frac`. The API is `fixed` 1.23's: the `strict_*` methods that later
+//! releases add in place of the `unwrapped_*` ones are not provided.
 //!
 //! # What the Prover sees
 //!
@@ -91,14 +92,17 @@
 //! the other conversions, `abs_diff`, the `_int` arithmetic, formatting) are
 //! modelled with the Prover's approximation of their bitwise operations, as
 //! the wide type's are. A counterexample through one of them can be
-//! spurious: `checked_from_num` on `U127` gets one.
+//! spurious: `checked_from_num` on `U127` and `checked_to_num` on `U60` get
+//! one.
 //!
 //! Each native result reaches the program as a `u128` through
 //! `NativeInt::into_u128`. The Prover writes that `u128` only when it can find
 //! the stack slot that receives it, and otherwise logs "Cannot determine the
-//! returned low and high bits" and leaves the result unconstrained. The
-//! methods that call it are `#[inline(always)]` so that the slot is in the
-//! caller's frame; a run that logs that warning still cannot be trusted.
+//! returned low and high bits" and leaves the result unconstrained. Every
+//! method and operator that computes on native integers, and every method
+//! built on one, is `#[inline(always)]`, so that the slot is in the program's
+//! own frame whatever its opt-level; a run that logs that warning still cannot
+//! be trusted.
 //!
 //! The constants that the operators, `ceil` and `round` evaluate on an
 //! overflow are folded by rustc, leaving at most `fixed`'s panic. If they are
@@ -513,21 +517,25 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
     }
 
     /// `self + rhs`, panicking on overflow.
+    #[allow(deprecated)]
     pub const fn unwrapped_add(self, rhs: Self) -> Self {
         Self(self.0.unwrapped_add(rhs.0))
     }
 
     /// `self - rhs`, panicking when `rhs > self`.
+    #[allow(deprecated)]
     pub const fn unwrapped_sub(self, rhs: Self) -> Self {
         Self(self.0.unwrapped_sub(rhs.0))
     }
 
     /// `self * rhs`, panicking on overflow.
+    #[allow(deprecated)]
     pub const fn unwrapped_mul_int(self, rhs: u128) -> Self {
         Self(self.0.unwrapped_mul_int(rhs))
     }
 
     /// `self / rhs` rounded down. Panics when `rhs` is zero.
+    #[allow(deprecated)]
     pub const fn unwrapped_div_int(self, rhs: u128) -> Self {
         Self(self.0.unwrapped_div_int(rhs))
     }
@@ -576,6 +584,7 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
     }
 
     /// `self * rhs` rounded down, `None` on overflow.
+    #[inline(always)]
     pub fn checked_mul(self, rhs: Self) -> Option<Self> {
         match self.overflowing_mul(rhs) {
             (v, false) => Some(v),
@@ -584,6 +593,7 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
     }
 
     /// `self / rhs` rounded down, `None` when `rhs` is zero or on overflow.
+    #[inline(always)]
     pub fn checked_div(self, rhs: Self) -> Option<Self> {
         if rhs.is_zero() {
             return None;
@@ -595,6 +605,7 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
     }
 
     /// `self * rhs` rounded down, saturating at [`MAX`](Self::MAX).
+    #[inline(always)]
     pub fn saturating_mul(self, rhs: Self) -> Self {
         match self.overflowing_mul(rhs) {
             (v, false) => v,
@@ -604,6 +615,7 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
 
     /// `self / rhs` rounded down, saturating at [`MAX`](Self::MAX). Panics
     /// when `rhs` is zero.
+    #[inline(always)]
     pub fn saturating_div(self, rhs: Self) -> Self {
         match self.overflowing_div(rhs) {
             (v, false) => v,
@@ -612,16 +624,19 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
     }
 
     /// `self * rhs` rounded down, wrapping.
+    #[inline(always)]
     pub fn wrapping_mul(self, rhs: Self) -> Self {
         self.overflowing_mul(rhs).0
     }
 
     /// `self / rhs` rounded down, wrapping. Panics when `rhs` is zero.
+    #[inline(always)]
     pub fn wrapping_div(self, rhs: Self) -> Self {
         self.overflowing_div(rhs).0
     }
 
     /// `self * rhs` rounded down, panicking on overflow.
+    #[inline(always)]
     pub fn unwrapped_mul(self, rhs: Self) -> Self {
         match self.overflowing_mul(rhs) {
             (v, false) => v,
@@ -630,6 +645,7 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
     }
 
     /// `self / rhs` rounded down, panicking when `rhs` is zero or on overflow.
+    #[inline(always)]
     pub fn unwrapped_div(self, rhs: Self) -> Self {
         match self.overflowing_div(rhs) {
             (v, false) => v,
@@ -639,6 +655,7 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
 
     /// The `*` and `/` operators: the wrapped result, after `fixed`'s own
     /// `debug_assert!` has had its say on an overflow.
+    #[inline(always)]
     fn operator_result((v, overflow): (Self, bool)) -> Self {
         if overflow {
             Self::fixed_overflow_check();
@@ -650,6 +667,7 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
     /// it (or, with no integer bits, its `/` on two whose quotient does), so
     /// that `fixed`'s `debug_assert!`, built with `fixed`'s profile, panics
     /// exactly when the wide type's operator would have.
+    #[inline(always)]
     fn fixed_overflow_check() {
         if Frac::U32 < 128 {
             let _ = FixedU128::<Frac>::MAX * FixedU128::<Frac>::MAX;
@@ -753,28 +771,28 @@ impl<Frac: LeEqU128> ExactFixedU128<Frac> {
 macro_rules! cmp_int {
     ($($Int:ty),*) => { $(
         impl<Frac: LeEqU128> PartialEq<$Int> for ExactFixedU128<Frac> {
-            #[inline]
+            #[inline(always)]
             fn eq(&self, rhs: &$Int) -> bool {
                 self.cmp_int(*rhs) == Some(Ordering::Equal)
             }
         }
 
         impl<Frac: LeEqU128> PartialEq<ExactFixedU128<Frac>> for $Int {
-            #[inline]
+            #[inline(always)]
             fn eq(&self, rhs: &ExactFixedU128<Frac>) -> bool {
                 ExactFixedU128::int_cmp(*self, *rhs) == Some(Ordering::Equal)
             }
         }
 
         impl<Frac: LeEqU128> PartialOrd<$Int> for ExactFixedU128<Frac> {
-            #[inline]
+            #[inline(always)]
             fn partial_cmp(&self, rhs: &$Int) -> Option<Ordering> {
                 self.cmp_int(*rhs)
             }
         }
 
         impl<Frac: LeEqU128> PartialOrd<ExactFixedU128<Frac>> for $Int {
-            #[inline]
+            #[inline(always)]
             fn partial_cmp(&self, rhs: &ExactFixedU128<Frac>) -> Option<Ordering> {
                 ExactFixedU128::int_cmp(*self, *rhs)
             }
@@ -866,7 +884,7 @@ macro_rules! binary_op {
     ($Imp:ident, $method:ident, $Assign:ident, $assign:ident, |$a:ident, $b:ident| $body:expr) => {
         impl<Frac: LeEqU128> $Imp for ExactFixedU128<Frac> {
             type Output = Self;
-            #[inline]
+            #[inline(always)]
             fn $method(self, rhs: Self) -> Self {
                 let ($a, $b) = (self, rhs);
                 $body
@@ -875,7 +893,7 @@ macro_rules! binary_op {
 
         impl<Frac: LeEqU128> $Imp<&Self> for ExactFixedU128<Frac> {
             type Output = Self;
-            #[inline]
+            #[inline(always)]
             fn $method(self, rhs: &Self) -> Self {
                 $Imp::$method(self, *rhs)
             }
@@ -883,7 +901,7 @@ macro_rules! binary_op {
 
         impl<Frac: LeEqU128> $Imp<ExactFixedU128<Frac>> for &ExactFixedU128<Frac> {
             type Output = ExactFixedU128<Frac>;
-            #[inline]
+            #[inline(always)]
             fn $method(self, rhs: ExactFixedU128<Frac>) -> Self::Output {
                 $Imp::$method(*self, rhs)
             }
@@ -891,21 +909,21 @@ macro_rules! binary_op {
 
         impl<Frac: LeEqU128> $Imp<&ExactFixedU128<Frac>> for &ExactFixedU128<Frac> {
             type Output = ExactFixedU128<Frac>;
-            #[inline]
+            #[inline(always)]
             fn $method(self, rhs: &ExactFixedU128<Frac>) -> Self::Output {
                 $Imp::$method(*self, *rhs)
             }
         }
 
         impl<Frac: LeEqU128> $Assign for ExactFixedU128<Frac> {
-            #[inline]
+            #[inline(always)]
             fn $assign(&mut self, rhs: Self) {
                 *self = $Imp::$method(*self, rhs)
             }
         }
 
         impl<Frac: LeEqU128> $Assign<&Self> for ExactFixedU128<Frac> {
-            #[inline]
+            #[inline(always)]
             fn $assign(&mut self, rhs: &Self) {
                 *self = $Imp::$method(*self, *rhs)
             }

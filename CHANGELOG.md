@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+### Added
+  - `cvlr-fixed`'s `exact` module, behind the `fixed` feature:
+    `ExactFixedU128<Frac>`, a verification-only stand-in for a program's
+    128-bit `fixed::FixedU128<Frac>` that computes exactly what the wide type
+    computes. It wraps the wide type and delegates to it, except that
+    fixed-point `*` and `/` in all their forms, rounding (`int`, `frac`,
+    `floor`, `round_to_zero`, `ceil`, `round`), comparisons with primitive
+    integers and `From` a primitive integer are computed on native integers,
+    which the Prover models exactly, instead of through 256-bit intermediates.
+    Its operators, `ceil` and `round` panic on overflow exactly when the
+    program's `fixed` does.
+  - `cvlr_fixed::exact_lit!`, a compile-time literal of such a type, the
+    stand-in for `fixed_macro`'s literal macros.
+
+### Changed
+  - `cvlr`'s `rt` feature now enables `cvlr-fixed/rt`, so host builds through
+    `cvlr` get `cvlr-fixed`'s host implementations.
+
 ## [0.6.3] - 2026-11-18
 
 ### Added
