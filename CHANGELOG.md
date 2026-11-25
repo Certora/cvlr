@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
 
+## [0.6.4] - 2026-11-25
+
 ### Added
   - `cvlr-fixed`'s `exact` module, behind the `fixed` feature:
     `ExactFixedU128<Frac>`, a verification-only stand-in for a program's
@@ -140,7 +142,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 <!-- next-url -->
-[Unreleased]: https://github.com/Certora/cvlr/compare/cvlr-v0.6.3...HEAD
+[Unreleased]: https://github.com/Certora/cvlr/compare/cvlr-v0.6.4...HEAD
+[0.6.4]: https://github.com/Certora/cvlr/compare/cvlr-v0.6.3...cvlr-v0.6.4
 [0.6.3]: https://github.com/Certora/cvlr/compare/cvlr-v0.6.2...cvlr-v0.6.3
 [0.6.2]: https://github.com/Certora/cvlr/compare/cvlr-v0.6.1...cvlr-v0.6.2
 [0.6.1]: https://github.com/Certora/cvlr/compare/cvlr-v0.6.0...cvlr-v0.6.1

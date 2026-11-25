@@ -17,7 +17,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.6.3"
+version = "0.6.4"
 authors = [
     "Arie Gurfinkel <arie@certora.com>",
     "Jorge A. Navas <jorge@certora.com>",
@@ -52,16 +52,16 @@ syn = "2"
 macrotest = "1"
 trybuild = "1"
 
-cvlr = { path = "cvlr", version = "=0.6.3" }
-cvlr-asserts = { path = "cvlr-asserts", version = "=0.6.3" }
-cvlr-mathint = { path = "cvlr-mathint", version = "=0.6.3" }
-cvlr-nondet = { path = "cvlr-nondet", default-features = false, version = "=0.6.3" }
-cvlr-log = { path = "cvlr-log", version = "=0.6.3" }
-cvlr-macros = { path = "cvlr-macros", version = "=0.6.3" }
-cvlr-early-panic = { path = "cvlr-early-panic", version = "=0.6.3" }
-cvlr-hook = { path = "cvlr-hook", version = "=0.6.3" }
-cvlr-fixed = { path = "cvlr-fixed", version = "=0.6.3" }
-cvlr-decimal = { path = "cvlr-decimal", version = "=0.6.3" }
-cvlr-derive = { path = "cvlr-derive", version = "=0.6.3" }
-cvlr-spec = { path = "cvlr-spec", version = "=0.6.3" }
-cvlr-rule-manifest = { path = "cvlr-rule-manifest", version = "=0.6.3" }
+cvlr = { path = "cvlr", version = "=0.6.4" }
+cvlr-asserts = { path = "cvlr-asserts", version = "=0.6.4" }
+cvlr-mathint = { path = "cvlr-mathint", version = "=0.6.4" }
+cvlr-nondet = { path = "cvlr-nondet", default-features = false, version = "=0.6.4" }
+cvlr-log = { path = "cvlr-log", version = "=0.6.4" }
+cvlr-macros = { path = "cvlr-macros", version = "=0.6.4" }
+cvlr-early-panic = { path = "cvlr-early-panic", version = "=0.6.4" }
+cvlr-hook = { path = "cvlr-hook", version = "=0.6.4" }
+cvlr-fixed = { path = "cvlr-fixed", version = "=0.6.4" }
+cvlr-decimal = { path = "cvlr-decimal", version = "=0.6.4" }
+cvlr-derive = { path = "cvlr-derive", version = "=0.6.4" }
+cvlr-spec = { path = "cvlr-spec", version = "=0.6.4" }
+cvlr-rule-manifest = { path = "cvlr-rule-manifest", version = "=0.6.4" }
