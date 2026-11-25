@@ -64,11 +64,18 @@ fn agree<Frac: LeEqU128>(seed: u64) {
             ExactFixedU128::<Frac>::from_bits(a),
             ExactFixedU128::<Frac>::from_bits(b),
         );
-        let (w, v) = (FixedU128::<Frac>::from_bits(a), FixedU128::<Frac>::from_bits(b));
+        let (w, v) = (
+            FixedU128::<Frac>::from_bits(a),
+            FixedU128::<Frac>::from_bits(b),
+        );
 
         let (r, o) = x.overflowing_mul(y);
         let (wr, wo) = w.overflowing_mul(v);
-        assert_eq!((r.to_bits(), o), (wr.to_bits(), wo), "overflowing_mul {a} {b}");
+        assert_eq!(
+            (r.to_bits(), o),
+            (wr.to_bits(), wo),
+            "overflowing_mul {a} {b}"
+        );
         assert_eq!(bits(x.checked_mul(y)), wide_bits(w.checked_mul(v)));
         assert_eq!(x.saturating_mul(y).to_bits(), w.saturating_mul(v).to_bits());
         assert_eq!(x.wrapping_mul(y).to_bits(), w.wrapping_mul(v).to_bits());
@@ -76,9 +83,17 @@ fn agree<Frac: LeEqU128>(seed: u64) {
             panics(|| x.unwrapped_mul(y).to_bits()),
             panics(|| w.unwrapped_mul(v).to_bits())
         );
-        assert_eq!(panics(|| (x * y).to_bits()), panics(|| (w * v).to_bits()), "* {a} {b}");
+        assert_eq!(
+            panics(|| (x * y).to_bits()),
+            panics(|| (w * v).to_bits()),
+            "* {a} {b}"
+        );
 
-        assert_eq!(bits(x.checked_div(y)), wide_bits(w.checked_div(v)), "checked_div {a} {b}");
+        assert_eq!(
+            bits(x.checked_div(y)),
+            wide_bits(w.checked_div(v)),
+            "checked_div {a} {b}"
+        );
         assert_eq!(
             panics(|| x.overflowing_div(y)).map(|(r, o)| (r.to_bits(), o)),
             panics(|| w.overflowing_div(v)).map(|(r, o)| (r.to_bits(), o))
@@ -95,7 +110,11 @@ fn agree<Frac: LeEqU128>(seed: u64) {
             panics(|| x.unwrapped_div(y).to_bits()),
             panics(|| w.unwrapped_div(v).to_bits())
         );
-        assert_eq!(panics(|| (x / y).to_bits()), panics(|| (w / v).to_bits()), "/ {a} {b}");
+        assert_eq!(
+            panics(|| (x / y).to_bits()),
+            panics(|| (w / v).to_bits()),
+            "/ {a} {b}"
+        );
 
         assert_eq!(bits(x.checked_add(y)), wide_bits(w.checked_add(v)));
         assert_eq!(bits(x.checked_sub(y)), wide_bits(w.checked_sub(v)));
@@ -140,12 +159,21 @@ fn constants_and_literals_are_the_wide_types() {
     assert_eq!(F::ONE.to_bits(), W::ONE.to_bits());
     assert_eq!(F::MAX.to_bits(), W::MAX.to_bits());
     assert_eq!(F::DELTA.to_bits(), W::DELTA.to_bits());
-    assert_eq!(cvlr_fixed::exact_lit!(F, 0.000001).to_bits(), W::lit("0.000001").to_bits());
-    assert_eq!(cvlr_fixed::exact_lit!(F, 1000000000000000).to_bits(), W::lit("1000000000000000").to_bits());
+    assert_eq!(
+        cvlr_fixed::exact_lit!(F, 0.000001).to_bits(),
+        W::lit("0.000001").to_bits()
+    );
+    assert_eq!(
+        cvlr_fixed::exact_lit!(F, 1000000000000000).to_bits(),
+        W::lit("1000000000000000").to_bits()
+    );
     const EPS: F = F::from_bits(1_000_000);
     assert_eq!(EPS.to_bits(), 1_000_000);
     const PCT: F = F::const_from_int(5).unwrapped_div_int(100);
-    assert_eq!(PCT.to_bits(), W::const_from_int(5).unwrapped_div_int(100).to_bits());
+    assert_eq!(
+        PCT.to_bits(),
+        W::const_from_int(5).unwrapped_div_int(100).to_bits()
+    );
 }
 
 /// `a * b` as a 256-bit `(hi, lo)`.
@@ -174,7 +202,11 @@ fn shr(hi: u128, lo: u128, k: u32) -> (u128, bool) {
 fn wide_div(hi: u128, lo: u128, d: u128) -> (u128, bool) {
     let (mut q_hi, mut q_lo, mut rem) = (0u128, 0u128, 0u128);
     for i in (0..256).rev() {
-        let bit = if i >= 128 { (hi >> (i - 128)) & 1 } else { (lo >> i) & 1 };
+        let bit = if i >= 128 {
+            (hi >> (i - 128)) & 1
+        } else {
+            (lo >> i) & 1
+        };
         let carry = rem >> 127;
         rem = (rem << 1) | bit;
         if carry == 1 || rem >= d {
@@ -196,12 +228,21 @@ fn fixed_is_floor<Frac: LeEqU128>(seed: u64) {
     let k = Frac::U32;
     for _ in 0..CASES {
         let (a, b) = (rng.spread(), rng.spread());
-        let (w, v) = (FixedU128::<Frac>::from_bits(a), FixedU128::<Frac>::from_bits(b));
+        let (w, v) = (
+            FixedU128::<Frac>::from_bits(a),
+            FixedU128::<Frac>::from_bits(b),
+        );
         let (hi, lo) = wide_mul(a, b);
         let (r, o) = w.overflowing_mul(v);
         assert_eq!((r.to_bits(), o), shr(hi, lo, k), "mul {a} {b}");
         if b != 0 {
-            let (nhi, nlo) = if k == 0 { (0, a) } else if k == 128 { (a, 0) } else { (a >> (128 - k), a << k) };
+            let (nhi, nlo) = if k == 0 {
+                (0, a)
+            } else if k == 128 {
+                (a, 0)
+            } else {
+                (a >> (128 - k), a << k)
+            };
             let (r, o) = w.overflowing_div(v);
             assert_eq!((r.to_bits(), o), wide_div(nhi, nlo, b), "div {a} {b}");
         }
