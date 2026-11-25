@@ -15,7 +15,8 @@ repository.workspace = true
 
 [features]
 rt = ["cvlr-mathint/rt", "cvlr-nondet/rt", "cvlr-asserts/rt", "cvlr-log/rt"]
-## The `narrow` module: a verification-only 64-bit stand-in for a 128-bit `fixed` type.
+## The `narrow` and `exact` modules: verification-only stand-ins for a 128-bit `fixed` type,
+## computing at 64 bits (`narrow`) or exactly at the full width (`exact`).
 fixed = ["dep:fixed"]
 
 [dependencies]
