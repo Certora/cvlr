@@ -11,7 +11,7 @@
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
 use cvlr_fixed::exact::ExactFixedU128;
-use fixed::types::extra::{LeEqU128, Unsigned, U0, U127, U60};
+use fixed::types::extra::{LeEqU128, U0, U127, U128, U60, U64};
 use fixed::FixedU128;
 
 struct Rng(u64);
@@ -131,7 +131,43 @@ fn agree<Frac: LeEqU128>(seed: u64) {
 
         assert_eq!(bits(x.checked_ceil()), wide_bits(w.checked_ceil()));
         assert_eq!(bits(x.checked_round()), wide_bits(w.checked_round()));
+        let (c, co) = x.overflowing_ceil();
+        let (wc, wco) = w.overflowing_ceil();
+        assert_eq!(
+            (c.to_bits(), co),
+            (wc.to_bits(), wco),
+            "overflowing_ceil {a}"
+        );
+        let (r, ro) = x.overflowing_round();
+        let (wr, wro) = w.overflowing_round();
+        assert_eq!(
+            (r.to_bits(), ro),
+            (wr.to_bits(), wro),
+            "overflowing_round {a}"
+        );
+        assert_eq!(panics(|| x.ceil().to_bits()), panics(|| w.ceil().to_bits()));
+        assert_eq!(
+            panics(|| x.round().to_bits()),
+            panics(|| w.round().to_bits())
+        );
         assert_eq!(x.floor().to_bits(), w.floor().to_bits());
+        assert_eq!(x.int().to_bits(), w.int().to_bits());
+        assert_eq!(x.frac().to_bits(), w.frac().to_bits());
+        assert_eq!(x.round_to_zero().to_bits(), w.round_to_zero().to_bits());
+
+        let m = rng.spread() >> (rng.next() % 129).min(127);
+        let m64 = m as u64;
+        let neg = -(m as i64 & i64::MAX);
+        let int = w.int().to_num::<u128>();
+        for k in [m, int, int.wrapping_add(1), int.wrapping_sub(1)] {
+            assert_eq!(x.partial_cmp(&k), w.partial_cmp(&k), "cmp {a} {k}");
+            assert_eq!(k.partial_cmp(&x), k.partial_cmp(&w), "cmp {k} {a}");
+            assert_eq!(x == k, w == k);
+        }
+        assert_eq!(x.partial_cmp(&m64), w.partial_cmp(&m64));
+        assert_eq!(m64 == x, m64 == w);
+        assert_eq!(x.partial_cmp(&neg), w.partial_cmp(&neg));
+        assert_eq!(neg.partial_cmp(&x), neg.partial_cmp(&w));
         assert_eq!(x.to_num::<f64>(), w.to_num::<f64>());
         assert_eq!(x.checked_to_num::<u64>(), w.checked_to_num::<u64>());
     }
@@ -150,6 +186,28 @@ fn agrees_with_fixed_u0() {
 #[test]
 fn agrees_with_fixed_u127() {
     agree::<U127>(0x2545_f491_4f6c_dd1d);
+}
+
+#[test]
+fn agrees_with_fixed_u128() {
+    agree::<U128>(0x6a09_e667_f3bc_c908);
+}
+
+#[test]
+fn from_ints_are_the_wide_types() {
+    type F = ExactFixedU128<U60>;
+    type W = FixedU128<U60>;
+    let mut rng = Rng(0xbb67_ae85_84ca_a73b);
+    for _ in 0..CASES {
+        let v = rng.next() >> (rng.next() % 64);
+        assert_eq!(F::from(v).to_bits(), W::from(v).to_bits());
+        assert_eq!(F::from(v as u32).to_bits(), W::from(v as u32).to_bits());
+    }
+    assert_eq!(F::from(true).to_bits(), W::from(true).to_bits());
+    assert_eq!(
+        ExactFixedU128::<U64>::from(u64::MAX).to_bits(),
+        FixedU128::<U64>::from(u64::MAX).to_bits()
+    );
 }
 
 #[test]

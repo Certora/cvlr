@@ -25,7 +25,7 @@ pre-release-replacements = [
 [features]
 default = ["cvlr-nondet/std"]
 vacuity = ["cvlr-asserts/vacuity"]
-rt = ["cvlr-asserts/rt", "cvlr-mathint/rt", "cvlr-log/rt", "cvlr-nondet/rt"]
+rt = ["cvlr-asserts/rt", "cvlr-mathint/rt", "cvlr-log/rt", "cvlr-nondet/rt", "cvlr-fixed/rt"]
 no-loc = ["cvlr-log/no-loc", "cvlr-asserts/no-loc"]
 
 [dependencies]
